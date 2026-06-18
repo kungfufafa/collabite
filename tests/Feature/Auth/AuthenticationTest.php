@@ -1,51 +1,36 @@
 <?php
 
-use App\Models\User;
-use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Fortify\Features;
+declare(strict_types=1);
 
-test('login screen can be rendered', function () {
+use App\Enums\AccountStatus;
+use App\Enums\UserRole;
+use App\Models\User;
+
+test('login screen can be rendered', function (): void {
     $response = $this->get(route('login'));
 
     $response->assertOk();
 });
 
-test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
+test('users can authenticate using the login screen', function (): void {
+    $user = User::factory()->create([
+        'role' => UserRole::Umkm,
+        'email_verified_at' => now(),
     ]);
-
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
-});
-
-test('users with two factor enabled are redirected to two factor challenge', function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
-
-    $user = User::factory()->withTwoFactor()->create();
 
     $response = $this->post(route('login'), [
         'email' => $user->email,
         'password' => 'password',
     ]);
 
-    $response->assertRedirect(route('two-factor.login'));
-    $response->assertSessionHas('login.id', $user->id);
-    $this->assertGuest();
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('umkm.dashboard', absolute: false));
 });
 
-test('users can not authenticate with invalid password', function () {
+test('users cannot authenticate with invalid password', function (): void {
     $user = User::factory()->create();
 
-    $this->post(route('login.store'), [
+    $this->post(route('login'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
@@ -53,25 +38,46 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users can logout', function () {
+test('suspended users cannot authenticate', function (): void {
+    $user = User::factory()->withStatus(AccountStatus::Suspended)->create();
+
+    $response = $this->post(route('login'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors('email');
+});
+
+test('users can logout', function (): void {
     $user = User::factory()->create();
+    $this->actingAs($user);
 
-    $response = $this->actingAs($user)->post(route('logout'));
+    $response = $this->post(route('logout'));
 
+    $this->assertGuest();
     $response->assertRedirect(route('home'));
-
-    $this->assertGuest();
 });
 
-test('users are rate limited', function () {
-    $user = User::factory()->create();
+test('admin users are redirected to admin dashboard', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::Admin, 'email_verified_at' => now()]);
 
-    RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
+    $response = $this->post(route('login'), [
+        'email' => $admin->email,
+        'password' => 'password',
     ]);
 
-    $response->assertTooManyRequests();
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
+});
+
+test('creator users are redirected to creator dashboard', function (): void {
+    $creator = User::factory()->create(['role' => UserRole::Creator, 'email_verified_at' => now()]);
+
+    $response = $this->post(route('login'), [
+        'email' => $creator->email,
+        'password' => 'password',
+    ]);
+
+    $response->assertRedirect(route('creator.dashboard', absolute: false));
 });

@@ -1,214 +1,324 @@
-<laravel-boost-guidelines>
-=== foundation rules ===
+# AGENTS.md — Aturan Coding Agent Collabite
 
-# Laravel Boost Guidelines
+> **Versi:** 1.0 (Approved)
+> **Tanggal:** 2026-06-18
+> **Status:** Disetujui sebagai acuan implementasi M0–M7.
+
+Dokumen ini adalah **kontrak kerja** antara coding agent (Claude, dsb.) dan proyek Collabite. Jika terjadi konflik dengan aturan lain, urutan prioritas di bawah berlaku. AGENTS.md **tidak menggantikan** `CLAUDE.md` (Laravel Boost) — keduanya saling melengkapi. Agent **wajib membaca `CLAUDE.md`** untuk panduan Laravel, Fortify, Inertia v3, Pest, Pint, dan Larastan.
+
+> **Pembagian peran**:
+> - `AGENTS.md` (file ini) → aturan khusus Collabite: source of truth, scope MVP, business rules, format laporan agent.
+> - `CLAUDE.md` → panduan Laravel Boost: konvensi PHP, cara pakai `search-docs`, Pint, Pest, Larastan, Inertia v3, Wayfinder, Herd, dan tools MCP `laravel-boost`.
+
+---
+
+## 1. Cara Membaca Dokumentasi
+
+Sebelum mengerjakan tugas apa pun, agent **wajib** membaca (atau memverifikasi via grep/Read) dokumen pada urutan berikut:
+
+1. `docs/PRD.md` — masalah, scope, FR/NFR, business rules, traceability.
+2. `docs/USE_CASE.md` — perilaku sistem dari sudut pandang aktor.
+3. `docs/TDD.md` — arsitektur, ERD, struktur folder, status enum, state transition.
+4. `docs/COMPONENT_DIAGRAM.md` — batas modul dan dependensi.
+5. `docs/TEST_PLAN.md` — test case, traceability, UAT.
+6. `docs/IMPLEMENTATION_ROADMAP.md` — milestone saat ini dan small-PR breakdown.
+7. `docs/DECISIONS.md` — ADR dan rationale.
+8. `AGENTS.md` (dokumen ini) — aturan kerja.
+
+---
+
+## 2. Source of Truth
+
+Jika terjadi konflik, urutan **source of truth**:
+
+1. `docs/PRD.md`
+2. `docs/USE_CASE.md`
+3. `docs/TDD.md`
+4. `docs/COMPONENT_DIAGRAM.md`
+5. `docs/TEST_PLAN.md`
+6. `docs/IMPLEMENTATION_ROADMAP.md`
+7. `docs/DECISIONS.md`
+8. `AGENTS.md`
+
+Jika agent menemukan konflik, **wajib melapor** dan tidak menebak sendiri.
+
+---
+
+## 3. Scope MVP
+
+Fitur yang **boleh** dikerjakan: lihat PRD §9.
+Fitur yang **tidak boleh** dikerjakan: lihat PRD §8 (Non-Goals). Termasuk di dalamnya:
+
+- Payment gateway / escrow.
+- Subscription / billing.
+- AI Creator recommendation.
+- Publikasi otomatis ke Instagram/TikTok.
+- Video call.
+- Native mobile app.
+- WebSocket real-time / push FCM.
+- GraphQL.
+- Microservices.
+- Elasticsearch.
+- Kontrak elektronik.
+- Sistem dispute kompleks.
+- Analitik media sosial otomatis.
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
+**Larangan:** Menambah fitur di luar scope MVP tanpa eksplisit mengubah PRD, USE_CASE, dan DECISIONS.
+
+---
+
+## 4. Stack Wajib
+
+- Backend: PHP 8.4, Laravel 13, Eloquent.
+- Frontend: React 19 + TypeScript.
+- Bridge: Inertia.js v3.
+- Database: MySQL 8.x.
+- UI: Tailwind CSS v4 + shadcn/ui.
+- File storage: Laravel Filesystem (public + private disk).
+- Queue: database.
+- Notification: database + email.
+- Backend test: Pest v4.
+- Frontend test: Vitest + React Testing Library.
+- E2E test: Playwright.
+- Formatter: Pint v1.
+- Static analysis: Larastan v3 level 6.
+- Tidak menambah dependency baru tanpa persetujuan.
 
-## Foundational Context
+---
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
+## 5. Aturan Arsitektur
+
+1. **Laravel monolith** dengan module domain terpisah (lihat COMPONENT_DIAGRAM.md).
+2. **Tiga portal independen**: UMKM Portal, Creator Portal, Admin Portal. Tiap portal memakai modul core secara independen sesuai kebutuhannya — **bukan sebagai rantai proses bisnis**.
+3. **Tidak membuat REST API internal terpisah** (ADR-006). Controller mengembalikan `Inertia::render` atau `redirect`.
+4. **Layanan lintas-modul** diletakkan di `app/Services` atau `app/Actions`, **bukan** di model.
+5. **Konvensi Laravel** (Boost): PSR-12, Pint, type-hints, constructor promotion, enum TitleCase.
+6. **Struktur folder** sesuai TDD §6. Agent **tidak** membuat base folder baru tanpa persetujuan.
 
-- php - 8.4
-- inertiajs/inertia-laravel (INERTIA_LARAVEL) - v3
-- laravel/fortify (FORTIFY) - v1
-- laravel/framework (LARAVEL) - v13
-- laravel/prompts (PROMPTS) - v0
-- laravel/wayfinder (WAYFINDER) - v0
-- larastan/larastan (LARASTAN) - v3
-- laravel/boost (BOOST) - v2
-- laravel/mcp (MCP) - v0
-- laravel/pail (PAIL) - v1
-- laravel/pint (PINT) - v1
-- laravel/sail (SAIL) - v1
-- pestphp/pest (PEST) - v4
-- phpunit/phpunit (PHPUNIT) - v12
-- @inertiajs/react (INERTIA_REACT) - v3
-- react (REACT) - v19
-- tailwindcss (TAILWINDCSS) - v4
-- @laravel/vite-plugin-wayfinder (WAYFINDER_VITE) - v0
-- eslint (ESLINT) - v9
-- prettier (PRETTIER) - v3
+---
 
-## Skills Activation
+## 6. Aturan Migration
 
-This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
+1. Migration baru **wajib** memiliki `down()`.
+2. Penamaan: `YYYY_MM_DD_HHMMSS_create_<table>_table.php` atau `YYYY_MM_DD_HHMMSS_alter_<table>_table.php`.
+3. Setiap tabel baru:
+   - Memiliki `id` dan `timestamps()`.
+   - Mendeklarasikan `softDeletes()` jika diperlukan (lihat TDD §13).
+   - Mendeklarasikan FK + onDelete sesuai model domain.
+   - Mendeklarasikan unique & index eksplisit untuk kolom yang di-query sering.
+4. **Tidak menghapus** tabel/kolom pada migration yang sudah di-merge; gunakan `down()` hanya untuk rollback lokal.
+5. **Mengubah schema** dari migration yang sudah di-merge: buat migration baru, jangan edit file lama.
+6. **Seed** hanya di folder `database/seeders`. Factory di `database/factories`.
 
-## Conventions
+---
+
+## 7. Aturan Model
+
+1. Eloquent model **wajib** mendeklarasikan:
+   - `$fillable` atau `$guarded`.
+   - `casts()` untuk kolom enum/tanggal/json.
+   - Relasi Eloquent (tidak pakai string manual).
+2. Enum digunakan untuk kolom status (lihat TDD §14).
+3. **Tidak** meletakkan logika bisnis di model — gunakan `Action`/`Service`.
+4. **Tidak** mengakses `request()` dari model.
+5. Soft-delete di-handle via trait `SoftDeletes` pada model yang ditandai di TDD.
 
-- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
-- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
-- Check for existing components to reuse before writing a new one.
+---
+
+## 8. Aturan Controller
+
+1. Controller didaftarkan via atribut rute Laravel (Laravel 11/12/13 style) atau `routes/web.php`.
+2. **Injeksi dependensi** lewat constructor atau method injection — bukan `app()->make`.
+3. **Resource controller** mengikuti konvensi Laravel (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`).
+4. Controller **tidak** melakukan validasi manual — gunakan Form Request.
+5. Controller **tidak** memanggil `Auth::user()` secara langsung di dalam loop besar.
+6. Controller mengembalikan:
+   - `Inertia::render('Namespace/Page', props)` untuk view.
+   - `redirect()->back()->with(...)` untuk form submission.
+   - `redirect()->route('name')` untuk redirect dengan nama route.
+7. **Prefix route** sesuai peran: `umkm.`, `creator.`, `admin.`, `auth.`, `public.`.
 
-## Verification Scripts
+---
+
+## 9. Aturan Validation
+
+1. **Setiap input** dari klien divalidasi via Form Request (`app/Http/Requests`).
+2. Form Request **wajib** memiliki `authorize()` (default `true`; jika kompleks, delegasi ke Policy).
+3. Validasi lintas field (`deadline > today`) ditempatkan di `withValidator()` atau rules kustom.
+4. Pesan error menggunakan Bahasa Indonesia dan **spesifik**.
 
-- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+---
 
-## Application Structure & Architecture
+## 10. Aturan Policy
 
-- Stick to existing directory structure; don't create new base folders without approval.
-- Do not change the application's dependencies without approval.
+1. Setiap resource utama memiliki Policy (lihat TDD §10).
+2. Policy didaftarkan via `Gate::policy` otomatis (Laravel convention) atau service provider.
+3. Pemeriksaan di Controller: `$this->authorize('action', $model)`.
+4. Test policy di folder `tests/Feature/Authorization/*` (lihat TEST_PLAN).
+
+---
 
-## Frontend Bundling
+## 11. Aturan React / Inertia
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+1. Halaman Inertia di `resources/js/pages/{Auth,Public,Umkm,Creator,Admin}/*`.
+2. Komponen shared di `resources/js/components/{ui,layout,common}`.
+3. **Aktifkan skill `inertia-react-development`** saat menulis/mengedit kode Inertia client.
+4. **Gunakan `search-docs` MCP tool** untuk dokumentasi Inertia v3 sebelum perubahan.
+5. Aksi/form submit gunakan `useForm` dari `@inertiajs/react`.
+6. **Naming komponen** PascalCase. Halaman dinamai sesuai path URL (mis. `pages/Umkm/Campaign/Create.tsx`).
+7. **TypeScript strict** aktif (lihat `tsconfig.json`).
+8. **Hindari** axios (Inertia v3 menghapus axios default); gunakan XHR bawaan.
 
-## Documentation Files
+---
 
-- You must only create documentation files if explicitly requested by the user.
+## 12. Aturan TypeScript
 
-## Replies
+1. `strict: true` (lihat `tsconfig.json`).
+2. Setiap komponen Halaman memiliki `PageProps` typing (via Inertia `PageProps` generic).
+3. Hindari `any`. Gunakan `unknown` + narrowing jika tidak tahu tipenya.
+4. Path imports: gunakan alias `@/*` yang didefinisikan di `tsconfig.json`.
+5. **Wayfinder**: gunakan generated helpers dari `@/actions/` (controller) atau `@/routes/` (named route). Jangan tulis URL hard-coded.
 
-- Be concise in your explanations - focus on what's important rather than explaining obvious details.
+---
+
+## 13. Aturan File Upload
 
-=== boost rules ===
+1. Logo, foto produk, foto portofolio → disk `public`.
+2. Dokumen verifikasi, lampiran pesan, file submission → disk `private`.
+3. Akses file private via `URL::temporarySignedRoute('files.private', $ttl, ['path' => $path])`.
+4. Validasi MIME & ukuran di Form Request (lihat TDD §16).
+5. Penamaan file: UUIDv4. **Jangan** menyimpan nama asli di storage path (simpan di kolom `original_name`).
+6. Path pattern: `{module}/{owner_id}/{uuid}.{ext}`.
 
-# Laravel Boost
+---
 
-## Tools
+## 14. Aturan Security
 
-- Laravel Boost is an MCP server with tools designed specifically for this application. Prefer Boost tools over manual alternatives like shell commands or file reads.
-- Use `database-query` to run read-only queries against the database instead of writing raw SQL in tinker.
-- Use `database-schema` to inspect table structure before writing migrations or models.
-- Use `get-absolute-url` to resolve the correct scheme, domain, and port for project URLs. Always use this before sharing a URL with the user.
-- Use `browser-logs` to read browser logs, errors, and exceptions. Only recent logs are useful, ignore old entries.
+1. **CSRF** otomatis via Inertia; tidak menonaktifkan middleware `VerifyCsrfToken`.
+2. **Rate limit** pada `login`, `register`, `forgot-password`.
+3. **Hashing password** via bcrypt/argon bawaan Laravel.
+4. **Hindari** menyimpan data sensitif di log (password, token, isi pesan).
+5. **Validasi** semua input via Form Request — termasuk query string.
+6. **Authorization** dicek di Controller/Policy — bukan di Blade/JSX.
+7. **Signed URL** untuk akses file private.
+8. **Email enumeration prevention**: response `/forgot-password` selalu 200 dengan pesan generik.
 
-## Searching Documentation (IMPORTANT)
+---
 
-- Always use `search-docs` before making code changes. Do not skip this step. It returns version-specific docs based on installed packages automatically.
-- Pass a `packages` array to scope results when you know which packages are relevant.
-- Use multiple broad, topic-based queries: `['rate limiting', 'routing rate limiting', 'routing']`. Expect the most relevant results first.
-- Do not add package names to queries because package info is already shared. Use `test resource table`, not `filament 4 test resource table`.
+## 15. Aturan Testing
 
-### Search Syntax
-
-1. Use words for auto-stemmed AND logic: `rate limit` matches both "rate" AND "limit".
-2. Use `"quoted phrases"` for exact position matching: `"infinite scroll"` requires adjacent words in order.
-3. Combine words and phrases for mixed queries: `middleware "rate limit"`.
-4. Use multiple queries for OR logic: `queries=["authentication", "middleware"]`.
-
-## Artisan
-
-- Run Artisan commands directly via the command line (e.g., `php artisan route:list`). Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
-- Inspect routes with `php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
-- Read configuration values using dot notation: `php artisan config:show app.name`, `php artisan config:show database.default`. Or read config files directly from the `config/` directory.
-
-## Tinker
-
-- Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
-- Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
-
-=== php rules ===
-
-# PHP
-
-- Always use curly braces for control structures, even for single-line bodies.
-- Use PHP 8 constructor property promotion: `public function __construct(public GitHub $github) { }`. Do not leave empty zero-parameter `__construct()` methods unless the constructor is private.
-- Use explicit return type declarations and type hints for all method parameters: `function isAccessible(User $user, ?string $path = null): bool`
-- Use TitleCase for Enum keys: `FavoritePerson`, `BestLake`, `Monthly`.
-- Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
-- Use array shape type definitions in PHPDoc blocks.
-
-=== deployments rules ===
-
-# Deployment
-
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-
-=== herd rules ===
-
-# Laravel Herd
-
-- The application is served by Laravel Herd at `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs. Never run commands to serve the site. It is always available.
-- Use the `herd` CLI to manage services, PHP versions, and sites (e.g. `herd sites`, `herd services:start <service>`, `herd php:list`). Run `herd list` to discover all available commands.
-
-=== tests rules ===
-
-# Test Enforcement
-
-- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
-- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
-
-=== inertia-laravel/core rules ===
-
-# Inertia
-
-- Inertia creates fully client-side rendered SPAs without modern SPA complexity, leveraging existing server-side patterns.
-- Components live in `resources/js/pages` (unless specified in `vite.config.js`). Use `Inertia::render()` for server-side routing instead of Blade views.
-- ALWAYS use `search-docs` tool for version-specific Inertia documentation and updated code examples.
-- IMPORTANT: Activate `inertia-react-development` when working with Inertia client-side patterns.
-
-# Inertia v3
-
-- Use all Inertia features from v1, v2, and v3. Check the documentation before making changes to ensure the correct approach.
-- New v3 features: standalone HTTP requests (`useHttp` hook), optimistic updates with automatic rollback, layout props (`useLayoutProps` hook), instant visits, simplified SSR via `@inertiajs/vite` plugin, custom exception handling for error pages.
-- Carried over from v2: deferred props, infinite scroll, merging props, polling, prefetching, once props, flash data.
-- When using deferred props, add an empty state with a pulsing or animated skeleton.
-- Axios has been removed. Use the built-in XHR client with interceptors, or install Axios separately if needed.
-- `Inertia::lazy()` / `LazyProp` has been removed. Use `Inertia::optional()` instead.
-- Prop types (`Inertia::optional()`, `Inertia::defer()`, `Inertia::merge()`) work inside nested arrays with dot-notation paths.
-- SSR works automatically in Vite dev mode with `@inertiajs/vite` - no separate Node.js server needed during development.
-- Event renames: `invalid` is now `httpException`, `exception` is now `networkError`.
-- `router.cancel()` replaced by `router.cancelAll()`.
-- The `future` configuration namespace has been removed - all v2 future options are now always enabled.
-
-=== laravel/core rules ===
-
-# Do Things the Laravel Way
-
-- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
-- If you're creating a generic PHP class, use `php artisan make:class`.
-- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
-
-### Model Creation
-
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
-
-## APIs & Eloquent Resources
-
-- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
-
-## URL Generation
-
-- When generating links to other pages, prefer named routes and the `route()` function.
-
-## Testing
-
-- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
-- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
-
-## Vite Error
-
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
-
-=== wayfinder/core rules ===
-
-# Laravel Wayfinder
-
-Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `@/actions/` (controllers) or `@/routes/` (named routes).
-
-=== pint/core rules ===
-
-# Laravel Pint Code Formatter
-
-- If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
-- Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
-
-=== pest/core rules ===
-
-## Pest
-
-- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
-- The `{name}` argument should not include the test suite directory. Use `php artisan make:test --pest SomeFeatureTest` instead of `php artisan make:test --pest Feature/SomeFeatureTest`.
-- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
-
-=== inertia-react/core rules ===
-
-# Inertia + React
-
-- IMPORTANT: Activate `inertia-react-development` when working with Inertia React client-side patterns.
-
-</laravel-boost-guidelines>
+1. **Setiap perubahan kode** harus disertai test (feature/unit/component) sesuai TEST_PLAN.
+2. **Test Enforcement** (CLAUDE.md): tulis/ubah test, lalu jalankan test yang terdampak.
+3. **Pest** untuk backend. Format: `php artisan make:test --pest NameTest`.
+4. **Vitest + RTL** untuk frontend.
+5. **Playwright** untuk E2E happy path.
+6. **Larastan** level 6: `vendor/bin/phpstan analyse` tanpa error baru.
+7. **Pint**: `vendor/bin/pint --dirty --format agent` sebelum finalize.
+8. **Coverage minimum**: backend 70%, frontend 60% (PRD §17).
+
+---
+
+## 16. Small-PR Workflow
+
+1. Agent **wajib** memecah implementasi milestone menjadi PR kecil sesuai IMPLEMENTATION_ROADMAP §small-PR.
+2. Setiap PR:
+   - Berfokus pada satu concern.
+   - Disertai test.
+   - Lulus Pint, Larastan, dan test sebelum dinyatakan selesai.
+3. Agent **tidak** memaket banyak concern dalam satu PR.
+4. Commit message: `conventional commits` (feat:, fix:, chore:, test:, docs:, refactor:).
+5. Branch naming: `feat/<milestone>-<slug>` (mis. `feat/m1-register-umkm`).
+
+---
+
+## 17. Definition of Done
+
+Suatu fitur dianggap selesai jika:
+
+1. Kode ditulis sesuai aturan arsitektur & konvensi Laravel.
+2. Test (unit/feature/authorization/component) ditulis dan lulus.
+3. `vendor/bin/pint --dirty` bersih.
+4. `vendor/bin/phpstan analyse` tanpa error baru.
+5. `php artisan test --compact` lulus untuk test terdampak.
+6. Frontend build (`npm run build`) sukses.
+7. Tidak ada perubahan di luar scope.
+8. PR didokumentasikan (deskripsi, screenshot jika UI, referensi FR/UC/TC).
+
+---
+
+## 18. Larangan Menambah Fitur di Luar Scope
+
+1. **Tidak menambah** migration/model/controller/route/React page yang tidak terkait milestone aktif.
+2. **Tidak menambah** dependency baru tanpa persetujuan.
+3. **Tidak membuat** REST API route baru untuk kebutuhan internal.
+4. **Tidak menggunakan** library UI di luar shadcn/ui + Tailwind.
+5. **Tidak membuat** field baru di tabel tanpa konfirmasi dampaknya terhadap FR/Use Case.
+
+---
+
+## 19. Format Laporan Agent Setelah Implementasi
+
+Setiap kali agent menyelesaikan satu task/PR, agent **wajib** melaporkan dengan format:
+
+```markdown
+## Ringkasan
+- <satu kalimat ringkasan>
+
+## Perubahan
+- <daftar file/komponen yang berubah>
+- <migration baru (jika ada)>
+- <dependency baru (jika ada)>
+
+## Validasi
+- `vendor/bin/pint --dirty`: <lulus / daftar error>
+- `vendor/bin/phpstan analyse`: <lulus / daftar error>
+- `php artisan test --compact --filter=...`: <lulus / ringkasan>
+- `npm run build`: <sukses / error>
+
+## Traceability
+- FR terkait: FR-XXX-XXX
+- Use Case terkait: UC-XXX-XXX
+- Test Case terkait: TC-XXX-XXX
+- Milestone: Mx
+
+## Catatan / Asumsi
+- <daftar asumsi>
+- <daftar open questions>
+```
+
+---
+
+## 20. Aturan Tambahan
+
+1. **Tidak menghapus** test tanpa persetujuan.
+2. **Tidak memaksa** commit/push. Agent hanya bekerja sampai PR-ready.
+3. **Tidak membuat** dokumentasi tambahan (mis. README panjang, tutorial) di luar `docs/`. Jika perlu, ajukan perubahan ke `docs/`.
+4. **Aktifkan skill** yang relevan (mis. `inertia-react-development`, `pest-testing`, `tailwindcss-development`) saat masuk domain tersebut.
+5. **Gunakan** `search-docs` MCP tool sebelum perubahan kode library/framework.
+6. **Berkomunikasi** dengan ringkas: fokus pada **apa** yang berubah, **mengapa**, dan **bagaimana memverifikasinya**.
+
+---
+
+## Lampiran A. Daftar Skill yang Sering Diperlukan
+
+| Domain | Skill |
+| --- | --- |
+| React + Inertia | `inertia-react-development` |
+| Pest | `pest-testing` |
+| Tailwind | `tailwindcss-development` |
+| Wayfinder | `wayfinder-development` |
+| Laravel best practices | `laravel-best-practices` |
+| Fortify | `fortify-development` |
+| Riset keputusan | `deep-research` (jika ada keputusan besar) |
+| Code review | `code-review` (sebelum merge) |
+| Simplify | `simplify` (cleanup setelah implementasi) |
+| Audit | `audit` (quality check) |
+
+---
+
+## Catatan Versi
+
+| Versi | Tanggal | Perubahan | Penulis |
+| --- | --- | --- | --- |
+| 0.1 (Draft) | 2026-06-18 | Initial draft: aturan agent + traceability. | Product Engineer |
+| 1.0 (Approved) | 2026-06-18 | Tutup OQ-001..OQ-011. Tambah aturan: AGENTS/CLAUDE split, single-role, immutable messages, file size policy, signed URL, audit log untuk pembatalan. | Product Engineer |

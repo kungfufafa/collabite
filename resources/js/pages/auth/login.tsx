@@ -1,16 +1,11 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import InputError from '@/components/input-error';
-import PasskeyVerify from '@/components/passkey-verify';
-import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import TextLink from '@/components/text-link';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
+import { login, register } from '@/routes';
 
 type Props = {
     status?: string;
@@ -20,98 +15,42 @@ type Props = {
 export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
-            <Head title="Log in" />
-
-            <PasskeyVerify />
-
-            <Form
-                {...store.form()}
-                resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
-            >
-                {({ processing, errors }) => (
-                    <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-sm"
-                                            tabIndex={5}
-                                        >
-                                            Forgot your password?
-                                        </TextLink>
-                                    )}
-                                </div>
-                                <PasswordInput
-                                    id="password"
-                                    name="password"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    placeholder="Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full"
-                                tabIndex={4}
-                                disabled={processing}
-                                data-test="login-button"
-                            >
-                                {processing && <Spinner />}
-                                Log in
-                            </Button>
+            <Head title="Masuk" />
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
+                <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h1 className="mb-1 text-2xl font-bold">Masuk ke Collabite</h1>
+                    <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">
+                        Belum punya akun?{' '}
+                        <TextLink href={register()}>Daftar di sini</TextLink>
+                    </p>
+                    {status ? (
+                        <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                            {status}
                         </div>
-
-                        <div className="text-center text-sm text-muted-foreground">
-                            Don't have an account?{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                Sign up
-                            </TextLink>
+                    ) : null}
+                    <Form action={login()} method="post" resetOnSuccess={['password']} className="flex flex-col gap-4">
+                        <div>
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" name="email" required autoFocus tabIndex={1} autoComplete="email" />
+                            <InputError message={undefined} />
                         </div>
-                    </>
-                )}
-            </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password">Password</Label>
+                                {canResetPassword ? (
+                                    <Link href="/forgot-password" className="text-xs text-slate-600 hover:underline">
+                                        Lupa password?
+                                    </Link>
+                                ) : null}
+                            </div>
+                            <Input id="password" type="password" name="password" required tabIndex={2} autoComplete="current-password" />
+                        </div>
+                        <Button type="submit" tabIndex={3}>
+                            Masuk
+                        </Button>
+                    </Form>
                 </div>
-            )}
+            </div>
         </>
     );
 }
-
-Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
-};

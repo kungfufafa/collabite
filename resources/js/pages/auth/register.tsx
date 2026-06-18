@@ -1,120 +1,115 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
-import { store } from '@/routes/register';
 
 type Props = {
-    passwordRules: string;
+    role: 'umkm' | 'creator' | null;
 };
 
-export default function Register({ passwordRules }: Props) {
+export default function Register({ role }: Props) {
+    const isUmkm = role === 'umkm';
+    const isCreator = role === 'creator';
+
     return (
         <>
-            <Head title="Register" />
-            <Form
-                {...store.form()}
-                resetOnSuccess={['password', 'password_confirmation']}
-                disableWhileProcessing
-                className="flex flex-col gap-6"
-            >
-                {({ processing, errors }) => (
-                    <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
-                                />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
+            <Head title="Daftar Collabite" />
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
+                <div className="w-full max-w-lg rounded-lg border bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h1 className="mb-1 text-2xl font-bold">Daftar di Collabite</h1>
+                    <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">
+                        Sudah punya akun?{' '}
+                        <Link href={login()} className="text-slate-900 underline dark:text-slate-100">
+                            Masuk di sini
+                        </Link>
+                    </p>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="email"
-                                    name="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                    <div className="mb-6 grid grid-cols-2 gap-3">
+                        <Link
+                            href="/register?role=umkm"
+                            className={`rounded border p-3 text-center text-sm font-medium ${
+                                isUmkm ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200'
+                            }`}
+                        >
+                            Saya UMKM
+                        </Link>
+                        <Link
+                            href="/register?role=creator"
+                            className={`rounded border p-3 text-center text-sm font-medium ${
+                                isCreator ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200'
+                            }`}
+                        >
+                            Saya Creator
+                        </Link>
+                    </div>
 
-                            <div className="grid gap-2">
+                    {isUmkm ? (
+                        <Form action="/register/umkm" method="post" className="flex flex-col gap-4">
+                            <div>
+                                <Label htmlFor="name">Nama Anda</Label>
+                                <Input id="name" name="name" required />
+                            </div>
+                            <div>
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" type="email" name="email" required />
+                            </div>
+                            <div>
                                 <Label htmlFor="password">Password</Label>
-                                <PasswordInput
-                                    id="password"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="new-password"
-                                    name="password"
-                                    placeholder="Password"
-                                    passwordrules={passwordRules}
-                                />
-                                <InputError message={errors.password} />
+                                <Input id="password" type="password" name="password" required minLength={8} />
                             </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    required
-                                    tabIndex={4}
-                                    autoComplete="new-password"
-                                    name="password_confirmation"
-                                    placeholder="Confirm password"
-                                    passwordrules={passwordRules}
-                                />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                            <div>
+                                <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
+                                <Input id="password_confirmation" type="password" name="password_confirmation" required minLength={8} />
                             </div>
+                            <div>
+                                <Label htmlFor="business_name">Nama Usaha</Label>
+                                <Input id="business_name" name="business_name" required />
+                            </div>
+                            <div>
+                                <Label htmlFor="business_type">Jenis Usaha</Label>
+                                <Input id="business_type" name="business_type" required />
+                            </div>
+                            <Button type="submit">Daftar UMKM</Button>
+                        </Form>
+                    ) : null}
 
-                            <Button
-                                type="submit"
-                                className="mt-2 w-full"
-                                tabIndex={5}
-                                data-test="register-user-button"
-                            >
-                                {processing && <Spinner />}
-                                Create account
-                            </Button>
-                        </div>
+                    {isCreator ? (
+                        <Form action="/register/creator" method="post" className="flex flex-col gap-4">
+                            <div>
+                                <Label htmlFor="name">Nama Anda</Label>
+                                <Input id="name" name="name" required />
+                            </div>
+                            <div>
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" type="email" name="email" required />
+                            </div>
+                            <div>
+                                <Label htmlFor="password">Password</Label>
+                                <Input id="password" type="password" name="password" required minLength={8} />
+                            </div>
+                            <div>
+                                <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
+                                <Input id="password_confirmation" type="password" name="password_confirmation" required minLength={8} />
+                            </div>
+                            <div>
+                                <Label htmlFor="city">Kota</Label>
+                                <Input id="city" name="city" />
+                            </div>
+                            <div>
+                                <Label htmlFor="contact_phone">Kontak (opsional)</Label>
+                                <Input id="contact_phone" name="contact_phone" />
+                            </div>
+                            <Button type="submit">Daftar Creator</Button>
+                        </Form>
+                    ) : null}
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
-                                Log in
-                            </TextLink>
-                        </div>
-                    </>
-                )}
-            </Form>
+                    {!isUmkm && !isCreator ? (
+                        <p className="text-sm text-slate-500">Pilih peran terlebih dahulu untuk melanjutkan.</p>
+                    ) : null}
+                </div>
+            </div>
         </>
     );
 }
-
-Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
-};
