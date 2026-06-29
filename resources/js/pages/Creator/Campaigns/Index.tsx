@@ -1,7 +1,14 @@
 import { Head, Link } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
+import type { ReactNode } from 'react';
+
+import { FilterPanel } from '@/components/app/filter-panel';
+import { ListEmptyState } from '@/components/app/list-empty-state';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type Campaign = {
     id: number;
@@ -15,7 +22,10 @@ type Campaign = {
 };
 
 function formatBudget(value: string | null): string {
-    if (!value) return 'Budget fleksibel';
+    if (!value) {
+        return 'Budget fleksibel';
+    }
+
     return 'Rp ' + Number(value).toLocaleString('id-ID');
 }
 
@@ -27,82 +37,110 @@ export default function Index({
     campaigns: { data: Campaign[] } | Campaign[];
     categories: { id: number; name: string }[];
     filters: { q: string; category_id: string | null; min_budget: string | null; max_budget: string | null };
-}) {
+}): ReactNode {
     const list = Array.isArray(campaigns) ? campaigns : campaigns.data;
 
     return (
         <>
             <Head title="Cari Campaign" />
-            <main className="container mx-auto px-6 py-10">
-                <header className="mb-6">
-                    <h1 className="text-2xl font-bold">Cari Campaign</h1>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Temukan campaign UMKM yang sesuai untuk Anda.
-                    </p>
-                </header>
+            <div>
+                <PageHeader
+                    description="Temukan campaign UMKM yang sesuai untuk Anda."
+                    title="Cari Campaign"
+                />
 
-                <form method="GET" action="/creator/campaigns" className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                        <label htmlFor="q" className="text-sm font-medium">Kata kunci</label>
-                        <input id="q" name="q" defaultValue={filters.q ?? ''} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-                    </div>
-                    <div>
-                        <label htmlFor="category_id" className="text-sm font-medium">Kategori</label>
-                        <select id="category_id" name="category_id" defaultValue={filters.category_id ?? ''} className="mt-1 w-full rounded-md border px-3 py-2 text-sm">
-                            <option value="">Semua</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="min_budget" className="text-sm font-medium">Budget min</label>
-                        <input id="min_budget" name="min_budget" type="number" defaultValue={filters.min_budget ?? ''} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-                    </div>
-                    <div>
-                        <label htmlFor="max_budget" className="text-sm font-medium">Budget max</label>
-                        <input id="max_budget" name="max_budget" type="number" defaultValue={filters.max_budget ?? ''} className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
-                    </div>
-                    <div className="sm:col-span-2 lg:col-span-4">
-                        <Button type="submit">Terapkan</Button>
-                    </div>
-                </form>
+                <div className="mt-8">
+                    <FilterPanel>
+                        <form
+                            action="/creator/campaigns"
+                            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                            method="GET"
+                        >
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="q">Kata kunci</Label>
+                                <Input
+                                    defaultValue={filters.q ?? ''}
+                                    id="q"
+                                    name="q"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="category_id">Kategori</Label>
+                                <select
+                                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    defaultValue={filters.category_id ?? ''}
+                                    id="category_id"
+                                    name="category_id"
+                                >
+                                    <option value="">Semua</option>
+                                    {categories.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="min_budget">Budget min</Label>
+                                <Input
+                                    defaultValue={filters.min_budget ?? ''}
+                                    id="min_budget"
+                                    name="min_budget"
+                                    type="number"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="max_budget">Budget max</Label>
+                                <Input
+                                    defaultValue={filters.max_budget ?? ''}
+                                    id="max_budget"
+                                    name="max_budget"
+                                    type="number"
+                                />
+                            </div>
+                            <div className="sm:col-span-2 lg:col-span-4">
+                                <Button type="submit">Terapkan filter</Button>
+                            </div>
+                        </form>
+                    </FilterPanel>
+                </div>
 
                 {list.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-10 text-center text-sm text-slate-500">
-                            Belum ada campaign yang cocok.
-                        </CardContent>
-                    </Card>
+                    <div className="mt-8">
+                        <ListEmptyState
+                            description="Coba ubah filter atau cek lagi nanti."
+                            title="Belum ada campaign yang cocok"
+                        />
+                    </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="mt-8 flex flex-col gap-3">
                         {list.map((c) => (
-                            <Card key={c.id}>
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <CardTitle>
-                                                <Link href={`/creator/campaigns/${c.id}`} className="hover:underline">
-                                                    {c.title}
-                                                </Link>
-                                            </CardTitle>
-                                            <CardDescription>
-                                                {c.umkm.name ?? 'UMKM'} • {c.umkm.city ?? '-'} •{' '}
-                                                {c.category ?? 'Tanpa kategori'} • {formatBudget(c.budget)}
-                                                {c.deadline ? ` • Deadline ${c.deadline}` : ''}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge variant="default">Terbuka</Badge>
+                            <ResourceCard key={c.id}>
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <Link
+                                            className="text-base font-semibold text-foreground hover:underline"
+                                            href={`/creator/campaigns/${c.id}`}
+                                        >
+                                            {c.title}
+                                        </Link>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {c.umkm.name ?? 'UMKM'} · {c.umkm.city ?? '-'} ·{' '}
+                                            {c.category ?? 'Tanpa kategori'} ·{' '}
+                                            {formatBudget(c.budget)}
+                                            {c.deadline ? ` · Deadline ${c.deadline}` : ''}
+                                        </p>
+                                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                                            {c.description}
+                                        </p>
                                     </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">{c.description}</p>
-                                </CardContent>
-                            </Card>
+                                    <StatusBadge label="Terbuka" tone="success" />
+                                </div>
+                            </ResourceCard>
                         ))}
                     </div>
                 )}
-            </main>
+            </div>
         </>
     );
 }

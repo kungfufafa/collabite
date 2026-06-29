@@ -1,69 +1,274 @@
 import { Head, Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
+import {
+    ArrowRight,
+    Compass,
+    Handshake,
+    Images,
+    Plus,
+    Search,
+    Star,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 
-type Props = {
-    stats: {
-        rating_avg: number;
-        rating_count: number;
-        portfolio_items: number;
-        collaborations: number;
-    };
-    profile: { headline: string | null; verification_status: string } | null;
+import { ActivityTimeline } from '@/components/app/activity-timeline';
+import { DashboardSection } from '@/components/app/dashboard-section';
+import { MetricTile } from '@/components/app/metric-tile';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { StatusBadge } from '@/components/app/status-badge';
+import type {
+    DashboardActivityItem,
+    DashboardHealth,
+    DashboardStat,
+    DashboardTableRow,
+} from '@/components/dashboard/types';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress-placeholder';
+import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
+import { index as creatorCollaborationsIndex } from '@/routes/creator/collaborations';
+import { index as creatorPortfolioIndex } from '@/routes/creator/portfolio';
+import { show as creatorVerificationShow } from '@/routes/creator/verification';
+
+type Profile = {
+    headline: string | null;
+    verification_status: string;
+    name?: string | null;
 };
 
-export default function Index({ stats, profile }: Props) {
+type PortfolioCompletion = {
+    percent: number;
+    missing: string[];
+};
+
+type Props = {
+    stats: DashboardStat[];
+    profile: Profile | null;
+    portfolio_completion?: PortfolioCompletion;
+    recent_collaborations: DashboardTableRow[];
+    activity: DashboardActivityItem[];
+    health: DashboardHealth;
+};
+
+function statValue(stats: DashboardStat[], label: string): string {
+    return stats.find((item) => item.label === label)?.value ?? '0';
+}
+
+function verificationTone(
+    status: string,
+): 'success' | 'warning' | 'danger' | 'neutral' {
+    if (status === 'verified') {
+        return 'success';
+    }
+
+    if (status === 'rejected') {
+        return 'danger';
+    }
+
+    if (status === 'pending') {
+        return 'warning';
+    }
+
+    return 'neutral';
+}
+
+function verificationLabel(status: string): string {
+    if (status === 'verified') {
+        return 'Terverifikasi';
+    }
+
+    if (status === 'rejected') {
+        return 'Ditolak';
+    }
+
+    if (status === 'pending') {
+        return 'Menunggu review';
+    }
+
+    return 'Belum diverifikasi';
+}
+
+export default function CreatorDashboard({
+    stats,
+    profile,
+    portfolio_completion,
+    recent_collaborations,
+    activity,
+    health,
+}: Props): ReactNode {
+    const displayName = profile?.name ?? 'Creator';
+    const portfolioPercent = portfolio_completion?.percent ?? 0;
+
     return (
         <>
             <Head title="Dashboard Creator" />
-            <main className="container mx-auto px-6 py-10">
-                <header className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">Dashboard Creator</h1>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            {profile?.headline ?? 'Lengkapi profil untuk menarik UMKM.'}
-                        </p>
+            <div data-testid="creator-home">
+                <PageHeader
+                    title={`Halo, ${displayName}`}
+                    description={
+                        profile?.headline ??
+                        'Pantau kolaborasi, lengkapi profil, dan temukan campaign yang cocok.'
+                    }
+                    actions={
+                        <Button asChild>
+                            <Link href={creatorCampaignsIndex().url}>
+                                <Search className="size-4" />
+                                Cari Campaign
+                            </Link>
+                        </Button>
+                    }
+                />
+
+                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <MetricTile
+                        emphasis={Number(statValue(stats, 'Undangan menunggu')) > 0}
+                        hint="Sedang berjalan"
+                        href={creatorCollaborationsIndex().url}
+                        icon={Handshake}
+                        label="Kolaborasi aktif"
+                        value={statValue(stats, 'Kolaborasi aktif')}
+                    />
+                    <MetricTile
+                        hint="Tampilkan karyamu"
+                        href={creatorPortfolioIndex().url}
+                        icon={Images}
+                        label="Item portofolio"
+                        value={statValue(stats, 'Item portofolio')}
+                    />
+                    <MetricTile
+                        hint="Dari ulasan UMKM"
+                        href={creatorCollaborationsIndex().url}
+                        icon={Star}
+                        label="Rating rata-rata"
+                        value={statValue(stats, 'Rating rata-rata')}
+                    />
+                    <MetricTile
+                        hint="Peluang terbaru"
+                        href={creatorCampaignsIndex().url}
+                        icon={Compass}
+                        label="Cari campaign"
+                        value="→"
+                    />
+                </div>
+
+                {!health.caught_up ? (
+                    <div className="mt-8">
+                        <DashboardSection title="Butuh tindakanmu">
+                            <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <StatusBadge label="Perlu perhatian" tone="warning" />
+                                    <p className="mt-2 text-sm text-foreground">
+                                        {health.message}
+                                    </p>
+                                </div>
+                                <Button asChild className="shrink-0" variant="outline">
+                                    <Link href={creatorPortfolioIndex().url}>
+                                        Lengkapi profil
+                                        <ArrowRight className="size-4" />
+                                    </Link>
+                                </Button>
+                            </ResourceCard>
+                        </DashboardSection>
                     </div>
-                    <form method="post" action="/logout">
-                        <Button type="submit" variant="outline">Keluar</Button>
-                    </form>
-                </header>
+                ) : null}
 
-                <section className="grid gap-4 md:grid-cols-4">
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Rating Rata-rata</h2>
-                        <p className="text-3xl font-bold">{Number(stats.rating_avg).toFixed(1)}</p>
-                    </article>
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Jumlah Review</h2>
-                        <p className="text-3xl font-bold">{stats.rating_count}</p>
-                    </article>
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Item Portofolio</h2>
-                        <p className="text-3xl font-bold">{stats.portfolio_items}</p>
-                    </article>
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Total Kolaborasi</h2>
-                        <p className="text-3xl font-bold">{stats.collaborations}</p>
-                    </article>
-                </section>
+                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                        <DashboardSection
+                            action={{
+                                href: creatorCollaborationsIndex().url,
+                                label: 'Lihat semua',
+                            }}
+                            title="Kolaborasi terbaru"
+                        >
+                            {recent_collaborations.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Belum ada kolaborasi. Mulai dengan mencari campaign.
+                                </p>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {recent_collaborations.map((row) => (
+                                        <ResourceCard key={row.id}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-foreground">
+                                                        {row.title}
+                                                    </p>
+                                                    {row.meta ? (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {row.meta}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                                {row.status ? (
+                                                    <StatusBadge
+                                                        label={row.status}
+                                                        tone="info"
+                                                    />
+                                                ) : null}
+                                            </div>
+                                            <div className="mt-3">
+                                                <Button asChild size="sm" variant="ghost">
+                                                    <Link href={row.href}>
+                                                        Buka kolaborasi
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </ResourceCard>
+                                    ))}
+                                </div>
+                            )}
+                        </DashboardSection>
+                    </div>
 
-                <section className="mt-10 grid gap-4 md:grid-cols-3">
-                    <Link href="/creator/profile" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Profil & Keahlian</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Perbarui bio, kategori, dan skill.</p>
-                    </Link>
-                    <Link href="/creator/portfolio" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Portofolio</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Tambah karya terbaikmu.</p>
-                    </Link>
-                    <Link href="/creator/verification" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Verifikasi</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                            Status: <strong>{profile?.verification_status ?? 'unverified'}</strong>
-                        </p>
-                    </Link>
-                </section>
-            </main>
+                    <div className="flex flex-col gap-8">
+                        <DashboardSection title="Verifikasi profil">
+                            <ResourceCard>
+                                <StatusBadge
+                                    label={verificationLabel(
+                                        profile?.verification_status ?? 'unverified',
+                                    )}
+                                    tone={verificationTone(
+                                        profile?.verification_status ?? 'unverified',
+                                    )}
+                                />
+                                <p className="mt-3 text-sm text-muted-foreground">
+                                    Profil terverifikasi meningkatkan peluang undangan dari
+                                    UMKM.
+                                </p>
+                                <Button asChild className="mt-4 w-full" variant="outline">
+                                    <Link href={creatorVerificationShow().url}>
+                                        Lihat status verifikasi
+                                    </Link>
+                                </Button>
+                            </ResourceCard>
+                        </DashboardSection>
+
+                        <DashboardSection title="Portofolio">
+                            <ResourceCard className="border-dashed">
+                                <p className="text-sm font-medium text-foreground">
+                                    Lengkapi portofoliomu
+                                </p>
+                                <div className="mt-3 flex items-center gap-3">
+                                    <Progress className="h-2 flex-1" value={portfolioPercent} />
+                                    <span className="text-xs tabular-nums text-muted-foreground">
+                                        {portfolioPercent}%
+                                    </span>
+                                </div>
+                                <Button asChild className="mt-4 w-full">
+                                    <Link href={creatorPortfolioIndex().url}>
+                                        <Plus className="size-4" />
+                                        Kelola Portofolio
+                                    </Link>
+                                </Button>
+                            </ResourceCard>
+                        </DashboardSection>
+
+                        <DashboardSection title="Aktivitas">
+                            <ActivityTimeline items={activity} />
+                        </DashboardSection>
+                    </div>
+                </div>
+            </div>
         </>
     );
 }

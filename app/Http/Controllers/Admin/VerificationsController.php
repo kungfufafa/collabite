@@ -30,8 +30,12 @@ class VerificationsController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $verifications->setCollection(
+            $verifications->getCollection()->map(fn (CreatorVerification $v): array => $this->serializeSummary($v)),
+        );
+
         return Inertia::render('Admin/Verifications/Index', [
-            'verifications' => $verifications->through(fn (CreatorVerification $v): array => $this->serializeSummary($v))->all(),
+            'verifications' => $verifications,
             'pagination' => [
                 'current_page' => $verifications->currentPage(),
                 'last_page' => $verifications->lastPage(),

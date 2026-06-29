@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['conversation_id', 'sender_id', 'body', 'read_at'])]
+#[Fillable(['conversation_id', 'sender_id', 'body', 'is_hidden', 'read_at'])]
 class Message extends Model
 {
     /** @use HasFactory<MessageFactory> */
@@ -36,6 +36,7 @@ class Message extends Model
     {
         return [
             'read_at' => 'datetime',
+            'is_hidden' => 'boolean',
         ];
     }
 

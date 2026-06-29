@@ -78,6 +78,8 @@ Mempersiapkan fondasi teknis: struktur folder, konfigurasi, dependency utama, da
 - Pipeline CI hijau.
 - Dokumentasi singkat di `README.md` tentang cara menjalankan.
 
+**Status RC.1: ✅ Selesai** — Lingkup M0 tuntas. Tidak ada test khusus M0; cakupan oleh Pest factory & seeder awal.
+
 ---
 
 ## Milestone 1 — Authentication & Role
@@ -138,6 +140,8 @@ Mengimplementasikan pendaftaran, login, logout, verifikasi email, reset password
 ### Definition of Done
 - Lint, statis analisis, dan test lulus.
 - Tidak ada perubahan di luar scope M1.
+
+**Status RC.1: ✅ Selesai** — TC-AUTH-001..010 lulus via `tests/Feature/Auth/*Test.php`.
 
 ---
 
@@ -255,6 +259,8 @@ Memungkinkan UMKM membuat & mempublikasikan campaign, dan Creator menemukan camp
 - TC-CAMP & TC-DISC lulus.
 - Tidak ada full table scan di pencarian.
 
+**Status RC.1: ✅ Selesai** — TC-CAMP-001..008 & TC-DISC-001..004 lulus via `tests/Feature/Campaign/*Test.php` & `tests/Feature/Discovery/*Test.php`.
+
 ---
 
 ## Milestone 4 — Collaboration Request & Collaboration
@@ -309,6 +315,8 @@ Memungkinkan Creator mengajukan kolaborasi dan UMKM mengundang Creator, dengan p
 ### Definition of Done
 - Alur request → kolaborasi berjalan di E2E.
 - Audit log tercatat.
+
+**Status RC.1: ✅ Selesai** — TC-COLLAB-001..010 & TC-CANC-COLLAB-001..003 (pihak) lulus via `tests/Feature/Collaboration/*Test.php`.
 
 ---
 
@@ -366,6 +374,8 @@ Menyediakan alur pesan, progress update, upload konten, revisi, approval, dan co
 - TC-COM & TC-CONT lulus.
 - Notifikasi event terkirim.
 
+**Status RC.1: ✅ Selesai** — TC-COM-001..004 + TC-MSG-IMMUTABLE-001..007 (`tests/Feature/Messaging/MessagingTest.php`); TC-CONT-001..008 + TC-CONT-IMMUTABLE-001..004 (`tests/Feature/Content/ContentTest.php`).
+
 ---
 
 ## Milestone 6 — Completion, Review, Moderation
@@ -421,6 +431,8 @@ Menyelesaikan kolaborasi, memberi review dua arah, dan kemampuan moderasi admin.
 ### Definition of Done
 - TC-REV & TC-ADMIN lulus.
 - Email notifikasi terkirim via queue.
+
+**Status RC.1: ✅ Selesai** — TC-REV-001..005 + TC-REV-AGG-001..008 (`tests/Feature/Review/ReviewTest.php`); TC-ADMIN-001..008 + TC-MOD-001..008 (`tests/Feature/Admin/ModerationTest.php`); admin force-close namespace + 11 test di `tests/Feature/Admin/CollaborationsTest.php`.
 
 ---
 
@@ -480,6 +492,8 @@ Menyelesaikan audit log, statistik, ekspor laporan, hardening, dan UAT.
 ### Definition of Done
 - Exit criteria MVP (PRD §17) terpenuhi.
 
+**Status RC.1: ✅ Selesai** — Internal acceptance pass (otomated). Exit criteria PRD §17.1 seluruhnya PASS: 166 Pest / 562 assertions; 39 Vitest / 18 files; 17 Playwright / 5 specs (E2E-01..E2E-05); Larastan 0 error; Pint bersih. UAT UI manual dengan Product Owner masuk release task pasca-RC (lihat `docs/OPERATIONS.md`).
+
 ---
 
 ## Lampiran: Traceability Milestone ↔ FR
@@ -503,3 +517,4 @@ Menyelesaikan audit log, statistik, ekspor laporan, hardening, dan UAT.
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: 8 milestone dengan small-PR breakdown & DoD. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tutup OQ-001..OQ-011: tambah cancel-collab (pre-approval), admin force-close, message hide, file size policy, signed URL. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): setiap milestone (M0–M7) ditandai "Status RC.1: ✅ Selesai" dengan jumlah test relevan. | Product Engineer |

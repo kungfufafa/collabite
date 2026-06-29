@@ -1,8 +1,12 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+
 import InputError from '@/components/input-error';
+import { FlashBanner } from '@/components/app/flash-banner';
+import { PageHeader } from '@/components/app/page-header';
+import { SectionPanel } from '@/components/app/section-panel';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { update } from '@/routes/umkm/profile';
@@ -20,41 +24,46 @@ type Profile = {
     logo_url: string | null;
 };
 
-export default function Edit({ profile }: { profile: Profile }) {
+export default function Edit({ profile }: { profile: Profile }): ReactNode {
     const flash = usePage().props.status as string | undefined;
 
     return (
         <>
             <Head title="Profil UMKM" />
-            <main className="container mx-auto px-6 py-10">
-                <header className="mb-6">
-                    <h1 className="text-2xl font-bold">Profil UMKM</h1>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Perbarui informasi usaha Anda. Logo akan ditampilkan di halaman publik UMKM.
-                    </p>
-                </header>
+            <div>
+                <PageHeader
+                    title="Profil UMKM"
+                    description="Perbarui informasi usaha Anda. Logo akan ditampilkan di halaman publik UMKM."
+                />
 
                 {flash ? (
-                    <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200">
-                        {flash}
+                    <div className="mt-6">
+                        <FlashBanner message={flash} />
                     </div>
                 ) : null}
 
-                <Card className="max-w-3xl">
-                    <CardHeader>
-                        <CardTitle>Informasi Usaha</CardTitle>
-                        <CardDescription>
-                            Data ini akan terlihat oleh Creator saat Anda mempublikasikan campaign.
-                        </CardDescription>
-                    </CardHeader>
-                    <Form {...update.form()} encType="multipart/form-data" className="contents">
+                <div className="mt-8 max-w-3xl">
+                    <Form {...update.form()} encType="multipart/form-data">
                         {({ errors, processing }) => (
-                            <>
-                                <CardContent className="space-y-5">
+                            <SectionPanel
+                                title="Informasi Usaha"
+                                description="Data ini akan terlihat oleh Creator saat Anda mempublikasikan campaign."
+                                footer={
+                                    <div className="flex justify-end">
+                                        <Button type="submit" disabled={processing}>
+                                            {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                        </Button>
+                                    </div>
+                                }
+                            >
+                                <div className="space-y-5">
                                     <div className="flex items-center gap-4">
                                         <Avatar className="size-16">
                                             {profile.logo_url ? (
-                                                <AvatarImage src={profile.logo_url} alt={profile.business_name} />
+                                                <AvatarImage
+                                                    src={profile.logo_url}
+                                                    alt={profile.business_name}
+                                                />
                                             ) : null}
                                             <AvatarFallback>
                                                 {profile.business_name.slice(0, 2).toUpperCase()}
@@ -69,7 +78,9 @@ export default function Edit({ profile }: { profile: Profile }) {
                                                 accept="image/png,image/jpeg,image/jpg,image/webp"
                                                 className="mt-1"
                                             />
-                                            <p className="mt-1 text-xs text-slate-500">JPG/PNG/WebP, maksimal 2MB.</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                JPG/PNG/WebP, maksimal 2MB.
+                                            </p>
                                             <InputError message={errors.logo} className="mt-1" />
                                         </div>
                                     </div>
@@ -171,17 +182,12 @@ export default function Edit({ profile }: { profile: Profile }) {
                                         />
                                         <InputError message={errors.website_url} className="mt-1" />
                                     </div>
-                                </CardContent>
-                                <CardFooter className="justify-end gap-2">
-                                    <Button type="submit" disabled={processing}>
-                                        {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
-                                    </Button>
-                                </CardFooter>
-                            </>
+                                </div>
+                            </SectionPanel>
                         )}
                     </Form>
-                </Card>
-            </main>
+                </div>
+            </div>
         </>
     );
 }

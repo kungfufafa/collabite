@@ -64,6 +64,13 @@ Detail keputusan ada di [DECISIONS.md](./DECISIONS.md).
 - **Domain modular di Laravel**: dipisah melalui folder `app/Http/Controllers/{Umkm,Creator,Admin,Public}`, `app/Models`, `app/Policies`, `app/Http/Requests`.
 - **Queue database**: email, ekspor laporan, dan notifikasi berat dijalankan via job.
 - **File storage**: dua disk — `public` (logo usaha, foto produk, foto portofolio) dan `private` (dokumen verifikasi, lampiran pesan, file submission). Akses publik melalui `Storage::url()`; akses private melalui signed URL sementara.
+- **Frontend shell per peran** (lihat [ADR-031](./DECISIONS.md#adr-031--role-specific-layout-shells-admin-dashboard-vs-marketplace)):
+  - `resources/js/layouts/PublicLayout.tsx` — landing, direktori publik, dan halaman marketing.
+  - `resources/js/layouts/AuthLayout.tsx` — autentikasi (login, register, lupa password, verifikasi).
+  - `resources/js/layouts/MarketplaceLayout.tsx` — UMKM dan Creator terautentikasi: top navbar, role-specific navigation, search opsional, mobile sheet, dan bottom navigation.
+  - `resources/js/layouts/AdminDashboardLayout.tsx` — Admin saja: sidebar persisten + breadcrumb + tabel ringkas.
+  - `resources/js/layouts/CollaborationWorkspaceLayout.tsx` — workspace kolaborasi UMKM/Creator dengan tab Pesan/Progres/Submission/Review.
+  - Konfigurasi navigasi terpusat di `resources/js/config/navigation.ts`; pemilihan layout terjadi di `resources/js/app.tsx` berdasarkan prefix nama page.
 
 ---
 
@@ -656,6 +663,7 @@ Completed --(admin reopen? )-->           Tidak diizinkan pada MVP
 - Format subject: polymorphic `subject_type` + `subject_id`.
 - Append-only (tidak ada update/delete).
 - Admin melihat log di `Admin/AuditLogController@index` dengan filter.
+- Aksi `collaboration.force_closed` (admin-only) dengan metadata `previous_status` + `reason`. Dicatat oleh `app/Actions/Admin/ForceCloseCollaborationAction.php` lewat `AuditLogger::log()`.
 
 ---
 
@@ -741,6 +749,7 @@ Lihat [TEST_PLAN.md](./TEST_PLAN.md) untuk detail test case.
 - **Worker:** `php artisan queue:work` (supervisor).
 - **Scheduler:** cron `* * * * * php artisan schedule:run`.
 - **Health check:** `/up` (Laravel default).
+- **Detail operasional:** lihat `docs/DEPLOYMENT.md` (prosedur deploy, environment, observability) dan `docs/OPERATIONS.md` (runbook harian).
 
 ---
 
@@ -749,6 +758,7 @@ Lihat [TEST_PLAN.md](./TEST_PLAN.md) untuk detail test case.
 - Backup MySQL harian (mysqldump / Laravel Cloud automatic).
 - Backup storage private disinkronkan ke object storage (opsional pasca-MVP).
 - Restore diuji sebelum rilis.
+- **Detail pemulihan & rollback:** lihat `docs/BACKUP_RECOVERY.md` (RPO/RTO, restore drill) dan `docs/ROLLBACK.md` (prosedur rollback deploy).
 
 ---
 
@@ -800,3 +810,4 @@ Lihat [TEST_PLAN.md](./TEST_PLAN.md) untuk detail test case.
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: arsitektur, ERD, rancangan tabel, status enum, state transition. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tutup OQ-001..OQ-011: single-Creator campaign, immutable messages, cancellable collab pre-approval, file size policy, disk separation, signed URL. Tambah kolom `cancelled_*` di collaborations, `messages.is_hidden`, dan validasi lanjutan. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): konfirmasi `collaborations.cancelled_by` + `cancelled_reason`; tambah entri audit `collaboration.force_closed` (§22); cross-reference `docs/DEPLOYMENT.md` (§30), `docs/BACKUP_RECOVERY.md` & `docs/ROLLBACK.md` (§31). | Product Engineer |

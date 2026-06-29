@@ -1,7 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import type { FormEventHandler, ReactNode } from 'react';
+
+import InputError from '@/components/input-error';
+import { PageHeader } from '@/components/app/page-header';
+import { SectionPanel } from '@/components/app/section-panel';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +22,7 @@ type Profile = {
 
 type Props = { profile: Profile };
 
-export default function Edit({ profile }: Props) {
+export default function Edit({ profile }: Props): ReactNode {
     const form = useForm({
         headline: profile.headline ?? '',
         bio: profile.bio ?? '',
@@ -31,22 +34,20 @@ export default function Edit({ profile }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        form.post(`/creator/profile`, { forceFormData: true });
+        form.post('/creator/profile', { forceFormData: true });
     };
 
     return (
         <>
             <Head title="Profil Creator" />
-            <main className="container mx-auto max-w-3xl px-6 py-10">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Profil Creator</CardTitle>
-                        <CardDescription>
-                            Perbarui bio singkat, lokasi, dan kontak. Status verifikasi saat ini:{' '}
-                            <strong>{profile.verification_status}</strong>.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+            <div>
+                <PageHeader
+                    title="Profil Creator"
+                    description={`Perbarui bio, lokasi, dan kontak. Status verifikasi: ${profile.verification_status}.`}
+                />
+
+                <div className="mt-8 max-w-3xl">
+                    <SectionPanel title="Informasi Profil">
                         <form onSubmit={submit} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="headline">Headline</Label>
@@ -56,9 +57,7 @@ export default function Edit({ profile }: Props) {
                                     onChange={(e) => form.setData('headline', e.target.value)}
                                     maxLength={160}
                                 />
-                                {form.errors.headline && (
-                                    <p className="text-sm text-red-600">{form.errors.headline}</p>
-                                )}
+                                <InputError message={form.errors.headline} />
                             </div>
 
                             <div className="space-y-2">
@@ -69,9 +68,7 @@ export default function Edit({ profile }: Props) {
                                     value={form.data.bio}
                                     onChange={(e) => form.setData('bio', e.target.value)}
                                 />
-                                {form.errors.bio && (
-                                    <p className="text-sm text-red-600">{form.errors.bio}</p>
-                                )}
+                                <InputError message={form.errors.bio} />
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
@@ -82,9 +79,7 @@ export default function Edit({ profile }: Props) {
                                         value={form.data.city}
                                         onChange={(e) => form.setData('city', e.target.value)}
                                     />
-                                    {form.errors.city && (
-                                        <p className="text-sm text-red-600">{form.errors.city}</p>
-                                    )}
+                                    <InputError message={form.errors.city} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="contact_phone">Telepon</Label>
@@ -104,40 +99,38 @@ export default function Edit({ profile }: Props) {
                                     value={form.data.contact_email}
                                     onChange={(e) => form.setData('contact_email', e.target.value)}
                                 />
-                                {form.errors.contact_email && (
-                                    <p className="text-sm text-red-600">{form.errors.contact_email}</p>
-                                )}
+                                <InputError message={form.errors.contact_email} />
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="profile_photo">Foto Profil</Label>
-                                {profile.profile_photo_url && (
+                                {profile.profile_photo_url ? (
                                     <img
                                         src={profile.profile_photo_url}
                                         alt="Foto saat ini"
                                         className="h-20 w-20 rounded-full object-cover"
                                     />
-                                )}
+                                ) : null}
                                 <Input
                                     id="profile_photo"
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => form.setData('profile_photo', e.target.files?.[0] ?? null)}
+                                    onChange={(e) =>
+                                        form.setData('profile_photo', e.target.files?.[0] ?? null)
+                                    }
                                 />
-                                {form.errors.profile_photo && (
-                                    <p className="text-sm text-red-600">{form.errors.profile_photo}</p>
-                                )}
+                                <InputError message={form.errors.profile_photo} />
                             </div>
 
-                            <div className="flex items-center justify-end gap-3">
+                            <div className="flex items-center justify-end">
                                 <Button type="submit" disabled={form.processing}>
                                     Simpan
                                 </Button>
                             </div>
                         </form>
-                    </CardContent>
-                </Card>
-            </main>
+                    </SectionPanel>
+                </div>
+            </div>
         </>
     );
 }

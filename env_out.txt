@@ -1,0 +1,3 @@
+APP_ENV: testing
+SESSION_DRIVER: array
+APP_URL: http://localhost

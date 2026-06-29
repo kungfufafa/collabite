@@ -24,8 +24,17 @@ class ResubmitSubmissionAction
             throw ValidationException::withMessages(['submission' => 'Submission tidak dalam status RevisionRequested.']);
         }
 
+        // Approved submissions are immutable (BR-014): tidak boleh superseded.
+        $hasApproved = $oldSubmission->collaboration->submissions()
+            ->where('status', ContentSubmissionStatus::Approved)
+            ->exists();
+        if ($hasApproved) {
+            throw ValidationException::withMessages(['submission' => 'Submission Approved tidak dapat digantikan.']);
+        }
+
         return DB::transaction(function () use ($oldSubmission, $data): ContentSubmission {
-            $oldSubmission->update(['status' => ContentSubmissionStatus::Superseded]);
+            $oldSubmission->status = ContentSubmissionStatus::Superseded;
+            $oldSubmission->save();
 
             $version = ($oldSubmission->collaboration->submissions()->max('version') ?? 0) + 1;
 

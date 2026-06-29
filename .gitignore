@@ -27,3 +27,15 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+
+# Playwright artifacts
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/blob-report/
+
+# Local MySQL config + dumps
+/.env.testing.mysql
+/storage/backups/
+/storage/mysql-dumps/

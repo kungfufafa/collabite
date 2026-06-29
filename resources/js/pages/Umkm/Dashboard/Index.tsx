@@ -1,67 +1,195 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    ArrowRight,
+    ClipboardList,
+    Megaphone,
+    Plus,
+    Search,
+    Users,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
+
+import { ActivityTimeline } from '@/components/app/activity-timeline';
+import { DashboardSection } from '@/components/app/dashboard-section';
+import { InitialsAvatar } from '@/components/app/initials-avatar';
+import { MetricTile } from '@/components/app/metric-tile';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { StatusBadge } from '@/components/app/status-badge';
+import type {
+    DashboardActivityItem,
+    DashboardHealth,
+    DashboardStat,
+    DashboardTableRow,
+} from '@/components/dashboard/types';
 import { Button } from '@/components/ui/button';
+import { create as umkmCampaignsCreate, index as umkmCampaignsIndex } from '@/routes/umkm/campaigns';
+import { index as umkmCollaborationsIndex } from '@/routes/umkm/collaborations';
+import { index as umkmDiscoverIndex } from '@/routes/umkm/discover';
 
 type Props = {
-    stats: {
-        total_campaigns: number;
-        open_campaigns: number;
-        collaborations: number;
-    };
+    stats: DashboardStat[];
     profile: { business_name: string; city: string | null } | null;
+    recent_collaborations: DashboardTableRow[];
+    activity: DashboardActivityItem[];
+    health: DashboardHealth;
 };
 
-export default function Index({ stats, profile }: Props) {
+function statValue(stats: DashboardStat[], label: string): string {
+    return stats.find((item) => item.label === label)?.value ?? '0';
+}
+
+export default function UmkmDashboard({
+    stats,
+    profile,
+    recent_collaborations,
+    activity,
+    health,
+}: Props): ReactNode {
+    const businessName = profile?.business_name ?? 'UMKM';
+
     return (
         <>
             <Head title="Dashboard UMKM" />
-            <main className="container mx-auto px-6 py-10">
-                <header className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">Dashboard UMKM</h1>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            Halo, {profile?.business_name ?? 'UMKM'}. Kelola campaign dan kolaborasi Anda.
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
+            <div data-testid="umkm-home">
+                <PageHeader
+                    title="Dashboard"
+                    description="Pantau campaign, tinjau lamaran, dan ambil keputusan konten dari satu tempat."
+                    meta={
+                        <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                            <InitialsAvatar
+                                name={businessName}
+                                size="sm"
+                                tone="secondary"
+                            />
+                            {businessName}
+                            {profile?.city ? ` · ${profile.city}` : ''}
+                        </span>
+                    }
+                    actions={
                         <Button asChild>
-                            <Link href="/umkm/campaigns/create">Buat Campaign</Link>
+                            <Link href={umkmCampaignsCreate().url}>
+                                <Plus className="size-4" />
+                                Buat Campaign
+                            </Link>
                         </Button>
-                        <form method="post" action="/logout">
-                            <Button type="submit" variant="outline">Keluar</Button>
-                        </form>
+                    }
+                />
+
+                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <MetricTile
+                        emphasis
+                        hint="Perlu ditinjau"
+                        href={umkmCollaborationsIndex().url}
+                        icon={ClipboardList}
+                        label="Lamaran menunggu"
+                        value={statValue(stats, 'Lamaran menunggu')}
+                    />
+                    <MetricTile
+                        hint="Sedang berjalan"
+                        href={umkmCollaborationsIndex().url}
+                        icon={Users}
+                        label="Kolaborasi aktif"
+                        value={statValue(stats, 'Kolaborasi aktif')}
+                    />
+                    <MetricTile
+                        hint="Menerima creator"
+                        href={umkmCampaignsIndex().url}
+                        icon={Megaphone}
+                        label="Campaign terbuka"
+                        value={statValue(stats, 'Campaign terbuka')}
+                    />
+                    <MetricTile
+                        hint="Cari mitra konten"
+                        href={umkmDiscoverIndex().url}
+                        icon={Search}
+                        label="Cari creator"
+                        value="→"
+                    />
+                </div>
+
+                {!health.caught_up ? (
+                    <div className="mt-8">
+                        <DashboardSection
+                            description="Lamaran dan konten yang perlu keputusanmu."
+                            title="Perlu keputusanmu"
+                        >
+                            <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <StatusBadge
+                                        label="Menunggu tindakan"
+                                        tone="warning"
+                                    />
+                                    <p className="mt-2 text-sm text-foreground">
+                                        {health.message}
+                                    </p>
+                                </div>
+                                <Button asChild className="shrink-0" variant="outline">
+                                    <Link href={umkmCollaborationsIndex().url}>
+                                        Tinjau sekarang
+                                        <ArrowRight className="size-4" />
+                                    </Link>
+                                </Button>
+                            </ResourceCard>
+                        </DashboardSection>
                     </div>
-                </header>
+                ) : null}
 
-                <section className="grid gap-4 md:grid-cols-3">
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Total Campaign</h2>
-                        <p className="text-3xl font-bold">{stats.total_campaigns}</p>
-                    </article>
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Campaign Terbuka</h2>
-                        <p className="text-3xl font-bold">{stats.open_campaigns}</p>
-                    </article>
-                    <article className="rounded-lg border bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm text-slate-500">Kolaborasi Aktif</h2>
-                        <p className="text-3xl font-bold">{stats.collaborations}</p>
-                    </article>
-                </section>
+                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2">
+                        <DashboardSection
+                            action={{
+                                href: umkmCollaborationsIndex().url,
+                                label: 'Lihat semua',
+                            }}
+                            title="Kolaborasi terbaru"
+                        >
+                            {recent_collaborations.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Belum ada kolaborasi aktif.
+                                </p>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {recent_collaborations.map((row) => (
+                                        <ResourceCard
+                                            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                            key={row.id}
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-foreground">
+                                                    {row.title}
+                                                </p>
+                                                {row.meta ? (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {row.meta}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                {row.status ? (
+                                                    <StatusBadge
+                                                        label={row.status}
+                                                        tone="info"
+                                                    />
+                                                ) : null}
+                                                <Button asChild size="sm" variant="ghost">
+                                                    <Link href={row.href}>
+                                                        Lihat
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </ResourceCard>
+                                    ))}
+                                </div>
+                            )}
+                        </DashboardSection>
+                    </div>
 
-                <section className="mt-10 grid gap-4 md:grid-cols-3">
-                    <Link href="/umkm/campaigns" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Kelola Campaign</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Buat, publikasikan, dan pantau campaign.</p>
-                    </Link>
-                    <Link href="/umkm/discover" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Cari Creator</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Temukan Creator terverifikasi.</p>
-                    </Link>
-                    <Link href="/umkm/collaborations" className="rounded-lg border bg-white p-6 hover:shadow dark:border-slate-800 dark:bg-slate-900">
-                        <h3 className="text-lg font-semibold">Kolaborasi</h3>
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Pantau kolaborasi aktif dan selesai.</p>
-                    </Link>
-                </section>
-            </main>
+                    <DashboardSection title="Aktivitas operasional">
+                        <ActivityTimeline items={activity} />
+                    </DashboardSection>
+                </div>
+            </div>
         </>
     );
 }

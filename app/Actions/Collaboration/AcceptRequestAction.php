@@ -7,15 +7,18 @@ namespace App\Actions\Collaboration;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestStatus;
 use App\Enums\CollaborationStatus;
+use App\Models\Campaign;
 use App\Models\Collaboration;
 use App\Models\CollaborationRequest;
-use App\Models\Conversation;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Terima request collaboration (application/invitation) dan bentuk Collaboration.
+ *
+ * Concurrency-safe: gunakan DB::transaction + lockForUpdate pada baris campaign
+ * untuk mencegah dua request diterima bersamaan untuk campaign yang sama.
  */
 class AcceptRequestAction
 {
@@ -26,6 +29,16 @@ class AcceptRequestAction
         }
 
         return DB::transaction(function () use ($request): Collaboration {
+            // Lock campaign row agar tidak ada accept ganda.
+            $campaign = Campaign::query()
+                ->whereKey($request->campaign_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($campaign->collaboration()->exists()) {
+                throw ValidationException::withMessages(['request' => 'Campaign sudah memiliki kolaborasi aktif.']);
+            }
+
             // 1. Set request ini accepted
             $request->update([
                 'status' => CollaborationRequestStatus::Accepted,
@@ -40,20 +53,12 @@ class AcceptRequestAction
                 ->update(['status' => CollaborationRequestStatus::Rejected, 'responded_at' => now()]);
 
             // 3. Bentuk collaboration (1 campaign = 1 collaboration)
-            $campaign = $request->campaign;
-            $collaboration = Collaboration::query()->updateOrCreate(
-                ['campaign_id' => $campaign->id],
-                [
-                    'umkm_id' => $campaign->umkm_profile_id === $request->creator_id ? $campaign->umkmProfile->user_id : $campaign->umkmProfile->user_id,
-                    'creator_id' => $request->creator_id,
-                    'status' => CollaborationStatus::Active,
-                    'started_at' => now(),
-                ],
-            );
-
-            // Note: umkm_id adalah user_id, bukan profile_id. Campaign->umkmProfile->user->id
-            $collaboration->update([
+            $collaboration = Collaboration::create([
+                'campaign_id' => $campaign->id,
                 'umkm_id' => $campaign->umkmProfile->user_id,
+                'creator_id' => $request->creator_id,
+                'status' => CollaborationStatus::Active,
+                'started_at' => now(),
             ]);
 
             // 4. Conversation
@@ -63,10 +68,10 @@ class AcceptRequestAction
             $campaign->update(['status' => CampaignStatus::InCollaboration]);
 
             app(AuditLogger::class)->log(
-                $request->sender_id === $request->creator_id ? $request->creator : $campaign->umkmProfile->user,
+                $campaign->umkmProfile->user,
                 'collaboration.accepted',
                 $collaboration,
-                ['campaign_id' => $campaign->id, 'request_id' => $request->id],
+                ['campaign_id' => $campaign->id, 'request_id' => $request->id, 'creator_id' => $request->creator_id],
             );
 
             return $collaboration->fresh(['conversation']);

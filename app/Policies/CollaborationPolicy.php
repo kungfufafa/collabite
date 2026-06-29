@@ -15,10 +15,8 @@ class CollaborationPolicy
 {
     public function view(User $actor, Collaboration $collaboration): Response
     {
-        if ($actor->isAdmin()) {
-            return Response::allow();
-        }
-
+        // Admin tidak boleh mengakses route UMKM/Creator collaborations.
+        // Akses admin disediakan via /admin/collaborations namespace terpisah.
         return $actor->is($collaboration->umkm) || $actor->is($collaboration->creator)
             ? Response::allow()
             : Response::deny('Anda bukan peserta kolaborasi ini.');

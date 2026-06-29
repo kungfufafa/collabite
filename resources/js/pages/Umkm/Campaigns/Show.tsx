@@ -1,8 +1,13 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
+import type { ReactNode } from 'react';
+
+import { DashboardSection } from '@/components/app/dashboard-section';
+import { FlashBanner } from '@/components/app/flash-banner';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { SectionPanel } from '@/components/app/section-panel';
+import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { edit, publish, cancel } from '@/routes/umkm/campaigns';
 
 type Request = {
@@ -29,134 +34,154 @@ type Campaign = {
     collaboration_id: number | null;
 };
 
-export default function Show({ campaign }: { campaign: Campaign }) {
+function statusTone(status: string): 'success' | 'neutral' | 'danger' | 'info' | 'warning' {
+    if (status === 'open') {
+        return 'success';
+    }
+
+    if (status === 'draft') {
+        return 'neutral';
+    }
+
+    if (status === 'cancelled') {
+        return 'danger';
+    }
+
+    if (status === 'completed') {
+        return 'info';
+    }
+
+    return 'warning';
+}
+
+export default function Show({ campaign }: { campaign: Campaign }): ReactNode {
     const flash = usePage().props.status as string | undefined;
-    const statusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
-        if (status === 'open') return 'default';
-        if (status === 'draft') return 'secondary';
-        if (status === 'cancelled' || status === 'completed') return 'outline';
-        return 'secondary';
-    };
 
     return (
         <>
             <Head title={`Campaign - ${campaign.title}`} />
-            <main className="container mx-auto max-w-4xl px-6 py-10">
+            <div>
+                <PageHeader
+                    actions={
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild>
+                                <Link href={edit(campaign.id).url}>Edit Campaign</Link>
+                            </Button>
+                            {campaign.status === 'draft' ? (
+                                <Form {...publish.form(campaign.id)}>
+                                    {({ processing }) => (
+                                        <Button disabled={processing} type="submit">
+                                            Publikasikan
+                                        </Button>
+                                    )}
+                                </Form>
+                            ) : null}
+                            {!['cancelled', 'completed'].includes(campaign.status) ? (
+                                <Form {...cancel.form(campaign.id)}>
+                                    {({ processing }) => (
+                                        <Button
+                                            disabled={processing}
+                                            onClick={(e) => {
+                                                if (!confirm('Batalkan campaign ini?')) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            type="submit"
+                                            variant="destructive"
+                                        >
+                                            Batalkan
+                                        </Button>
+                                    )}
+                                </Form>
+                            ) : null}
+                            {campaign.collaboration_id ? (
+                                <Button asChild variant="outline">
+                                    <Link href={`/umkm/collaborations/${campaign.collaboration_id}`}>
+                                        Lihat Kolaborasi
+                                    </Link>
+                                </Button>
+                            ) : null}
+                        </div>
+                    }
+                    description={
+                        <>
+                            {campaign.category ? `Kategori: ${campaign.category}` : 'Tanpa kategori'}
+                            {campaign.budget
+                                ? ` · Budget: Rp ${Number(campaign.budget).toLocaleString('id-ID')}`
+                                : ''}
+                            {campaign.deadline ? ` · Deadline: ${campaign.deadline}` : ''}
+                        </>
+                    }
+                    meta={
+                        <div className="flex flex-wrap gap-2">
+                            <StatusBadge label={campaign.status_label} tone={statusTone(campaign.status)} />
+                            {campaign.is_hidden ? (
+                                <StatusBadge label="Disembunyikan admin" tone="danger" />
+                            ) : null}
+                        </div>
+                    }
+                    title={campaign.title}
+                />
+
                 {flash ? (
-                    <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        {flash}
+                    <div className="mt-6">
+                        <FlashBanner message={flash} />
                     </div>
                 ) : null}
 
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <CardTitle className="text-2xl">{campaign.title}</CardTitle>
-                                <CardDescription>
-                                    {campaign.category ? `Kategori: ${campaign.category}` : 'Tanpa kategori'}
-                                    {campaign.budget ? ` • Budget: Rp ${Number(campaign.budget).toLocaleString('id-ID')}` : ''}
-                                    {campaign.deadline ? ` • Deadline: ${campaign.deadline}` : ''}
-                                </CardDescription>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                                <Badge variant={statusVariant(campaign.status)}>{campaign.status_label}</Badge>
-                                {campaign.is_hidden ? <Badge variant="destructive">Disembunyikan admin</Badge> : null}
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                            {campaign.description}
-                        </p>
-                    </CardContent>
-                </Card>
+                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-8">
+                        <SectionPanel description="Ringkasan brief campaign." title="Deskripsi">
+                            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                                {campaign.description}
+                            </p>
+                        </SectionPanel>
 
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Deliverable</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                        <DashboardSection title={`Pengajuan (${campaign.requests.length})`}>
+                            {campaign.requests.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Belum ada pengajuan dari Creator.
+                                </p>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {campaign.requests.map((r) => (
+                                        <ResourceCard key={r.id}>
+                                            <p className="font-medium text-foreground">
+                                                {r.creator_name}
+                                            </p>
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                {r.type === 'application' ? 'Lamaran' : 'Undangan'} · {r.status}
+                                            </p>
+                                        </ResourceCard>
+                                    ))}
+                                </div>
+                            )}
+                        </DashboardSection>
+                    </div>
+
+                    <SectionPanel title="Deliverable">
                         {campaign.deliverables.length === 0 ? (
-                            <p className="text-sm text-slate-500">Belum ada deliverable.</p>
+                            <p className="text-sm text-muted-foreground">Belum ada deliverable.</p>
                         ) : (
-                            <ul className="space-y-2">
+                            <ul className="flex flex-col gap-3">
                                 {campaign.deliverables.map((d) => (
-                                    <li key={d.id} className="rounded-md border px-3 py-2 text-sm">
-                                        <div className="font-medium">{d.title}</div>
-                                        {d.description ? <div className="text-slate-500">{d.description}</div> : null}
-                                        <div className="text-xs text-slate-400">Qty: {d.quantity}</div>
-                                    </li>
+                                    <ResourceCard key={d.id}>
+                                        <p className="font-medium text-foreground">{d.title}</p>
+                                        {d.description ? (
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {d.description}
+                                            </p>
+                                        ) : null}
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Qty: {d.quantity}
+                                        </p>
+                                    </ResourceCard>
                                 ))}
                             </ul>
                         )}
-                    </CardContent>
-                </Card>
-
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Pengajuan ({campaign.requests.length})</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {campaign.requests.length === 0 ? (
-                            <p className="text-sm text-slate-500">Belum ada pengajuan dari Creator.</p>
-                        ) : (
-                            <ul className="space-y-2">
-                                {campaign.requests.map((r) => (
-                                    <li key={r.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                                        <div>
-                                            <div className="font-medium">{r.creator_name}</div>
-                                            <div className="text-xs text-slate-500">
-                                                {r.type === 'application' ? 'Lamaran' : 'Undangan'} • {r.status}
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Separator className="my-6" />
-
-                <div className="flex flex-wrap gap-2">
-                    <Button asChild>
-                        <Link href={edit(campaign.id).url}>Edit Campaign</Link>
-                    </Button>
-                    {campaign.status === 'draft' ? (
-                        <Form {...publish.form(campaign.id)}>
-                            {({ processing }) => (
-                                <Button type="submit" disabled={processing}>
-                                    Publikasikan
-                                </Button>
-                            )}
-                        </Form>
-                    ) : null}
-                    {!['cancelled', 'completed'].includes(campaign.status) ? (
-                        <Form {...cancel.form(campaign.id)}>
-                            {({ processing }) => (
-                                <Button
-                                    type="submit"
-                                    variant="destructive"
-                                    disabled={processing}
-                                    onClick={(e) => {
-                                        if (!confirm('Batalkan campaign ini?')) e.preventDefault();
-                                    }}
-                                >
-                                    Batalkan
-                                </Button>
-                            )}
-                        </Form>
-                    ) : null}
-                    {campaign.collaboration_id ? (
-                        <Button asChild variant="outline">
-                            <Link href={`/umkm/collaborations/${campaign.collaboration_id}`}>
-                                Lihat Kolaborasi
-                            </Link>
-                        </Button>
-                    ) : null}
+                    </SectionPanel>
                 </div>
-            </main>
+            </div>
         </>
     );
 }

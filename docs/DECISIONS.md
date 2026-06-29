@@ -40,6 +40,7 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 | ADR-026 | Suspend-only (no self-delete) | Accepted |
 | ADR-027 | `read_at` per pesan (tanpa tabel `message_reads`) | Accepted |
 | ADR-028 | Single-kategori per campaign | Accepted |
+| ADR-029 | SQLite sebagai database validasi RC; MySQL compatibility ditunda | Accepted |
 
 ---
 
@@ -380,6 +381,43 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 - **Alternatives Considered:**
   - **Multi-kategori sejak MVP** → ditolak: menambah UI & query.
 
+## ADR-029 — SQLite sebagai Database Validasi RC; MySQL Compatibility Ditunda
+
+- **Status:** Accepted
+- **Context:** AGENTS.md §4 melarang menambah dependency tanpa persetujuan, dan lingkungan lokal RC saat ini tidak memiliki kredensial MySQL siap pakai. Pengujian Pest yang berjalan di `tests/` telah memakai `sqlite :memory:` untuk kecepatan. Namun validasi runtime RC (server lokal, demo, dan smoke test) membutuhkan database persisten di luar `phpunit.xml`.
+- **Decision:** SQLite (default konfigurasi `.env` Laravel) digunakan sebagai database validasi untuk release candidate ini. MySQL 8.x tetap merupakan database produksi resmi sesuai ADR-004. Kompatibilitas MySQL diverifikasi secara eksplisit sebagai release task pasca-RC, dengan checklist eksekusi terhadap instance MySQL 8.x sebelum deploy produksi.
+- **Consequences:**
+  - Pipeline CI dan perintah `php artisan migrate:fresh --seed` RC memakai SQLite; demo seeder tetap kompatibel dengan kedua engine.
+  - Risiko minor ketidakcocokan tipe data (presisi `DECIMAL`, perilaku kolom `JSON`, dan penyimpanan enum sebagai string di SQLite) dimitigasi dengan tes validasi ulang terhadap MySQL sebelum production deploy.
+  - Konfigurasi produksi (`env.production`) tetap merujuk ke `mysql` sesuai ADR-004. SQLite tidak menggantikan target produksi, hanya menggantikan engine validasi RC.
+- **Alternatives Considered:**
+  - **Block RC sampai MySQL siap** → ditolak: tidak menambah nilai untuk QA fungsional inti; validasi runtime sudah cukup dengan SQLite.
+  - **Pakai Docker MySQL on-the-fly** → ditolak: menambah kompleksitas tooling tanpa persetujuan sesuai AGENTS.md §4.
+
+## ADR-030 — Admin Collaboration Namespace Separation
+
+- **Status:** Accepted
+- **Context:** Sebelum RC, Admin mengakses halaman kolaborasi UMKM/Creator dengan role override. Setelah OQ-005 dan UC-ADMIN-010 diformalkan, Admin membutuhkan halaman oversight sendiri (`/admin/collaborations`) yang:
+  1. Menampilkan seluruh kolaborasi lintas UMKM/Creator (bukan scoped ke satu akun).
+  2. Mengekspos aksi force-close (UC-ADMIN-010) yang tidak tersedia untuk pihak.
+  3. Menegakkan isolasi akses: Admin tidak boleh menggunakan route `/umkm/collaborations/*` atau `/creator/collaborations/*` (akan mengembalikan 403).
+- **Decision:** Pisahkan namespace Admin untuk kolaborasi dengan komponen:
+  - Route: `GET /admin/collaborations`, `GET /admin/collaborations/{collaboration}`, `POST /admin/collaborations/{collaboration}/force-close`.
+  - Controller: `app/Http/Controllers/Admin/CollaborationsController.php`.
+  - Action: `app/Actions/Admin/ForceCloseCollaborationAction.php` (admin-only, menulis audit `collaboration.force_closed`).
+  - Request: `app/Http/Requests/Admin/ForceCloseCollaborationRequest.php`.
+  - Notifikasi: `app/Notifications/CollaborationForceClosedNotification.php`.
+  - Frontend: `resources/js/pages/Admin/Collaborations/Index.tsx`, `Show.tsx`.
+  - Policy: `app/Policies/CollaborationPolicy.php` mengembalikan 403 untuk Admin di luar namespace admin.
+  - Tests: `tests/Feature/Admin/CollaborationsTest.php` (11 cases termasuk validasi reason, audit, notifikasi, dan policy 403).
+- **Consequences:**
+  - Audit trail jelas: `collaboration.force_closed` hanya bisa ditrigger Admin, sehingga dapat dibedakan dari `collaboration.cancelled` (pihak).
+  - Memperkuat authorization boundary: Admin tidak bisa lewat celah UMKM/Creator route.
+  - Penambahan tabel `notifications` (Laravel default) + kolom `collaborations.cancelled_by` & `cancelled_reason` (sudah ada sejak v1.0; dikonfirmasi final di RC.1).
+- **Alternatives Considered:**
+  - **Reuse route UMKM/Creator dengan policy khusus Admin** → ditolak: sulit ditegakkan konsisten dan mempersulit audit.
+  - **Admin hanya akses via menu Force-Close pada halaman UMKM** → ditolak: tidak memberikan visibility lintas kolaborasi.
+
 ---
 
 ## Catatan Versi
@@ -388,3 +426,45 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: 15 keputusan MVP. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tambah ADR-016..ADR-028: single-role, AGENTS/CLAUDE split, single-Creator campaign, direct-hire out, review opsional, cancel-collab, admin force-close, message immutable, file size policy, storage abstraction, suspend-only, read_at, single-kategori. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | Tambah ADR-029 (SQLite sebagai DB validasi RC; MySQL compatibility ditunda) & ADR-030 (Admin collaboration namespace separation). | Product Engineer |
+
+## ADR-031 — Role-Specific Layout Shells (Admin Dashboard vs Marketplace)
+
+- **Status:** Accepted
+- **Context:** Sebelum refactor ini, halaman UMKM dan Creator mewarisi shell dashboard/sidebar yang sama dengan Admin (`AppSidebar` + `AppHeader`) sehingga tampilan Admin bocor ke UMKM dan Creator. Hasil audit menunjukkan pengalaman Admin yang padat (tabel ringkas, filter, breadcrumb, sidebar persisten) tidak sesuai untuk UMKM dan Creator, yang lebih tepat dilayani sebagai marketplace modern (top navigation, kartu, pencarian, mobile bottom-nav).
+- **Decision:** Pisahkan shell layout berdasarkan peran dengan struktur di bawah `resources/js/layouts/`:
+  - `PublicLayout` — landing, direktori publik, dan halaman marketing.
+  - `AuthLayout` — login, register, lupa password, verifikasi email.
+  - `MarketplaceLayout` — semua halaman UMKM dan Creator yang terautentikasi; menyediakan top navbar, role-specific navigation, search opsional, user menu, mobile sheet, dan bottom navigation.
+  - `AdminDashboardLayout` — Admin saja, mempertahankan sidebar persisten + breadcrumb + tabel ringkas.
+  - `CollaborationWorkspaceLayout` — UMKM dan Creator di dalam kolaborasi aktif; berisi header kolaborasi, badge status, dan tab Pesan/Progres/Submission/Review.
+  - Sumber kebenaran navigasi dipusatkan di `resources/js/config/navigation.ts` (role-specific `NavigationItem[]` plus `PrimaryAction`).
+  - `app.tsx` memilih layout berdasarkan prefix nama page (`Admin/`, `Umkm/`, `Creator/`, `auth/`, `Public/`, `settings/`).
+- **Consequences:**
+  - UMKM dan Creator tidak lagi melihat sidebar Admin; Admin tetap mempertahankan dashboard operasional.
+  - Penambahan peran baru cukup mendaftarkan `NavigationItem[]` di konfigurasi navigasi tanpa duplikasi layout.
+  - Komponen lama (`app-header`, `app-shell`, `app-content`, `app-sidebar-header`, `app-sidebar-layout`, `app-header-layout`, `nav-user`, `user-menu-content`, `user-info`, `nav-footer`) dihapus untuk mencegah regresi.
+  - Marketplace home untuk UMKM dan Creator didesain ulang sebagai landing-style personalized page (hero, statistik ringkas, kartu campaign/kolaborasi, empty-state, dan tips) sehingga tidak lagi terasa seperti dashboard Admin.
+- **Alternatives Considered:**
+  - **Satu layout universal dengan flag peran** → ditolak: sulit mempertahankan konsistensi visual, dan risiko kebocoran navigasi Admin ke UMKM/Creator masih ada.
+  - **Pakai template dashboard eksternal** → ditolak: menambah dependency UI besar di luar shadcn/ui dan kontradiksi dengan AGENTS.md §4.
+| 1.2 (Refactor) | 2026-06-18 | Tambah ADR-031: role-specific layout shells (MarketplaceLayout untuk UMKM/Creator, AdminDashboardLayout untuk Admin). | Product Engineer |
+## ADR-032 — Login Form Action Binding (POST /login)
+
+- **Status:** Accepted
+- **Context:** RC.1 audit menemukan `DEF-AUTH-001` (Blocker): submit form login jatuh ke `GET /login?email=…&password=…` (form submit native) karena Wayfinder hanya menghasilkan binding `login.get`/`login.head` untuk `GET /login`. `POST /login` di `routes/web.php` tidak memiliki route name, sehingga helper `login()` di `@/routes` selalu `RouteDefinition<'get'>`. Form React `<Form action={login()} method="post">` membuat Inertia mengikuti `method: 'get'`, sehingga Inertia tidak melakukan XHR fetch; form submit native yang terjadi. Tangkapan browser menunjukkan URL akhir berisi `?email=…&password=…` (kredensial di query string) dan `auth.user: null`.
+- **Decision:** Tiga perubahan minimum:
+  1. `routes/web.php`: `POST /login` di-`->name('login.store')` agar Wayfinder dapat membuat binding untuk `store` action.
+  2. `resources/js/pages/Auth/Login.tsx`: pakai `store as loginStore` dari `@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController` lalu render `<Form action={loginStore.url()} method="post">`. Tree-shakeable dan jelas menunjukkan `POST /login`.
+  3. Sambungkan `usePage().props.errors` ke `<InputError>` agar pesan kesalahan dari server (kredensial salah, akun suspended) tampil.
+- **Consequences:**
+  - Submit login sekarang memanggil `AuthenticatedSessionController@store` via Inertia XHR `POST /login` dengan CSRF token yang valid.
+  - Redirect role-aware: admin → `/admin/dashboard`, umkm → `/umkm/dashboard`, creator → `/creator/dashboard`, suspended → tetap di `/login` dengan pesan kesalahan.
+  - Validasi regresi: 12 kasus Pest, 5 kasus Vitest, 6 skenario Playwright real browser (`tests/E2E/00-login-flow.spec.ts`).
+- **Alternatives Considered:**
+  - **Buat route dummy `POST /login` di `routes/web.php` terpisah** → ditolak: duplikasi, rentan inkonsistensi.
+  - **Disable CSRF di `/login`** → ditolak: menurunkan keamanan.
+  - **Gunakan `<form method="post">` native + Blade** → ditolak: Inertia adalah satu-satunya pipeline rendering.
+
+
+| 1.3 (RC.2) | 2026-06-18 | Tambah ADR-032: login form action binding via Wayfinder action helper + `usePage().props.errors` untuk error display. | Product Engineer |

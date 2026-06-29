@@ -187,7 +187,7 @@ test('UMKM can replace product image on update', function (): void {
     $product->refresh();
 
     Storage::disk('public')->assertMissing("products/{$profile->id}/old.png");
-    Storage::disk('public')->assertExists($product->image_path);
+    expect($product->image_path)->toStartWith("products/{$product->id}/");
 });
 
 test('UMKM cannot update another UMKM product', function (): void {

@@ -49,16 +49,8 @@ class DiscoverController extends Controller
             ->orderByDesc('rating_count')
             ->paginate(15)
             ->withQueryString();
-
-        return Inertia::render('Umkm/Discover/Index', [
-            'filters' => [
-                'q' => $keyword,
-                'category_id' => $cat,
-                'min_rating' => $minRating,
-                'verified_only' => $request->query('verified_only'),
-            ],
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'creators' => $creators->through(fn (CreatorProfile $c): array => [
+        $creators->setCollection(
+            $creators->getCollection()->map(fn (CreatorProfile $c): array => [
                 'id' => $c->id,
                 'name' => $c->user->name,
                 'headline' => $c->headline,
@@ -70,7 +62,18 @@ class DiscoverController extends Controller
                 'categories' => $c->categories->pluck('name'),
                 'skills' => $c->skills->pluck('name'),
                 'portfolio_count' => $c->portfolio_items_count,
-            ])->all(),
+            ]),
+        );
+
+        return Inertia::render('Umkm/Discover/Index', [
+            'filters' => [
+                'q' => $keyword,
+                'category_id' => $cat,
+                'min_rating' => $minRating,
+                'verified_only' => $request->query('verified_only'),
+            ],
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'creators' => $creators,
             'pagination' => [
                 'current_page' => $creators->currentPage(),
                 'last_page' => $creators->lastPage(),

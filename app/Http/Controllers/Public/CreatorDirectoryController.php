@@ -50,9 +50,12 @@ class CreatorDirectoryController extends Controller
         }
 
         $creators = $query->orderByDesc('rating_avg')->paginate(15)->withQueryString();
+        $creators->setCollection(
+            $creators->getCollection()->map(fn (CreatorProfile $c): array => $this->serialize($c)),
+        );
 
         return Inertia::render('Public/CreatorDirectory', [
-            'creators' => $creators->through(fn (CreatorProfile $c): array => $this->serialize($c)),
+            'creators' => $creators,
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'filters' => [
                 'q' => $keyword,

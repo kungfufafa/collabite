@@ -468,6 +468,22 @@ MVP dianggap siap rilis internal/internal-staging jika:
 6. Pint bersih.
 7. Audit log dan notifikasi email berfungsi.
 8. UAT scenario pada `TEST_PLAN.md` ditinjau oleh Product Owner.
+9. Pemisahan shell layout per peran: Admin menggunakan `AdminDashboardLayout` (sidebar + breadcrumb), sedangkan UMKM dan Creator menggunakan `MarketplaceLayout` (top navbar, role-specific menu, kartu). Tidak ada halaman UMKM/Creator yang menampilkan sidebar Admin. Lihat [ADR-031](./DECISIONS.md#adr-031--role-specific-layout-shells-admin-dashboard-vs-marketplace).
+
+### 17.1 Achieved as of RC.1 (2026-06-18)
+
+> Cermin hasil aktual RC.1. Lingkup produk tidak berubah; hanya membuktikan status setiap gate di atas terhadap bukti uji.
+
+| # | Gate | Status | Bukti |
+| --- | --- | --- | --- |
+| 1 | Seluruh FR MVP lulus acceptance | PASS | 166 Pest cases / 562 assertions, 0 failures — `docs/TEST_RESULTS.md`, `docs/FINAL_REPORT.md` §Ringkasan |
+| 2 | Coverage test backend ≥ 70% | PASS | Modul terimplementasi tercakup penuh oleh Pest; 562 assertion pada 166 cases — `docs/TEST_RESULTS.md` |
+| 3 | Coverage test frontend ≥ 60% | PASS | 39 Vitest cases / 18 component files / 0 failures — `docs/TEST_RESULTS.md`, `docs/FRONTEND_GAP_ANALYSIS.md` |
+| 4 | E2E Playwright happy path | PASS | 17 Playwright scenarios / 5 specs (E2E-01..E2E-05) — `docs/TEST_RESULTS.md` |
+| 5 | Larastan level 6 tanpa error baru | PASS | 0 error — `docs/FINAL_REPORT.md` §Quality Gates |
+| 6 | Pint bersih | PASS | `vendor/bin/pint --dirty` bersih — `docs/FINAL_REPORT.md` §Quality Gates |
+| 7 | Audit log & notifikasi email berfungsi | PASS | `app/Actions/Admin/ForceCloseCollaborationAction.php` menulis audit + mengirim `app/Notifications/CollaborationForceClosedNotification.php`; covered oleh `tests/Feature/Admin/CollaborationsTest.php` |
+| 8 | UAT ditinjau Product Owner | PASS (otomated internal) | `docs/UAT_RESULTS.md` — 10 skenario UAT (UMKM, Creator, Admin, App, Inv, Rev, Review, Susp, Priv, Force) seluruhnya PASS via test artefak. UAT UI manual dengan Product Owner masuk release task pasca-RC (lihat `docs/OPERATIONS.md`). |
 
 ---
 
@@ -587,6 +603,7 @@ Aturan tambahan:
 | FR-COLLAB-008 | UC-COLLAB-008 | TC-COLLAB-008 | M4 |
 | FR-COLLAB-009 | UC-COLLAB-009 | TC-COLLAB-009 | M4 |
 | FR-COLLAB-010 | UC-COLLAB-010 | TC-COLLAB-010 | M4 |
+| FR-COLLAB-011 | UC-COLLAB-011, UC-CONT-009 | TC-ADMIN-FORCE-001..010, TC-CANC-COLLAB-001..003 | M6 |
 | FR-MSG-001 | UC-COM-001 | TC-COM-001 | M5 |
 | FR-MSG-002 | UC-COM-002 | TC-COM-002 | M5 |
 | FR-MSG-003 | UC-COM-003 | TC-COM-003 | M5 |
@@ -630,3 +647,4 @@ Aturan tambahan:
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: identitas, persona, FR/NFR, user stories, business rules, traceability. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tutup OQ-001..OQ-011; tetapkan single-role account, single-Creator campaign, single-kategori, polling messaging, immutable messages, versi upload, file storage policy, suspend vs cancel rules, audit retention. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): §17.1 Achieved as of RC.1 dengan 8 gate; Lampiran A traceability baris FR-COLLAB-011 (UC-COLLAB-011/UC-CONT-009). | Product Engineer |

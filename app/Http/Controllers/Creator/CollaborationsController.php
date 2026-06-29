@@ -29,6 +29,7 @@ use App\Models\Collaboration;
 use App\Models\CollaborationRequest;
 use App\Models\ContentSubmission;
 use App\Models\ContentSubmissionFile;
+use App\Models\MessageAttachment;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,15 +51,18 @@ class CollaborationsController extends Controller
             ->where('creator_id', $request->user()->id)
             ->latest()
             ->paginate(10);
-
-        return Inertia::render('Creator/Collaborations/Index', [
-            'collaborations' => $collaborations->through(fn (Collaboration $c): array => [
+        $collaborations->setCollection(
+            $collaborations->getCollection()->map(fn (Collaboration $c): array => [
                 'id' => $c->id,
                 'campaign' => ['id' => $c->campaign->id, 'title' => $c->campaign->title],
                 'umkm' => ['id' => $c->umkm->id, 'name' => $c->umkm->name],
                 'status' => $c->status->value,
                 'status_label' => $c->status->label(),
-            ])->all(),
+            ]),
+        );
+
+        return Inertia::render('Creator/Collaborations/Index', [
+            'collaborations' => $collaborations,
         ]);
     }
 
@@ -79,6 +83,7 @@ class CollaborationsController extends Controller
         $conversation = $collaboration->conversation;
         $messages = $conversation?->messages()
             ->where('is_hidden', false)
+            ->with(['sender', 'attachments'])
             ->orderBy('created_at')
             ->get()
             ->map(fn ($m): array => [
@@ -88,6 +93,13 @@ class CollaborationsController extends Controller
                 'body' => $m->body,
                 'created_at' => $m->created_at->toIso8601String(),
                 'read_at' => $m->read_at?->toIso8601String(),
+                'attachments' => $m->attachments->map(fn (MessageAttachment $a): array => [
+                    'id' => $a->id,
+                    'original_name' => $a->original_name,
+                    'mime_type' => $a->mime_type,
+                    'size' => $a->size,
+                    'url' => $this->files->privateUrl($a->file_path),
+                ])->all(),
             ]) ?? collect();
 
         if ($conversation) {
@@ -172,6 +184,10 @@ class CollaborationsController extends Controller
 
     public function cancelRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, CancelApplicationAction $action): RedirectResponse
     {
+        abort_unless(
+            $requestModel->creator_id === $request->user()->id && $requestModel->type->value === 'application',
+            422,
+        );
         $action->execute($requestModel);
 
         return back()->with('status', 'Pengajuan dibatalkan.');
@@ -242,10 +258,10 @@ class CollaborationsController extends Controller
         return back()->with('status', 'Submission dikirim untuk review.');
     }
 
-    public function resubmit(ResubmitSubmissionRequest $request, Collaboration $collaboration, ContentSubmission $oldSubmission, ResubmitSubmissionAction $action): RedirectResponse
+    public function resubmit(ResubmitSubmissionRequest $request, Collaboration $collaboration, ContentSubmission $submission, ResubmitSubmissionAction $action): RedirectResponse
     {
         $this->authorize('view', $collaboration);
-        $new = $action->execute($oldSubmission, $request->validated());
+        $new = $action->execute($submission, $request->validated());
 
         return back()->with('status', "Submission v{$new->version} dibuat.");
     }

@@ -44,16 +44,8 @@ class CampaignsController extends Controller
         $campaigns = $query->latest('published_at')
             ->paginate(15)
             ->withQueryString();
-
-        return Inertia::render('Creator/Campaigns/Index', [
-            'filters' => [
-                'q' => $keyword,
-                'category_id' => $cat,
-                'min_budget' => $minBudget,
-                'max_budget' => $maxBudget,
-            ],
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'campaigns' => $campaigns->through(fn (Campaign $c): array => [
+        $campaigns->setCollection(
+            $campaigns->getCollection()->map(fn (Campaign $c): array => [
                 'id' => $c->id,
                 'title' => $c->title,
                 'description' => Str::limit($c->description, 200),
@@ -65,7 +57,18 @@ class CampaignsController extends Controller
                     'city' => $c->umkmProfile?->city,
                 ],
                 'published_at' => $c->published_at?->toDateTimeString(),
-            ])->all(),
+            ]),
+        );
+
+        return Inertia::render('Creator/Campaigns/Index', [
+            'filters' => [
+                'q' => $keyword,
+                'category_id' => $cat,
+                'min_budget' => $minBudget,
+                'max_budget' => $maxBudget,
+            ],
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'campaigns' => $campaigns,
         ]);
     }
 

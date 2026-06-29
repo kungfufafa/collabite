@@ -29,9 +29,8 @@ class AuditLogController extends Controller
         }
 
         $logs = $query->latest('created_at')->paginate(50)->withQueryString();
-
-        return Inertia::render('Admin/AuditLogs/Index', [
-            'logs' => $logs->through(fn (ActivityLog $l): array => [
+        $logs->setCollection(
+            $logs->getCollection()->map(fn (ActivityLog $l): array => [
                 'id' => $l->id,
                 'actor_id' => $l->actor_id,
                 'actor_role' => $l->actor_role,
@@ -40,7 +39,11 @@ class AuditLogController extends Controller
                 'subject_id' => $l->subject_id,
                 'metadata' => $l->metadata,
                 'created_at' => $l->created_at?->toIso8601String(),
-            ])->all(),
+            ]),
+        );
+
+        return Inertia::render('Admin/AuditLogs/Index', [
+            'logs' => $logs,
         ]);
     }
 }

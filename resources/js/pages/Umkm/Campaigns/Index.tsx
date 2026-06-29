@@ -1,7 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
+
+import { ListEmptyState } from '@/components/app/list-empty-state';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { create } from '@/routes/umkm/campaigns';
 
 type Campaign = {
@@ -17,86 +22,120 @@ type Campaign = {
     created_at: string;
 };
 
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (status === 'open') return 'default';
-    if (status === 'draft') return 'secondary';
-    if (status === 'cancelled') return 'destructive';
-    if (status === 'completed') return 'outline';
-    return 'secondary';
+function statusTone(status: string): 'success' | 'neutral' | 'danger' | 'info' | 'warning' {
+    if (status === 'open') {
+        return 'success';
+    }
+
+    if (status === 'draft') {
+        return 'neutral';
+    }
+
+    if (status === 'cancelled') {
+        return 'danger';
+    }
+
+    if (status === 'completed') {
+        return 'info';
+    }
+
+    return 'warning';
 }
 
-export default function Index({ campaigns }: { campaigns: { data: Campaign[] } | Campaign[] }) {
+export default function Index({ campaigns }: { campaigns: { data: Campaign[] } | Campaign[] }): ReactNode {
     const list = Array.isArray(campaigns) ? campaigns : campaigns.data;
 
     return (
         <>
             <Head title="Campaign" />
-            <main className="container mx-auto px-6 py-10">
-                <header className="mb-6 flex items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold">Campaign</h1>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            Kelola semua campaign Anda di satu tempat.
-                        </p>
-                    </div>
-                    <Button asChild>
-                        <Link href={create().url}>+ Buat Campaign</Link>
-                    </Button>
-                </header>
+            <div>
+                <PageHeader
+                    title="Campaign"
+                    description="Kelola semua campaign Anda di satu tempat."
+                    actions={
+                        <Button asChild>
+                            <Link href={create().url}>
+                                <Plus className="size-4" />
+                                Buat Campaign
+                            </Link>
+                        </Button>
+                    }
+                />
 
                 {list.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-10 text-center text-sm text-slate-500">
-                            Belum ada campaign. Buat campaign pertama Anda.
-                        </CardContent>
-                    </Card>
+                    <div className="mt-8">
+                        <ListEmptyState
+                            action={
+                                <Button asChild>
+                                    <Link href={create().url}>
+                                        <Plus className="size-4" />
+                                        Buat Campaign Pertama
+                                    </Link>
+                                </Button>
+                            }
+                            description="Buat campaign untuk mulai menerima lamaran dari creator."
+                            title="Belum ada campaign"
+                        />
+                    </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="mt-8 flex flex-col gap-3">
                         {list.map((c) => (
-                            <Card key={c.id}>
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <CardTitle>
-                                                <Link
-                                                    href={`/umkm/campaigns/${c.id}`}
-                                                    className="hover:underline"
-                                                >
-                                                    {c.title}
-                                                </Link>
-                                            </CardTitle>
-                                            <CardDescription>
-                                                {c.budget
-                                                    ? `Rp ${Number(c.budget).toLocaleString('id-ID')}`
-                                                    : 'Budget belum ditentukan'}
-                                                {c.deadline ? ` • Deadline ${c.deadline}` : ''}
-                                            </CardDescription>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <Badge variant={statusVariant(c.status)}>{c.status_label}</Badge>
-                                            {c.is_hidden ? <Badge variant="destructive">Disembunyikan admin</Badge> : null}
-                                        </div>
+                            <ResourceCard
+                                className="flex flex-col gap-4"
+                                key={c.id}
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <Link
+                                            className="text-base font-semibold text-foreground hover:underline"
+                                            href={`/umkm/campaigns/${c.id}`}
+                                        >
+                                            {c.title}
+                                        </Link>
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {c.budget
+                                                ? `Rp ${Number(c.budget).toLocaleString('id-ID')}`
+                                                : 'Budget belum ditentukan'}
+                                            {c.deadline ? ` · Deadline ${c.deadline}` : ''}
+                                        </p>
                                     </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between gap-4 text-sm">
-                                        <div className="flex gap-4 text-slate-600 dark:text-slate-300">
-                                            <span>Pengajuan: <strong>{c.pending_requests}</strong></span>
-                                            <span>
-                                                Kolaborasi:{' '}
-                                                <strong>{c.has_collaboration ? 'Aktif' : 'Belum ada'}</strong>
-                                            </span>
-                                        </div>
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={`/umkm/campaigns/${c.id}`}>Detail</Link>
-                                        </Button>
+                                    <div className="flex shrink-0 flex-col items-end gap-2">
+                                        <StatusBadge
+                                            label={c.status_label}
+                                            tone={statusTone(c.status)}
+                                        />
+                                        {c.is_hidden ? (
+                                            <StatusBadge
+                                                label="Disembunyikan admin"
+                                                tone="danger"
+                                            />
+                                        ) : null}
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 border-t border-border pt-4 text-sm">
+                                    <div className="flex gap-4 text-muted-foreground">
+                                        <span>
+                                            Pengajuan:{' '}
+                                            <strong className="text-foreground">
+                                                {c.pending_requests}
+                                            </strong>
+                                        </span>
+                                        <span>
+                                            Kolaborasi:{' '}
+                                            <strong className="text-foreground">
+                                                {c.has_collaboration ? 'Aktif' : 'Belum ada'}
+                                            </strong>
+                                        </span>
+                                    </div>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={`/umkm/campaigns/${c.id}`}>Detail</Link>
+                                    </Button>
+                                </div>
+                            </ResourceCard>
                         ))}
                     </div>
                 )}
-            </main>
+            </div>
         </>
     );
 }

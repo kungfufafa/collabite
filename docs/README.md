@@ -89,3 +89,4 @@ Selain dokumen desain, tim implementasi mengelola dokumen operasional berikut di
 - `TEST_RESULTS.md` — rekap hasil test.
 - `BLOCKERS.md` — daftar blocker aktif.
 - `UAT.md` — catatan hasil UAT.
+- `DEMO_ACCOUNTS.md` — daftar akun demo lokal (UMKM/Creator/Admin) + skenario RC walkthrough yang dihasilkan `DemoDataSeeder`.

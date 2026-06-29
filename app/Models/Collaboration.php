@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancelled_at
+ * @property int|null $cancelled_by
+ * @property string|null $cancelled_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -36,6 +38,8 @@ use Illuminate\Support\Carbon;
     'started_at',
     'completed_at',
     'cancelled_at',
+    'cancelled_by',
+    'cancelled_reason',
 ])]
 class Collaboration extends Model
 {

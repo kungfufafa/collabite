@@ -98,7 +98,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
     public function notifications(): HasMany
     {
-        return $this->hasMany(DatabaseNotification::class)
+        return $this->hasMany(DatabaseNotification::class, 'notifiable_id')
+            ->where('notifiable_type', self::class)
             ->orderByDesc('created_at');
     }
 }

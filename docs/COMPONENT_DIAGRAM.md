@@ -215,6 +215,21 @@ flowchart LR
 
 ### Presentation Layer
 
+#### Layout Shells (frontend architecture)
+
+- **Tanggung jawab:** Shell per peran yang membungkus seluruh halaman Inertia. Pemisahan eksplisit sesuai [ADR-031](./DECISIONS.md#adr-031--role-specific-layout-shells-admin-dashboard-vs-marketplace).
+- **Interface & lokasi:**
+  - `resources/js/layouts/PublicLayout.tsx` — landing, direktori publik, halaman marketing.
+  - `resources/js/layouts/AuthLayout.tsx` — login, register, lupa password, verifikasi.
+  - `resources/js/layouts/MarketplaceLayout.tsx` — UMKM & Creator terautentikasi; top navbar dengan role-specific navigation, search opsional, user menu, mobile sheet, dan bottom navigation.
+  - `resources/js/layouts/AdminDashboardLayout.tsx` — Admin saja; sidebar persisten + breadcrumb + tabel ringkas.
+  - `resources/js/layouts/CollaborationWorkspaceLayout.tsx` — workspace kolaborasi UMKM/Creator dengan header, badge status, dan tab Pesan/Progres/Submission/Review.
+  - Sumber kebenaran navigasi: `resources/js/config/navigation.ts` (`NavigationItem[]` per peran + `PrimaryAction`).
+  - Pemilihan layout terjadi di `resources/js/app.tsx` berdasarkan prefix nama page (`Admin/`, `Umkm/`, `Creator/`, `auth/`, `Public/`, `settings/`).
+- **Dependency:** `Shared React Components` (shadcn/ui), `Inertia Client`.
+- **Data yang dikelola:** Auth context, role flag, breadcrumbs opsional.
+- **Requirement terkait:** NFR-ACCESSIBILITY-001, FR-UI-CONSISTENCY.
+
 #### Public Website
 - **Tanggung jawab:** Halaman statis/dinamis untuk publik (landing, halaman profil Creator/UMKM publik, kebijakan privasi).
 - **Interface:** Inertia pages di `resources/js/pages/public/*`.
@@ -242,6 +257,14 @@ flowchart LR
 - **Dependency:** `Auth`, `Admin & Moderation`, `Reporting`, `Audit`.
 - **Data yang dikelola:** State UI.
 - **Requirement terkait:** Seluruh FR Admin.
+
+##### Admin Collaboration Oversight (UC-ADMIN-010)
+- **Tanggung jawab:** Halaman oversight kolaborasi khusus Admin (`/admin/collaborations`) — list & detail semua kolaborasi lintas UMKM/Creator; tombol force-close dengan reason validation.
+- **Interface:** `resources/js/pages/Admin/Collaborations/Index.tsx` & `Show.tsx`; backend `app/Http/Controllers/Admin/CollaborationsController.php` + `app/Actions/Admin/ForceCloseCollaborationAction.php`; request `app/Http/Requests/Admin/ForceCloseCollaborationRequest.php`; notifikasi `app/Notifications/CollaborationForceClosedNotification.php`.
+- **Route:** `GET /admin/collaborations`, `GET /admin/collaborations/{collaboration}`, `POST /admin/collaborations/{collaboration}/force-close`.
+- **Dependency:** `Admin & Moderation`, Audit, Notification, `app/Policies/CollaborationPolicy.php` (Admin ditolak akses rute UMKM/Creator → 403).
+- **Data yang dikelola:** Status `collaborations.cancelled_*` (FK `cancelled_by` + `cancelled_reason`).
+- **Requirement terkait:** FR-COLLAB-011, FR-AUDIT-001.
 
 #### Shared React Components
 - **Tanggung jawab:** UI primitives (button, form, modal, table, dsb.) berbasis shadcn/ui.
@@ -435,3 +458,4 @@ flowchart LR
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: diagram Mermaid + deskripsi komponen per layer. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tutup OQ-001..OQ-011: admin force-close, message moderation, cancel-collaboration flow, file storage policy. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): modul "Admin Collaboration Oversight (UC-ADMIN-010)" ditambahkan ke Admin Portal dengan interface, route, dependency, dan data yang dikelola. | Product Engineer |

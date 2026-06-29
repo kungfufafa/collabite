@@ -20,7 +20,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@collabite.test'],
             [
                 'name' => 'Admin Collabite',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('Password123!'),
                 'role' => UserRole::Admin,
                 'email_verified_at' => now(),
             ]

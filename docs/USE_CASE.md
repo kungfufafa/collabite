@@ -911,6 +911,7 @@ Setiap use case mengikuti format:
 | **Post-condition** | Kolaborasi `cancelled`; pesan & submission read-only. |
 | **Business rules** | BR-005, BR-009, BR-013. |
 | **Requirement terkait** | FR-COLLAB-011, FR-AUDIT-001. |
+| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. |
 
 ---
 
@@ -1119,6 +1120,7 @@ Setiap use case mengikuti format:
 | **Post-condition** | Kolaborasi `cancelled`; pesan & submission read-only. |
 | **Business rules** | BR-005, BR-009, BR-013. |
 | **Requirement terkait** | FR-COLLAB-011, FR-AUDIT-001. |
+| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. |
 
 ## UC-CONT-008 — Validasi State Transition
 
@@ -1382,6 +1384,7 @@ Setiap use case mengikuti format:
 | **Post-condition** | Kolaborasi `cancelled`. |
 | **Business rules** | BR-009, BR-013. |
 | **Requirement terkait** | FR-COLLAB-011, FR-AUDIT-001. |
+| **Implementasi** | `app/Actions/Admin/ForceCloseCollaborationAction.php` (admin). Request: `app/Http/Requests/Admin/ForceCloseCollaborationRequest.php`. Notifikasi: `app/Notifications/CollaborationForceClosedNotification.php`. Route: `POST /admin/collaborations/{collaboration}/force-close`. Bukti uji: `tests/Feature/Admin/CollaborationsTest.php`. |
 
 ## UC-MSG-005 — Moderasi Pesan (Admin)
 
@@ -1501,3 +1504,4 @@ Setiap use case mengikuti format:
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: use case UMKM, Creator, Admin + diagram Mermaid. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Menutup OQ-001..OQ-011: single-Creator campaign, immutable messages, cancellable collab pre-approval, file size policy. Penambahan UC-CONT-009 (Batalkan Kolaborasi), UC-COLLAB-011 (Admin Force Close), UC-MSG-005 (Moderasi Pesan). | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): implementasi reference untuk UC-ADMIN-010 (admin force-close) dan UC-COLLAB-011/UC-CONT-009 (pihak). | Product Engineer |

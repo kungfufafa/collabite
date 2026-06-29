@@ -100,6 +100,8 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | **Medium** | Fitur minor tidak sesuai, ada workaround. |
 | **Low** | Kosmetik/teks. |
 
+> Defect severity di atas dipetakan ke log defect terpusat di `docs/DEFECTS.md` (klasifikasi H/M/L = High/Medium/Low; Blocker & Critical belum pernah muncul di RC.1).
+
 ---
 
 ## 10. Format Test Case
@@ -1139,7 +1141,8 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | FR-COLLAB-008 | TC-COLLAB-009 | Collaboration | M4 |
 | FR-COLLAB-009 | TC-COLLAB-010 | Collaboration | M4 |
 | FR-COLLAB-010 | TC-COLLAB-008, TC-COM-002 | Collaboration | M4 |
-| FR-MSG-001 | TC-COM-001 | Messaging | M5 |
+| FR-COLLAB-011 | TC-ADMIN-FORCE-001..010, TC-CANC-COLLAB-001..003 | Admin/Collaboration | M6 |
+| FR-MSG-001 | TC-COM-001, TC-MSG-IMMUTABLE-001..007 | Messaging | M5 |
 | FR-MSG-002 | TC-COM-001, TC-COM-002 | Messaging | M5 |
 | FR-MSG-003 | TC-COM-003 | Messaging | M5 |
 | FR-MSG-004 | TC-COM-004 | Messaging | M5 |
@@ -1151,19 +1154,19 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | FR-CONTENT-005 | TC-CONT-005 | Content | M5 |
 | FR-CONTENT-006 | TC-CONT-006 | Content | M5 |
 | FR-CONTENT-007 | TC-CONT-007 | Content | M5 |
-| FR-CONTENT-008 | TC-CONT-008 | Content | M5 |
+| FR-CONTENT-008 | TC-CONT-008, TC-CONT-IMMUTABLE-001..004 | Content | M5 |
 | FR-REVIEW-001 | TC-REV-001, TC-E2E-001 | Review | M6 |
 | FR-REVIEW-002 | TC-REV-002, TC-E2E-002 | Review | M6 |
 | FR-REVIEW-003 | TC-REV-003 | Review | M6 |
 | FR-REVIEW-004 | TC-REV-004 | Review | M6 |
-| FR-REVIEW-005 | TC-REV-005 | Review | M6 |
+| FR-REVIEW-005 | TC-REV-005, TC-REV-AGG-001..008 | Review | M6 |
 | FR-ADMIN-001 | TC-ADMIN-002 | Admin | M6 |
 | FR-ADMIN-002 | TC-ADMIN-003 | Admin | M6 |
 | FR-ADMIN-003 | TC-ADMIN-001 | Admin | M6 |
 | FR-ADMIN-004 | TC-VERIF-003, TC-VERIF-002 | Admin | M6 |
 | FR-ADMIN-005 | TC-ADMIN-004 | Admin | M6 |
 | FR-ADMIN-006 | TC-ADMIN-005 | Admin | M6 |
-| FR-ADMIN-007 | TC-REV-005 | Admin | M6 |
+| FR-ADMIN-007 | TC-REV-005, TC-MOD-001..008 | Admin | M6 |
 | FR-ADMIN-008 | TC-AUDIT-002 | Admin | M7 |
 | FR-ADMIN-009 | TC-ADMIN-008, TC-E2E-003 | Admin | M7 |
 | FR-NOTIF-001 | TC-NOTIF-001 | Notification | M5/M6 |
@@ -1182,6 +1185,18 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | NFR-PERFORMANCE-001 | TC-CAMP-008, TC-PAGE-001 | Performance | M3+ |
 | NFR-PERFORMANCE-002 | TC-SEARCH-001 | Performance | M3+ |
 | NFR-DATA-001 | TC-PROF-007 | Data | M2+ |
+
+> Pemetaan test case di atas ↔ file test aktual:
+>
+> | Test Case Range | File Test |
+> | --- | --- |
+> | TC-ADMIN-FORCE-001..010 | `tests/Feature/Admin/CollaborationsTest.php` |
+> | TC-MSG-IMMUTABLE-001..007 | `tests/Feature/Messaging/MessagingTest.php` |
+> | TC-CONT-IMMUTABLE-001..004 | `tests/Feature/Content/ContentTest.php` |
+> | TC-REV-AGG-001..008 | `tests/Feature/Review/ReviewTest.php` |
+> | TC-MOD-001..008 | `tests/Feature/Admin/ModerationTest.php` |
+>
+> Lihat juga `docs/TEST_RESULTS.md` untuk ringkasan eksekusi aktual (166 Pest cases / 562 assertions, 39 Vitest, 17 Playwright).
 
 ---
 
@@ -1226,6 +1241,8 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | 5 | Pilih campaign; klik "Hide". | Campaign tersembunyi dari pencarian Creator. |
 | 6 | Buka laporan; ekspor CSV. | File CSV terdownload. |
 
+> Catatan RC.1: Seluruh skenario UAT utama (UMKM, Creator, Admin, App, Inv, Rev, Review, Susp, Priv, Force) telah dijalankan sebagai **automated internal acceptance** lewat test artefak. Hasil & bukti: lihat `docs/UAT_RESULTS.md`. UAT UI manual dengan Product Owner masuk release task pasca-RC.
+
 ---
 
 ## Catatan Versi
@@ -1234,3 +1251,4 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | --- | --- | --- | --- |
 | 0.1 (Draft) | 2026-06-18 | Initial draft: 9 test level, traceability matrix, UAT scenarios. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tambah TC-CANC-CAMP-001, TC-CANC-CAMP-002, TC-CANC-COLLAB-001, TC-CANC-COLLAB-002, TC-CANC-COLLAB-003, TC-MSG-HIDE-001, TC-FILE-LIM-001, TC-FILE-LIM-002, TC-FILE-LIM-003. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): §9 petakan severity ke `docs/DEFECTS.md`; §12 tambah baris FR-COLLAB-011 + 4 traceability test (TC-MSG-IMMUTABLE/CONT-IMMUTABLE/REV-AGG/MOD) + tabel pemetaan ke file test aktual; §13 cross-reference ke `docs/UAT_RESULTS.md`. | Product Engineer |

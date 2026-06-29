@@ -1,58 +1,109 @@
-import { usePage } from '@inertiajs/react';
-import { ChevronsUpDown } from 'lucide-react';
+"use client";
+
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "@/components/ui/avatar";
 import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from '@/components/ui/sidebar';
-import { UserInfo } from '@/components/user-info';
-import { UserMenuContent } from '@/components/user-menu-content';
-import { useIsMobile } from '@/hooks/use-mobile';
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UserIcon, BellIcon, CommandIcon, LifeBuoyIcon, BookOpenIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
+
+const user = {
+	name: "Shaban Haider",
+	email: "shaban@efferd.com",
+	avatar: "https://github.com/shabanhr.png",
+};
 
 export function NavUser() {
-    const { auth } = usePage().props;
-    const { state } = useSidebar();
-    const isMobile = useIsMobile();
-
-    if (!auth.user) {
-        return null;
-    }
-
-    return (
-        <SidebarMenu>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
-                        >
-                            <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        align="end"
-                        side={
-                            isMobile
-                                ? 'bottom'
-                                : state === 'collapsed'
-                                  ? 'left'
-                                  : 'bottom'
-                        }
-                    >
-                        <UserMenuContent user={auth.user} />
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SidebarMenuItem>
-        </SidebarMenu>
-    );
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Avatar className="size-8">
+					<AvatarImage src={user.avatar} />
+					<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+				</Avatar>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-60">
+				<DropdownMenuItem className="flex items-center justify-start gap-2">
+					<DropdownMenuLabel className="flex items-center gap-3">
+						<Avatar className="size-10">
+							<AvatarImage src={user.avatar} />
+							<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+						</Avatar>
+						<div>
+							<span className="font-medium text-foreground">{user.name}</span>{" "}
+							<br />
+							<div className="max-w-full overflow-hidden overflow-ellipsis whitespace-nowrap text-muted-foreground text-xs">
+								{user.email}
+							</div>
+							<div className="mt-0.5 text-[10px] text-muted-foreground">
+								Store owner
+							</div>
+						</div>
+					</DropdownMenuLabel>
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem>
+						<UserIcon
+						/>
+						Profile
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem>
+						<BellIcon
+						/>
+						Notifications
+					</DropdownMenuItem>
+					<DropdownMenuItem>
+						<CommandIcon
+						/>
+						Keyboard shortcuts
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem>
+						<LifeBuoyIcon
+						/>
+						Seller help
+					</DropdownMenuItem>
+					<DropdownMenuItem>
+						<BookOpenIcon
+						/>
+						Seller guides
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem>
+						<CreditCardIcon
+						/>
+						Plan & billing
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						className="w-full cursor-pointer"
+						variant="destructive"
+					>
+						<LogOutIcon
+						/>
+						Log out
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
 }

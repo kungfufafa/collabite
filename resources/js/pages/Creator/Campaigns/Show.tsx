@@ -1,11 +1,17 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
+
+import { apply } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
+import { FlashBanner } from '@/components/app/flash-banner';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { SectionPanel } from '@/components/app/section-panel';
+import { StatusBadge } from '@/components/app/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { apply } from '@/routes/creator/campaigns';
+import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
 
 type Deliverable = { id: number; title: string; description: string | null; quantity: number };
 type Campaign = {
@@ -26,7 +32,7 @@ export default function Show({
 }: {
     campaign: Campaign;
     already_applied: boolean;
-}) {
+}): ReactNode {
     const flash = usePage().props.status as string | undefined;
     const errors = usePage().props.errors as Record<string, string> | undefined;
     const [showForm, setShowForm] = useState(false);
@@ -34,102 +40,81 @@ export default function Show({
     return (
         <>
             <Head title={`Campaign - ${campaign.title}`} />
-            <main className="container mx-auto max-w-3xl px-6 py-10">
+            <div>
+                <PageHeader
+                    description={`${campaign.umkm.name ?? 'UMKM'} · ${campaign.umkm.city ?? '-'} · ${campaign.umkm.business_type ?? ''}`}
+                    meta={<StatusBadge label="Terbuka" tone="success" />}
+                    title={campaign.title}
+                />
+
                 {flash ? (
-                    <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        {flash}
+                    <div className="mt-6">
+                        <FlashBanner message={flash} />
                     </div>
                 ) : null}
 
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <CardTitle className="text-2xl">{campaign.title}</CardTitle>
-                                <CardDescription>
-                                    {campaign.umkm.name ?? 'UMKM'} • {campaign.umkm.city ?? '-'} •{' '}
-                                    {campaign.umkm.business_type ?? ''}
-                                </CardDescription>
-                            </div>
-                            <Badge variant="default">Terbuka</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                            {campaign.description}
-                        </p>
+                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-8">
+                        <SectionPanel title="Deskripsi campaign">
+                            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                                {campaign.description}
+                            </p>
+                            <dl className="mt-6 grid gap-4 sm:grid-cols-3">
+                                <div>
+                                    <dt className="text-xs text-muted-foreground">Budget</dt>
+                                    <dd className="font-semibold text-foreground">
+                                        {campaign.budget
+                                            ? `Rp ${Number(campaign.budget).toLocaleString('id-ID')}`
+                                            : 'Fleksibel'}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs text-muted-foreground">Deadline</dt>
+                                    <dd className="font-semibold text-foreground">
+                                        {campaign.deadline ?? '—'}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs text-muted-foreground">Kategori</dt>
+                                    <dd className="font-semibold text-foreground">
+                                        {campaign.category ?? '—'}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </SectionPanel>
 
-                        <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-                            <div>
-                                <dt className="text-xs text-slate-500">Budget</dt>
-                                <dd className="font-semibold">
-                                    {campaign.budget
-                                        ? `Rp ${Number(campaign.budget).toLocaleString('id-ID')}`
-                                        : 'Fleksibel'}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt className="text-xs text-slate-500">Deadline</dt>
-                                <dd className="font-semibold">{campaign.deadline ?? '-'}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-xs text-slate-500">Kategori</dt>
-                                <dd className="font-semibold">{campaign.category ?? '-'}</dd>
-                            </div>
-                        </dl>
-                    </CardContent>
-                </Card>
-
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Deliverable yang diharapkan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {campaign.deliverables.length === 0 ? (
-                            <p className="text-sm text-slate-500">UMKM belum menentukan deliverable.</p>
-                        ) : (
-                            <ul className="space-y-2">
-                                {campaign.deliverables.map((d) => (
-                                    <li key={d.id} className="rounded-md border px-3 py-2 text-sm">
-                                        <div className="font-medium">{d.title}</div>
-                                        {d.description ? <div className="text-slate-500">{d.description}</div> : null}
-                                        <div className="text-xs text-slate-400">Qty: {d.quantity}</div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <div className="mt-6">
-                    {already_applied ? (
-                        <p className="text-sm text-slate-500">
-                            Anda sudah mengajukan lamaran untuk campaign ini.
-                        </p>
-                    ) : showForm ? (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Kirim Lamaran</CardTitle>
-                            </CardHeader>
-                            <CardContent>
+                        {already_applied ? (
+                            <ResourceCard>
+                                <p className="text-sm text-muted-foreground">
+                                    Anda sudah mengajukan lamaran untuk campaign ini.
+                                </p>
+                            </ResourceCard>
+                        ) : showForm ? (
+                            <SectionPanel title="Kirim Lamaran">
                                 <Form {...apply.form(campaign.id)}>
                                     {({ processing }) => (
                                         <>
-                                            <Textarea
-                                                name="message"
-                                                rows={4}
-                                                maxLength={2000}
-                                                placeholder="Ceritakan mengapa Anda tertarik dan bagaimana Anda akan mengerjakannya..."
-                                            />
-                                            <InputError message={errors?.message} className="mt-1" />
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-sm font-medium" htmlFor="message">
+                                                    Pesan
+                                                </label>
+                                                <Textarea
+                                                    id="message"
+                                                    maxLength={2000}
+                                                    name="message"
+                                                    placeholder="Ceritakan mengapa Anda tertarik dan bagaimana Anda akan mengerjakannya..."
+                                                    rows={4}
+                                                />
+                                                <InputError className="mt-1" message={errors?.message} />
+                                            </div>
                                             <div className="mt-4 flex gap-2">
-                                                <Button type="submit" disabled={processing}>
+                                                <Button disabled={processing} type="submit">
                                                     {processing ? 'Mengirim...' : 'Kirim Lamaran'}
                                                 </Button>
                                                 <Button
+                                                    onClick={() => setShowForm(false)}
                                                     type="button"
                                                     variant="outline"
-                                                    onClick={() => setShowForm(false)}
                                                 >
                                                     Batal
                                                 </Button>
@@ -137,19 +122,43 @@ export default function Show({
                                         </>
                                     )}
                                 </Form>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <Button onClick={() => setShowForm(true)}>Lamar Campaign Ini</Button>
-                    )}
+                            </SectionPanel>
+                        ) : (
+                            <Button onClick={() => setShowForm(true)}>Lamar Campaign Ini</Button>
+                        )}
+                    </div>
+
+                    <SectionPanel title="Deliverable yang diharapkan">
+                        {campaign.deliverables.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                UMKM belum menentukan deliverable.
+                            </p>
+                        ) : (
+                            <ul className="flex flex-col gap-3">
+                                {campaign.deliverables.map((d) => (
+                                    <ResourceCard key={d.id}>
+                                        <p className="font-medium text-foreground">{d.title}</p>
+                                        {d.description ? (
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {d.description}
+                                            </p>
+                                        ) : null}
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Qty: {d.quantity}
+                                        </p>
+                                    </ResourceCard>
+                                ))}
+                            </ul>
+                        )}
+                    </SectionPanel>
                 </div>
 
-                <p className="mt-6">
+                <div className="mt-8">
                     <Button asChild variant="link">
-                        <Link href="/creator/campaigns">Kembali ke daftar campaign</Link>
+                        <Link href={creatorCampaignsIndex().url}>Kembali ke daftar campaign</Link>
                     </Button>
-                </p>
-            </main>
+                </div>
+            </div>
         </>
     );
 }

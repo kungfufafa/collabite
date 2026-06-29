@@ -199,6 +199,8 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('cancelled_reason')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -231,6 +233,7 @@ return new class extends Migration
             $table->foreignId('conversation_id')->constrained('conversations')->cascadeOnDelete();
             $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
             $table->text('body');
+            $table->boolean('is_hidden')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
             $table->softDeletes();

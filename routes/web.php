@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\CollaborationsController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ModerationController as AdminModerationController;
 use App\Http\Controllers\Admin\ReportsController as AdminReportsController;
@@ -10,12 +11,8 @@ use App\Http\Controllers\Admin\UsersController as AdminUsersController;
 use App\Http\Controllers\Admin\VerificationsController as AdminVerificationsController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Creator\CampaignsController as CreatorCampaignsController;
 use App\Http\Controllers\Creator\CollaborationsController as CreatorCollaborationsController;
 use App\Http\Controllers\Creator\DashboardController as CreatorDashboardController;
@@ -61,8 +58,8 @@ Route::middleware('guest')->group(function (): void {
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
 
-    Route::get('reset-password', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+    // password.reset (GET /reset-password/{token}) & password.update (POST /reset-password)
+    // are provided by Laravel Fortify. Our React page renders Fortify's view.
 });
 
 /*
@@ -73,16 +70,10 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', 'active'])->group(function (): void {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
-    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('auth.confirm-password');
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store'])->name('auth.confirm-password.store');
 
-    Route::get('verify-email', EmailVerificationPromptController::class)->name('verification.notice');
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed'])
-        ->name('verification.verify');
-    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
-        ->name('verification.send');
+    // verification.notice, verification.verify, verification.send are provided by Laravel Fortify.
 
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
@@ -111,6 +102,8 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
             Route::get('discover', [UmkmDiscoverController::class, 'index'])->name('discover.index');
 
+            Route::get('reviews', [UmkmReviewsController::class, 'index'])->name('reviews.index');
+
             Route::get('collaborations', [UmkmCollaborationsController::class, 'index'])->name('collaborations.index');
             Route::get('collaborations/{collaboration}', [UmkmCollaborationsController::class, 'show'])->name('collaborations.show');
             Route::post('collaborations/{collaboration}/messages', [UmkmCollaborationsController::class, 'sendMessage'])->name('collaborations.messages.store');
@@ -124,6 +117,10 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::post('collaborations/{collaboration}/complete', [UmkmCollaborationsController::class, 'complete'])->name('collaborations.complete');
             Route::post('collaborations/{collaboration}/review', [UmkmReviewsController::class, 'storeForUmkm'])->name('collaborations.review.store');
             Route::post('collaborations/{collaboration}/invitations', [UmkmCollaborationsController::class, 'invite'])->name('collaborations.invitations.store');
+            Route::post('campaigns/{campaign}/invitations', [UmkmCollaborationsController::class, 'inviteByCampaign'])->name('campaigns.invitations.store');
+            Route::post('requests/{request}/accept', [UmkmCollaborationsController::class, 'acceptByRequest'])->name('requests.accept');
+            Route::post('requests/{request}/reject', [UmkmCollaborationsController::class, 'rejectByRequest'])->name('requests.reject');
+            Route::post('collaborations/{collaboration}/review', [UmkmReviewsController::class, 'storeForUmkm'])->name('collaborations.review.store');
         });
 
     Route::middleware(['verified', 'role:creator'])
@@ -147,13 +144,14 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
             Route::get('campaigns', [CreatorCampaignsController::class, 'index'])->name('campaigns.index');
             Route::get('campaigns/{campaign}', [CreatorCampaignsController::class, 'show'])->name('campaigns.show');
-            Route::post('campaigns/{campaign}/apply', [CreatorCampaignsController::class, 'apply'])->name('campaigns.apply');
+            Route::post('campaigns/{campaign}/apply', [CreatorCollaborationsController::class, 'apply'])->name('campaigns.apply');
 
             Route::get('collaborations', [CreatorCollaborationsController::class, 'index'])->name('collaborations.index');
             Route::get('collaborations/{collaboration}', [CreatorCollaborationsController::class, 'show'])->name('collaborations.show');
             Route::post('collaborations/{collaboration}/messages', [CreatorCollaborationsController::class, 'sendMessage'])->name('collaborations.messages.store');
             Route::post('collaborations/{collaboration}/submissions', [CreatorCollaborationsController::class, 'storeSubmission'])->name('collaborations.submissions.store');
             Route::post('collaborations/{collaboration}/submissions/{submission}/submit-for-review', [CreatorCollaborationsController::class, 'submitForReview'])->name('collaborations.submissions.submitForReview');
+            Route::post('collaborations/{collaboration}/submissions/{submission}/resubmit', [CreatorCollaborationsController::class, 'resubmit'])->name('collaborations.submissions.resubmit');
             Route::post('collaborations/{collaboration}/progress', [CreatorCollaborationsController::class, 'storeProgress'])->name('collaborations.progress.store');
             Route::post('collaborations/{collaboration}/requests/{request}/accept', [CreatorCollaborationsController::class, 'acceptRequest'])->name('collaborations.requests.accept');
             Route::post('collaborations/{collaboration}/requests/{request}/reject', [CreatorCollaborationsController::class, 'rejectRequest'])->name('collaborations.requests.reject');
@@ -188,6 +186,14 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
             Route::get('reports', [AdminReportsController::class, 'index'])->name('reports.index');
             Route::get('reports/export', [AdminReportsController::class, 'export'])->name('reports.export');
+
+            // Admin collaboration moderation (UC-ADMIN-010, FR-COLLAB-011).
+            Route::get('collaborations', [CollaborationsController::class, 'index'])
+                ->name('collaborations.index');
+            Route::get('collaborations/{collaboration}', [CollaborationsController::class, 'show'])
+                ->name('collaborations.show');
+            Route::post('collaborations/{collaboration}/force-close', [CollaborationsController::class, 'forceClose'])
+                ->name('collaborations.force-close');
         });
 });
 

@@ -26,9 +26,8 @@ class CampaignsController extends Controller
             ->withCount(['collaborationRequests', 'collaboration'])
             ->latest()
             ->paginate(15);
-
-        return Inertia::render('Umkm/Campaigns/Index', [
-            'campaigns' => $campaigns->through(fn (Campaign $c): array => [
+        $campaigns->setCollection(
+            $campaigns->getCollection()->map(fn (Campaign $c): array => [
                 'id' => $c->id,
                 'title' => $c->title,
                 'status' => $c->status->value,
@@ -40,6 +39,10 @@ class CampaignsController extends Controller
                 'has_collaboration' => $c->collaboration_count > 0,
                 'created_at' => $c->created_at->toDateTimeString(),
             ]),
+        );
+
+        return Inertia::render('Umkm/Campaigns/Index', [
+            'campaigns' => $campaigns,
         ]);
     }
 

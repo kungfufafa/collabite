@@ -1,7 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+
+import { PageHeader } from '@/components/app/page-header';
+import { StatusBadge } from '@/components/app/status-badge';
+import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 type Verification = {
     id: number;
@@ -12,63 +15,93 @@ type Verification = {
 };
 
 type Props = {
-    verifications: Verification[];
+    verifications: {
+        data: Verification[];
+        links?: { url: string | null; label: string; active: boolean }[];
+    };
     pagination: { current_page: number; last_page: number; per_page: number; total: number };
 };
 
-export default function Index({ verifications, pagination }: Props) {
+function statusTone(status: string): 'warning' | 'success' | 'danger' | 'neutral' {
+    if (status === 'pending') {
+        return 'warning';
+    }
+
+    if (status === 'verified') {
+        return 'success';
+    }
+
+    if (status === 'rejected') {
+        return 'danger';
+    }
+
+    return 'neutral';
+}
+
+export default function Index({ verifications, pagination }: Props): ReactNode {
+    const rows = verifications.data ?? [];
+
     return (
         <>
             <Head title="Antrian Verifikasi" />
-            <main className="container mx-auto px-6 py-10 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Antrian Verifikasi Creator</CardTitle>
-                        <CardDescription>
-                            {pagination.total} pengajuan terdaftar. Pending ditampilkan di paling atas.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {verifications.length === 0 ? (
-                            <p className="text-sm text-slate-500">Tidak ada pengajuan.</p>
-                        ) : (
-                            <table className="w-full text-sm">
-                                <thead className="text-left">
-                                    <tr>
-                                        <th className="py-2">Creator</th>
-                                        <th>Status</th>
-                                        <th>Berkas</th>
-                                        <th>Diajukan</th>
-                                        <th />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {verifications.map((v) => (
-                                        <tr key={v.id} className="border-t">
-                                            <td className="py-2">
-                                                <div className="font-medium">{v.creator.name ?? '—'}</div>
-                                                <div className="text-xs text-slate-500">{v.creator.email}</div>
-                                            </td>
-                                            <td>
-                                                <Badge variant={v.status === 'pending' ? 'secondary' : 'outline'}>
-                                                    {v.status}
-                                                </Badge>
-                                            </td>
-                                            <td>{v.documents_count}</td>
-                                            <td>{v.submitted_at ?? '—'}</td>
-                                            <td>
-                                                <Button asChild size="sm" variant="outline">
-                                                    <Link href={`/admin/verifications/${v.id}`}>Tinjau</Link>
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </CardContent>
-                </Card>
-            </main>
+            <div>
+                <PageHeader
+                    description={`${pagination.total} pengajuan terdaftar. Pending ditampilkan di paling atas.`}
+                    title="Antrian Verifikasi Creator"
+                />
+
+                <div className="mt-8">
+                    <WorkspaceTable
+                        columns={[
+                            {
+                                header: 'Creator',
+                                cell: (v) => (
+                                    <div>
+                                        <p className="font-medium">
+                                            {v.creator.name ?? '—'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {v.creator.email}
+                                        </p>
+                                    </div>
+                                ),
+                            },
+                            {
+                                header: 'Status',
+                                cell: (v) => (
+                                    <StatusBadge
+                                        label={v.status}
+                                        tone={statusTone(v.status)}
+                                    />
+                                ),
+                            },
+                            {
+                                header: 'Berkas',
+                                cell: (v) => v.documents_count,
+                            },
+                            {
+                                header: 'Diajukan',
+                                cell: (v) => v.submitted_at ?? '—',
+                            },
+                            {
+                                header: '',
+                                className: 'text-right',
+                                cell: (v) => (
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={`/admin/verifications/${v.id}`}>
+                                            Tinjau
+                                        </Link>
+                                    </Button>
+                                ),
+                            },
+                        ]}
+                        emptyDescription="Tidak ada pengajuan verifikasi saat ini."
+                        emptyTitle="Tidak ada pengajuan"
+                        getRowKey={(v) => v.id}
+                        rows={rows}
+                    />
+                </div>
+            </div>
         </>
     );
 }

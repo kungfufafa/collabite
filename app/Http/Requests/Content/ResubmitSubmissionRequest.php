@@ -19,7 +19,7 @@ class ResubmitSubmissionRequest extends FormRequest
             'title' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string', 'max:5000'],
             'files' => ['nullable', 'array', 'max:5'],
-            'files.*' => ['file', 'max:102400', 'mimetypes:image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm,application/pdf'],
+            'files.*' => ['file', 'max:102400', 'mimes:jpg,jpeg,png,webp,mp4,mov,webm,pdf'],
         ];
     }
 }

@@ -128,8 +128,31 @@ Folder `app/Enums` untuk enum status. Folder `app/Actions/{Auth,Profile,Campaign
 - M6: completion, review, moderasi, email queue.
 - M7: audit, reporting, hardening, E2E, UAT.
 
+## RC.1 Outcome
+
+> Hasil aktual RC.1 (2026-06-18) — cermin run internal acceptance.
+
+| Gate | Hasil |
+| --- | --- |
+| Pest (backend) | 166 cases / 562 assertions / 0 failures (full suite) |
+| Vitest (frontend) | 39 cases / 18 component files / 0 failures |
+| Playwright (E2E) | 17 scenarios / 5 specs (E2E-01..E2E-05) / 0 failures |
+| Larastan (PHPStan level 6) | 0 error |
+| Pint | bersih (no diff) |
+| Build produksi (`npm run build`) | sukses |
+| Defect | 4 ditutup (H-001, M-001, M-002, L-001) — `docs/DEFECTS.md` |
+| Lint frontend (`npm run lint:check`) | bersih |
+| Type check (`npm run types:check`) | bersih |
+
+**Catatan:**
+
+- MySQL autoritatif masuk release task pasca-RC (ADR-029); RC.1 divalidasi di SQLite `:memory:`.
+- Bukti detail & jejak eksekusi: `docs/FINAL_REPORT.md`, `docs/TEST_RESULTS.md`, `docs/UAT_RESULTS.md`.
+- UAT UI manual dengan Product Owner masuk release task pasca-RC (`docs/OPERATIONS.md`).
+
 ## Catatan Versi
 
 | Versi | Tanggal | Perubahan | Penulis |
 | --- | --- | --- | --- |
 | 1.0 | 2026-06-18 | Initial IMPLEMENTATION_PLAN, hasil audit + roadmap. | Product Engineer |
+| 1.1 (RC.1 reflection) | 2026-06-18 | RC.1 reflection (no scope change): section "RC.1 Outcome" — 166 Pest / 562 assertions; 39 Vitest / 18 files; 17 Playwright / 5 specs; Larastan 0 error; Pint bersih. Referensi `docs/FINAL_REPORT.md`. | Product Engineer |

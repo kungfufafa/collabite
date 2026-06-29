@@ -1,4 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
+import type { ReactNode } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,34 +11,74 @@ type Props = {
     email?: string;
 };
 
-export default function ResetPassword({ token, email }: Props) {
+export default function ResetPassword({ token, email }: Props): ReactNode {
     return (
         <>
             <Head title="Reset Password" />
-            <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
-                <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <h1 className="mb-1 text-2xl font-bold">Atur Ulang Password</h1>
-                    <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">
-                        Silakan masukkan password baru untuk akun Anda.
-                    </p>
-                    <Form action="/reset-password" method="post" className="flex flex-col gap-4">
-                        <input type="hidden" name="token" value={token ?? ''} />
-                        <div>
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" name="email" defaultValue={email ?? ''} required />
-                        </div>
-                        <div>
-                            <Label htmlFor="password">Password Baru</Label>
-                            <Input id="password" type="password" name="password" required minLength={8} />
-                        </div>
-                        <div>
-                            <Label htmlFor="password_confirmation">Konfirmasi Password</Label>
-                            <Input id="password_confirmation" type="password" name="password_confirmation" required minLength={8} />
-                        </div>
-                        <Button type="submit">Reset Password</Button>
-                    </Form>
-                </div>
+            <div className="text-center lg:text-left">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                    Atur ulang kata sandi
+                </h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Silakan masukkan kata sandi baru untuk akun Anda.
+                </p>
             </div>
+
+            <Form
+                action="/reset-password"
+                method="post"
+                className="mt-5 space-y-4"
+            >
+                <input type="hidden" name="token" value={token ?? ''} />
+                <div className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                        <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            defaultValue={email ?? ''}
+                            className="h-11 pl-9"
+                            required
+                        />
+                    </div>
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="password">Kata Sandi Baru</Label>
+                    <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="password"
+                            type="password"
+                            name="password"
+                            className="h-11 pl-9"
+                            required
+                            minLength={8}
+                        />
+                    </div>
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="password_confirmation">
+                        Konfirmasi Kata Sandi
+                    </Label>
+                    <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="password_confirmation"
+                            type="password"
+                            name="password_confirmation"
+                            className="h-11 pl-9"
+                            required
+                            minLength={8}
+                        />
+                    </div>
+                </div>
+                <Button type="submit" className="h-11 w-full">
+                    Simpan Kata Sandi Baru
+                    <ArrowRight className="size-4" />
+                </Button>
+            </Form>
         </>
     );
 }

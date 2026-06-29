@@ -31,8 +31,9 @@ class UsersController extends Controller
 
         $users = $query->latest()->paginate(20)->withQueryString();
 
-        return Inertia::render('Admin/Users/Index', [
-            'users' => $users->through(fn (User $u): array => [
+        $users = $query->latest()->paginate(20)->withQueryString();
+        $users->setCollection(
+            $users->getCollection()->map(fn (User $u): array => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
@@ -40,7 +41,11 @@ class UsersController extends Controller
                 'role_label' => $u->role->label(),
                 'account_status' => $u->account_status->value,
                 'created_at' => $u->created_at->toDateTimeString(),
-            ])->all(),
+            ]),
+        );
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users,
             'filters' => [
                 'role' => $role,
                 'status' => $status,

@@ -1,9 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+
+import { ListEmptyState } from '@/components/app/list-empty-state';
+import { PageHeader } from '@/components/app/page-header';
+import { ResourceCard } from '@/components/app/resource-card';
+import { SectionPanel } from '@/components/app/section-panel';
+import { StatusBadge } from '@/components/app/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { index as creatorsIndex } from '@/routes/public/creators';
 
 type Product = {
@@ -25,78 +29,79 @@ type Umkm = {
     products: Product[];
 };
 
-export default function UmkmProfile({ umkm }: { umkm: Umkm }) {
+export default function UmkmProfile({ umkm }: { umkm: Umkm }): ReactNode {
     return (
         <>
             <Head title={umkm.business_name} />
-            <main className="container mx-auto px-6 py-10">
-                <section className="grid gap-6 md:grid-cols-[1fr_2fr]">
-                    <Card>
-                        <CardContent className="flex flex-col items-center gap-4 py-8">
+            <div className="mx-auto max-w-[1200px] px-5 py-10 sm:px-8">
+                <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+                    <SectionPanel title="Profil UMKM">
+                        <div className="flex flex-col items-center gap-4 text-center">
                             <Avatar className="size-24">
                                 {umkm.logo_url ? (
                                     <AvatarImage src={umkm.logo_url} alt={umkm.business_name} />
                                 ) : null}
-                                <AvatarFallback className="text-xl">
+                                <AvatarFallback className="bg-[var(--brand-secondary-soft)] text-xl font-semibold text-[var(--brand-secondary)]">
                                     {umkm.business_name.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="text-center">
-                                <h1 className="text-xl font-bold">{umkm.business_name}</h1>
-                                <Badge variant="secondary" className="mt-1">
-                                    {umkm.business_type}
-                                </Badge>
+                            <div>
+                                <h1 className="text-xl font-bold text-foreground">{umkm.business_name}</h1>
+                                <div className="mt-2">
+                                    <StatusBadge label={umkm.business_type} tone="info" />
+                                </div>
                                 {umkm.city ? (
-                                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{umkm.city}</p>
+                                    <p className="mt-2 text-sm text-muted-foreground">{umkm.city}</p>
                                 ) : null}
                             </div>
                             {umkm.website_url ? (
-                                <Button asChild variant="outline" size="sm">
+                                <Button asChild className="w-full" variant="outline" size="sm">
                                     <a href={umkm.website_url} target="_blank" rel="noopener noreferrer">
                                         Kunjungi Website
                                     </a>
                                 </Button>
                             ) : null}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </SectionPanel>
 
-                    <div>
-                        <header className="mb-4">
-                            <h2 className="text-lg font-semibold">Tentang Usaha</h2>
-                        </header>
+                    <SectionPanel title="Tentang Usaha">
                         {umkm.description ? (
-                            <p className="text-slate-700 dark:text-slate-200">{umkm.description}</p>
+                            <p className="text-sm text-muted-foreground">{umkm.description}</p>
                         ) : (
-                            <p className="text-sm italic text-slate-500">Belum ada deskripsi usaha.</p>
+                            <p className="text-sm italic text-muted-foreground">Belum ada deskripsi usaha.</p>
                         )}
                         {umkm.address ? (
-                            <>
-                                <Separator className="my-4" />
-                                <h3 className="mb-1 text-sm font-semibold text-slate-600 dark:text-slate-300">Alamat</h3>
-                                <p className="text-sm">{umkm.address}</p>
-                            </>
+                            <div className="mt-6 border-t border-border pt-4">
+                                <h3 className="text-sm font-semibold text-foreground">Alamat</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">{umkm.address}</p>
+                            </div>
                         ) : null}
-                    </div>
-                </section>
+                    </SectionPanel>
+                </div>
 
-                <section className="mt-10">
-                    <header className="mb-4 flex items-end justify-between">
-                        <h2 className="text-lg font-semibold">Daftar Produk ({umkm.products.length})</h2>
-                        <Button asChild variant="link" size="sm">
-                            <Link href={creatorsIndex()}>Cari Creator untuk Kolaborasi</Link>
-                        </Button>
-                    </header>
+                <div className="mt-10">
+                    <PageHeader
+                        title={`Daftar Produk (${umkm.products.length})`}
+                        description="Produk aktif yang ditampilkan di halaman publik UMKM."
+                        actions={
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={creatorsIndex()}>Cari Creator untuk Kolaborasi</Link>
+                            </Button>
+                        }
+                    />
+
                     {umkm.products.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-10 text-center text-sm text-slate-500">
-                                Belum ada produk aktif yang ditampilkan.
-                            </CardContent>
-                        </Card>
+                        <div className="mt-8">
+                            <ListEmptyState
+                                description="UMKM belum mempublikasikan produk aktif."
+                                title="Belum ada produk"
+                            />
+                        </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {umkm.products.map((product) => (
-                                <Card key={product.id}>
-                                    <div className="aspect-video w-full overflow-hidden rounded-t-xl bg-slate-100 dark:bg-slate-800">
+                                <ResourceCard key={product.id} className="overflow-hidden p-0">
+                                    <div className="aspect-video w-full overflow-hidden bg-muted">
                                         {product.image_url ? (
                                             <img
                                                 src={product.image_url}
@@ -104,23 +109,25 @@ export default function UmkmProfile({ umkm }: { umkm: Umkm }) {
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
-                                            <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+                                            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
                                                 No image
                                             </div>
                                         )}
                                     </div>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">{product.name}</CardTitle>
+                                    <div className="p-4">
+                                        <h3 className="font-semibold text-foreground">{product.name}</h3>
                                         {product.description ? (
-                                            <CardDescription className="line-clamp-3">{product.description}</CardDescription>
+                                            <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">
+                                                {product.description}
+                                            </p>
                                         ) : null}
-                                    </CardHeader>
-                                </Card>
+                                    </div>
+                                </ResourceCard>
                             ))}
                         </div>
                     )}
-                </section>
-            </main>
+                </div>
+            </div>
         </>
     );
 }
