@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .box {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .box h2 {
+      margin-top: 0;
+    }
+    img, svg, object {
+      border: 1px solid #ddd;
+      background: white;
+      width: 512px;
+      height: 512px;
+    }
+    .overlay-container {
+      position: relative;
+      width: 512px;
+      height: 512px;
+      border: 1px solid #ddd;
+      background: white;
+    }
+    .overlay-container img, .overlay-container object {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .overlay-container object {
+      opacity: 0.5;
+      mix-blend-mode: difference;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG Logo Vectorization - Final Check</h1>
+  <div class="container">
+    <div class="box">
+      <h2>Original Image (JPG)</h2>
+      <img src="logo_orig.jpg" alt="Original">
+    </div>
+    <div class="box">
+      <h2>Vectorized SVG</h2>
+      <img src="logo_test.svg?v=16" alt="SVG">
+    </div>
+    <div class="box">
+      <h2>Visual Overlay (Difference Mode)</h2>
+      <div class="overlay-container">
+        <img src="logo_orig.jpg" alt="Original">
+        <object type="image/svg+xml" data="logo_test.svg?v=16"></object>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

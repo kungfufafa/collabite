@@ -64,17 +64,17 @@
 :root {
     --font-size: 16px;
 
-    /* Brand */
-    --brand-primary: #7c3aed;
-    --brand-primary-hover: #6d28d9;
-    --brand-primary-active: #5b21b6;
-    --brand-primary-soft: #f5f3ff;
-    --brand-primary-muted: #ede9fe;
-    --brand-secondary: #2563eb;
-    --brand-secondary-hover: #1d4ed8;
-    --brand-secondary-active: #1e40af;
-    --brand-secondary-soft: #eff6ff;
-    --brand-secondary-muted: #dbeafe;
+    /* Brand — aligned with logo.tsx / logo.svg gradients */
+    --brand-primary: #0063d1;
+    --brand-primary-hover: #004a9e;
+    --brand-primary-active: #003d7a;
+    --brand-primary-soft: #e8f4fd;
+    --brand-primary-muted: #cce8fc;
+    --brand-secondary: #fa5a15;
+    --brand-secondary-hover: #e83c0c;
+    --brand-secondary-active: #c8330a;
+    --brand-secondary-soft: #fff4ed;
+    --brand-secondary-muted: #fdd9c4;
 
     /* Neutrals */
     --neutral-0: #ffffff;
@@ -164,8 +164,8 @@
     --border: var(--neutral-800);
     --input: var(--neutral-800);
     --ring: var(--brand-primary);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-1: var(--brand-primary);
+    --chart-2: var(--brand-secondary);
     --chart-3: oklch(0.769 0.188 70.08);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
