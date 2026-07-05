@@ -14,7 +14,7 @@ export function ResourceCard({
     return (
         <div
             className={cn(
-                'rounded-xl border border-border bg-card p-4 transition-colors',
+                'brutal-surface border-2 border-[var(--neutral-900)] bg-card p-4 shadow-[3px_3px_0_0_var(--neutral-900)] transition-transform duration-150 hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_0_var(--neutral-900)]',
                 className,
             )}
         >

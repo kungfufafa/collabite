@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { cn, toUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 type MetricTileProps = {
     label: string;
@@ -28,30 +28,32 @@ export function MetricTile({
             href={href}
             prefetch
             className={cn(
-                'group flex flex-col rounded-xl border bg-card p-4 transition-colors hover:border-[var(--brand-primary-muted)]',
+                'group flex flex-col border-2 border-[var(--neutral-900)] bg-card p-4 shadow-[3px_3px_0_0_var(--neutral-900)] transition-[transform,box-shadow] duration-150 hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_0_var(--neutral-900)]',
                 emphasis
-                    ? 'border-[var(--brand-primary-muted)]'
-                    : 'border-border',
+                    ? 'bg-[var(--brand-primary-soft)]'
+                    : 'bg-card',
             )}
         >
             <div className="flex items-center justify-between">
                 <span
                     className={cn(
-                        'flex size-8 items-center justify-center rounded-md',
+                        'flex size-8 items-center justify-center border-2 border-[var(--neutral-900)] shadow-[2px_2px_0_0_var(--neutral-900)]',
                         emphasis
-                            ? 'bg-[var(--brand-primary-soft)] text-[var(--brand-primary)]'
-                            : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]',
+                            ? 'bg-[var(--brand-primary)] text-white'
+                            : 'bg-white text-[var(--neutral-600)]',
                     )}
                 >
                     <Icon className="size-4" />
                 </span>
                 <ArrowUpRight className="size-4 text-[var(--neutral-400)] transition-colors group-hover:text-[var(--brand-primary)]" />
             </div>
-            <span className="mt-3 text-2xl font-bold tabular-nums text-foreground">
+            <span className="mt-3 text-2xl font-black tabular-nums text-foreground">
                 {value}
             </span>
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            <span className="mt-0.5 text-xs text-muted-foreground">{hint}</span>
+            <span className="text-sm font-bold text-foreground">{label}</span>
+            <span className="mt-0.5 text-xs font-medium text-muted-foreground">
+                {hint}
+            </span>
         </Link>
     );
 }

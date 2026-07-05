@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { brutalBadgeCount } from '@/components/collabite/landing/brutal-styles';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -44,7 +45,7 @@ export function AppNavGroup({ label, items }: AppNavGroupProps): ReactNode {
                                     {Icon ? <Icon /> : null}
                                     <span>{item.label}</span>
                                     {item.badge ? (
-                                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-primary)] px-1.5 text-xs font-semibold text-white tabular-nums">
+                                        <span className={brutalBadgeCount}>
                                             {item.badge}
                                         </span>
                                     ) : null}

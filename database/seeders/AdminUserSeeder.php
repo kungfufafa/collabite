@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\AccountStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Seeder akun admin pertama (PRD FR-AUTH-007, AGENTS.md §11).
+ *
+ * Password selaras dengan DemoDataSeeder & docs/DEMO_ACCOUNTS.md: `password`.
  */
 class AdminUserSeeder extends Seeder
 {
@@ -20,10 +22,11 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@collabite.test'],
             [
                 'name' => 'Admin Collabite',
-                'password' => Hash::make('Password123!'),
+                'password' => 'password',
                 'role' => UserRole::Admin,
+                'account_status' => AccountStatus::Active,
                 'email_verified_at' => now(),
-            ]
+            ],
         );
     }
 }

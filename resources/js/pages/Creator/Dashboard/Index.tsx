@@ -13,9 +13,9 @@ import type { ReactNode } from 'react';
 import { ActivityTimeline } from '@/components/app/activity-timeline';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { MetricTile } from '@/components/app/metric-tile';
-import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import type {
     DashboardActivityItem,
     DashboardHealth,
@@ -27,6 +27,7 @@ import { Progress } from '@/components/ui/progress-placeholder';
 import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
 import { index as creatorCollaborationsIndex } from '@/routes/creator/collaborations';
 import { index as creatorPortfolioIndex } from '@/routes/creator/portfolio';
+import { index as creatorRequestsIndex } from '@/routes/creator/requests';
 import { show as creatorVerificationShow } from '@/routes/creator/verification';
 
 type Profile = {
@@ -40,10 +41,17 @@ type PortfolioCompletion = {
     missing: string[];
 };
 
+type OnboardingStep = {
+    label: string;
+    href: string;
+    done: boolean;
+};
+
 type Props = {
     stats: DashboardStat[];
     profile: Profile | null;
     portfolio_completion?: PortfolioCompletion;
+    onboarding_steps?: OnboardingStep[];
     recent_collaborations: DashboardTableRow[];
     activity: DashboardActivityItem[];
     health: DashboardHealth;
@@ -91,6 +99,7 @@ export default function CreatorDashboard({
     stats,
     profile,
     portfolio_completion,
+    onboarding_steps = [],
     recent_collaborations,
     activity,
     health,
@@ -101,26 +110,26 @@ export default function CreatorDashboard({
     return (
         <>
             <Head title="Dashboard Creator" />
-            <div data-testid="creator-home">
-                <PageHeader
-                    title={`Halo, ${displayName}`}
-                    description={
-                        profile?.headline ??
-                        'Pantau kolaborasi, lengkapi profil, dan temukan campaign yang cocok.'
-                    }
-                    actions={
-                        <Button asChild>
-                            <Link href={creatorCampaignsIndex().url}>
-                                <Search className="size-4" />
-                                Cari Campaign
-                            </Link>
-                        </Button>
-                    }
-                />
-
-                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <WorkspacePage
+                actions={
+                    <Button asChild size="lg">
+                        <Link href={creatorCampaignsIndex().url}>
+                            <Search className="size-4" />
+                            Cari Campaign
+                        </Link>
+                    </Button>
+                }
+                description={
+                    profile?.headline ??
+                    'Pantau kolaborasi, lengkapi profil, dan temukan campaign yang cocok.'
+                }
+                eyebrow={`Halo, ${displayName}`}
+                testId="creator-home"
+                title="Dashboard Creator"
+            >
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <MetricTile
-                        emphasis={Number(statValue(stats, 'Undangan menunggu')) > 0}
+                        emphasis={Number(statValue(stats, 'Kolaborasi aktif')) > 0}
                         hint="Sedang berjalan"
                         href={creatorCollaborationsIndex().url}
                         icon={Handshake}
@@ -128,31 +137,52 @@ export default function CreatorDashboard({
                         value={statValue(stats, 'Kolaborasi aktif')}
                     />
                     <MetricTile
-                        hint="Tampilkan karyamu"
-                        href={creatorPortfolioIndex().url}
-                        icon={Images}
-                        label="Item portofolio"
-                        value={statValue(stats, 'Item portofolio')}
-                    />
-                    <MetricTile
-                        hint="Dari ulasan UMKM"
+                        hint="Transfer terkonfirmasi"
                         href={creatorCollaborationsIndex().url}
                         icon={Star}
-                        label="Rating rata-rata"
-                        value={statValue(stats, 'Rating rata-rata')}
+                        label="Pendapatan terkonfirmasi"
+                        value={statValue(stats, 'Pendapatan terkonfirmasi')}
                     />
                     <MetricTile
-                        hint="Peluang terbaru"
-                        href={creatorCampaignsIndex().url}
+                        emphasis={Number(statValue(stats, 'Menunggu pembayaran')) > 0}
+                        hint="Perlu konfirmasi"
+                        href={creatorCollaborationsIndex().url}
                         icon={Compass}
-                        label="Cari campaign"
-                        value="→"
+                        label="Menunggu pembayaran"
+                        value={statValue(stats, 'Menunggu pembayaran')}
+                    />
+                    <MetricTile
+                        emphasis={Number(statValue(stats, 'Undangan menunggu')) > 0}
+                        hint="Lamaran & undangan"
+                        href={creatorRequestsIndex().url}
+                        icon={Images}
+                        label="Undangan menunggu"
+                        value={statValue(stats, 'Undangan menunggu')}
                     />
                 </div>
 
+                {onboarding_steps.length > 0 ? (
+                    <DashboardSection title="Langkah berikutnya">
+                            <div className="flex flex-col gap-2">
+                                {onboarding_steps.map((step) => (
+                                    <ResourceCard
+                                        key={step.label}
+                                        className="flex items-center justify-between gap-3"
+                                    >
+                                        <p className="text-sm text-foreground">{step.label}</p>
+                                        <Button asChild size="sm" variant={step.done ? 'outline' : 'default'}>
+                                            <Link href={step.href}>
+                                                {step.done ? 'Lihat status' : 'Mulai'}
+                                            </Link>
+                                        </Button>
+                                    </ResourceCard>
+                                ))}
+                            </div>
+                        </DashboardSection>
+                ) : null}
+
                 {!health.caught_up ? (
-                    <div className="mt-8">
-                        <DashboardSection title="Butuh tindakanmu">
+                    <DashboardSection title="Butuh tindakanmu">
                             <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <StatusBadge label="Perlu perhatian" tone="warning" />
@@ -168,10 +198,9 @@ export default function CreatorDashboard({
                                 </Button>
                             </ResourceCard>
                         </DashboardSection>
-                    </div>
                 ) : null}
 
-                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                <div className="grid gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-2">
                         <DashboardSection
                             action={{
@@ -268,7 +297,7 @@ export default function CreatorDashboard({
                         </DashboardSection>
                     </div>
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

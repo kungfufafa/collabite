@@ -25,10 +25,10 @@ function TabsTrigger({ value, children, className }: { value: string; children: 
             type="button"
             onClick={() => ctx.setValue(value)}
             className={cn(
-                'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'border-2 border-[var(--neutral-900)] px-3 py-2 text-sm font-bold transition-[transform,box-shadow,background-color] shadow-[2px_2px_0_0_var(--neutral-900)]',
                 active
-                    ? 'bg-card text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'bg-[var(--brand-primary)] text-white'
+                    : 'bg-white text-muted-foreground hover:bg-[var(--neutral-100)] hover:text-foreground',
                 className,
             )}
         >

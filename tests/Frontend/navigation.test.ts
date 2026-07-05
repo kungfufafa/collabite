@@ -7,6 +7,7 @@ import {
     isNavigationItemActive,
     umkmPrimaryAction,
 } from '@/config/navigation';
+import { PUBLIC_NAV_LINKS } from '@/config/public-navigation';
 
 describe('Navigation configuration', () => {
     it('exposes only UMKM destinations for the umkm role', () => {
@@ -17,6 +18,8 @@ describe('Navigation configuration', () => {
             'Cari Creator',
             'Kolaborasi',
             'Profil Bisnis',
+            'Produk',
+            'Ulasan',
             'Pengaturan',
         ]);
 
@@ -34,8 +37,11 @@ describe('Navigation configuration', () => {
             'Dashboard',
             'Cari Campaign',
             'Kolaborasi',
+            'Permintaan',
+            'Profil Creator',
             'Portofolio',
-            'Profil & Verifikasi',
+            'Keahlian',
+            'Verifikasi',
             'Pengaturan',
         ]);
 
@@ -66,6 +72,17 @@ describe('Navigation configuration', () => {
             const href = typeof item.href === 'string' ? item.href : item.href.url;
             expect(href.startsWith('/admin')).toBe(true);
         });
+
+        const review = adminNavigation.find((item) => item.label === 'Review');
+        const auditLog = adminNavigation.find((item) => item.label === 'Audit Log');
+        const dashboard = adminNavigation.find((item) => item.label === 'Dashboard');
+        const laporan = adminNavigation.find((item) => item.label === 'Laporan');
+        expect(review?.icon).toBeDefined();
+        expect(auditLog?.icon).toBeDefined();
+        expect(review?.icon).not.toBe(auditLog?.icon);
+        expect(dashboard?.icon).toBeDefined();
+        expect(laporan?.icon).toBeDefined();
+        expect(dashboard?.icon).not.toBe(laporan?.icon);
     });
 
     it('marks the active navigation item based on the current path', () => {
@@ -101,5 +118,30 @@ describe('Navigation configuration', () => {
                 ? umkmPrimaryAction.href
                 : umkmPrimaryAction.href.url;
         expect(href).toBe('/umkm/campaigns/create');
+    });
+
+    it('keeps the public navbar concise with paired actor sections', () => {
+        expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
+            'Cara Kerja',
+            'UMKM',
+            'Creator',
+            'Fitur',
+            'FAQ',
+        ]);
+
+        expect(PUBLIC_NAV_LINKS[1]?.href).toBe('/#umkm');
+        expect(PUBLIC_NAV_LINKS[2]?.href).toBe('/#creator');
+    });
+
+    it('orders public nav anchors top-to-bottom on the landing page', () => {
+        const anchors = PUBLIC_NAV_LINKS.map((link) => link.href.replace('/#', ''));
+
+        expect(anchors).toEqual([
+            'cara-kerja',
+            'umkm',
+            'creator',
+            'fitur',
+            'faq',
+        ]);
     });
 });

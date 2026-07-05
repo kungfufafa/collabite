@@ -10,6 +10,7 @@ use App\Actions\Collaboration\CancelCollaborationAction;
 use App\Actions\Collaboration\RejectRequestAction;
 use App\Actions\Content\ResubmitSubmissionAction;
 use App\Actions\Content\SubmitForReviewAction;
+use App\Actions\Payment\ConfirmPaymentAction;
 use App\Actions\Review\StoreReviewAction;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestType;
@@ -30,6 +31,7 @@ use App\Models\CollaborationRequest;
 use App\Models\ContentSubmission;
 use App\Models\ContentSubmissionFile;
 use App\Models\MessageAttachment;
+use App\Services\CollaborationPaymentPresenter;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,12 +44,15 @@ use Inertia\Response;
  */
 class CollaborationsController extends Controller
 {
-    public function __construct(private readonly FileUrlService $files) {}
+    public function __construct(
+        private readonly FileUrlService $files,
+        private readonly CollaborationPaymentPresenter $paymentPresenter,
+    ) {}
 
     public function index(Request $request): Response
     {
         $collaborations = Collaboration::query()
-            ->with(['campaign', 'umkm'])
+            ->with(['campaign', 'umkm', 'payment'])
             ->where('creator_id', $request->user()->id)
             ->latest()
             ->paginate(10);
@@ -58,6 +63,7 @@ class CollaborationsController extends Controller
                 'umkm' => ['id' => $c->umkm->id, 'name' => $c->umkm->name],
                 'status' => $c->status->value,
                 'status_label' => $c->status->label(),
+                'payment_status_label' => $c->payment?->status->label(),
             ]),
         );
 
@@ -78,6 +84,7 @@ class CollaborationsController extends Controller
             'submissions.files',
             'submissions.revisions',
             'reviews',
+            'payment',
         ]);
 
         $conversation = $collaboration->conversation;
@@ -113,6 +120,7 @@ class CollaborationsController extends Controller
             'collaboration' => [
                 'id' => $collaboration->id,
                 'status' => $collaboration->status->value,
+                'status_label' => $collaboration->status->label(),
                 'campaign' => ['id' => $collaboration->campaign->id, 'title' => $collaboration->campaign->title],
                 'umkm' => ['id' => $collaboration->umkm->id, 'name' => $collaboration->umkm->name],
                 'messages' => $messages->all(),
@@ -128,6 +136,7 @@ class CollaborationsController extends Controller
                     'description' => $s->description,
                     'status' => $s->status->value,
                     'status_label' => $s->status->label(),
+                    'submitted_at' => $s->submitted_at?->toIso8601String(),
                     'files' => $s->files->map(fn (ContentSubmissionFile $f): array => [
                         'id' => $f->id,
                         'original_name' => $f->original_name,
@@ -136,8 +145,36 @@ class CollaborationsController extends Controller
                         'url' => $this->files->privateUrl($f->file_path),
                     ])->all(),
                 ])->all(),
+                'reviews' => $collaboration->reviews->map(fn ($r): array => [
+                    'id' => $r->id,
+                    'reviewer_id' => $r->reviewer_id,
+                    'rating' => $r->rating,
+                    'body' => $r->body,
+                    'is_hidden' => $r->is_hidden,
+                ])->all(),
+                'payment' => $this->paymentPresenter->present($collaboration->payment),
+                'budget' => $collaboration->campaign->budget,
             ],
         ]);
+    }
+
+    public function confirmPayment(
+        Request $request,
+        Collaboration $collaboration,
+        ConfirmPaymentAction $action,
+    ): RedirectResponse {
+        abort_unless(config('collabite.manual_payment_enabled'), 404);
+        $this->authorize('view', $collaboration);
+        $payment = $collaboration->payment;
+
+        if ($payment === null) {
+            abort(422, 'Record pembayaran belum tersedia.');
+        }
+
+        $this->authorize('confirm', $payment);
+        $action->execute($payment, $request->user());
+
+        return back()->with('status', 'Pembayaran dikonfirmasi.');
     }
 
     public function apply(ApplyCampaignRequest $request, Campaign $campaign): RedirectResponse
@@ -210,7 +247,7 @@ class CollaborationsController extends Controller
 
     public function storeProgress(StoreProgressRequest $request, Collaboration $collaboration): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
+        $this->authorize('createProgress', $collaboration);
         abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422);
 
         $collaboration->progressUpdates()->create([
@@ -223,7 +260,7 @@ class CollaborationsController extends Controller
 
     public function storeSubmission(StoreSubmissionRequest $request, Collaboration $collaboration): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
+        $this->authorize('create', [ContentSubmission::class, $collaboration]);
         abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422);
 
         $version = ($collaboration->submissions()->max('version') ?? 0) + 1;
@@ -252,7 +289,6 @@ class CollaborationsController extends Controller
 
     public function submitForReview(SubmitForReviewRequest $request, Collaboration $collaboration, ContentSubmission $submission, SubmitForReviewAction $action): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
         $action->execute($submission);
 
         return back()->with('status', 'Submission dikirim untuk review.');

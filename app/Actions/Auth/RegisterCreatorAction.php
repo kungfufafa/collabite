@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Hash;
 class RegisterCreatorAction
 {
     /**
-     * @param  array{name: string, email: string, password: string, contact_phone?: string|null, city?: string|null}  $data
+     * @param  array{name: string, email: string, password: string, contact_phone?: string|null, city?: string|null, skill_ids: list<int>, category_ids: list<int>}  $data
      */
     public function execute(array $data): User
     {
@@ -32,12 +32,15 @@ class RegisterCreatorAction
                 'role' => UserRole::Creator,
             ]);
 
-            CreatorProfile::create([
+            $profile = CreatorProfile::create([
                 'user_id' => $user->id,
                 'contact_phone' => $data['contact_phone'] ?? null,
                 'city' => $data['city'] ?? null,
                 'verification_status' => VerificationStatus::Unverified,
             ]);
+
+            $profile->skills()->sync($data['skill_ids']);
+            $profile->categories()->sync($data['category_ids']);
 
             event(new Registered($user));
 

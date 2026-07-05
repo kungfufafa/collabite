@@ -25,6 +25,10 @@ class RegisterCreatorRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'contact_phone' => ['nullable', 'string', 'max:30'],
             'city' => ['nullable', 'string', 'max:80'],
+            'skill_ids' => ['required', 'array', 'min:1'],
+            'skill_ids.*' => ['integer', Rule::exists('skills', 'id')],
+            'category_ids' => ['required', 'array', 'min:1'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')],
         ];
     }
 
@@ -37,6 +41,8 @@ class RegisterCreatorRequest extends FormRequest
             'email.unique' => 'Email sudah terdaftar.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'password.min' => 'Password minimal 8 karakter.',
+            'skill_ids.required' => 'Pilih minimal satu keahlian.',
+            'category_ids.required' => 'Pilih minimal satu kategori.',
         ];
     }
 }

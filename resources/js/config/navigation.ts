@@ -5,14 +5,18 @@ import {
     Briefcase,
     Building2,
     Compass,
+    FileBarChart,
     Home,
     Images,
     Inbox,
     LayoutGrid,
+    Package,
     PlusCircle,
+    ScrollText,
     Search,
     Settings,
     ShieldCheck,
+    Star,
     Users,
 } from 'lucide-react';
 
@@ -20,12 +24,17 @@ import { dashboard as adminDashboard } from '@/routes/admin';
 import { dashboard as creatorDashboard } from '@/routes/creator';
 import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
 import { index as creatorCollaborationsIndex } from '@/routes/creator/collaborations';
+import { index as creatorRequestsIndex } from '@/routes/creator/requests';
 import { index as creatorPortfolioIndex } from '@/routes/creator/portfolio';
+import { edit as creatorProfileEdit } from '@/routes/creator/profile';
+import { edit as creatorSkillsEdit } from '@/routes/creator/skills';
 import { show as creatorVerificationShow } from '@/routes/creator/verification';
 import { dashboard as umkmDashboard } from '@/routes/umkm';
 import { index as umkmCampaignsIndex } from '@/routes/umkm/campaigns';
 import { index as umkmCollaborationsIndex } from '@/routes/umkm/collaborations';
 import { index as umkmDiscoverIndex } from '@/routes/umkm/discover';
+import { index as umkmProductsIndex } from '@/routes/umkm/products';
+import { index as umkmReviewsIndex } from '@/routes/umkm/reviews';
 
 export type MarketplaceRole = 'umkm' | 'creator' | 'admin';
 
@@ -100,12 +109,6 @@ export const umkmNavigation: NavigationItem[] = [
         icon: Users,
         isActive: (path) => pathStartsWith(path, buildPath(umkmCollaborationsIndex())),
     },
-    {
-        label: 'Undangan',
-        href: '/umkm/collaborations',
-        icon: Inbox,
-        isActive: (path) => pathStartsWith(path, '/umkm/collaborations'),
-    },
 ];
 
 export const creatorNavigation: NavigationItem[] = [
@@ -126,6 +129,12 @@ export const creatorNavigation: NavigationItem[] = [
         href: creatorCollaborationsIndex(),
         icon: Users,
         isActive: (path) => pathStartsWith(path, buildPath(creatorCollaborationsIndex())),
+    },
+    {
+        label: 'Permintaan',
+        href: creatorRequestsIndex(),
+        icon: Inbox,
+        isActive: (path) => pathStartsWith(path, buildPath(creatorRequestsIndex())),
     },
     {
         label: 'Portofolio',
@@ -175,25 +184,25 @@ export const adminNavigation: NavigationItem[] = [
     {
         label: 'Konten',
         href: '/admin/moderation/content',
-        icon: Briefcase,
+        icon: Images,
         isActive: (path) => pathStartsWith(path, '/admin/moderation/content'),
     },
     {
         label: 'Review',
         href: '/admin/moderation/reviews',
-        icon: Inbox,
+        icon: Star,
         isActive: (path) => pathStartsWith(path, '/admin/moderation/reviews'),
     },
     {
         label: 'Audit Log',
         href: '/admin/audit-logs',
-        icon: Inbox,
+        icon: ScrollText,
         isActive: (path) => pathStartsWith(path, '/admin/audit-logs'),
     },
     {
         label: 'Laporan',
         href: '/admin/reports',
-        icon: LayoutGrid,
+        icon: FileBarChart,
         isActive: (path) => pathStartsWith(path, '/admin/reports'),
     },
 ];
@@ -219,7 +228,7 @@ export const creatorPrimaryActions: PrimaryAction[] = [
 
 export const adminPrimaryAction: PrimaryAction = {
     label: 'Notifikasi',
-    href: '/admin/dashboard',
+    href: '/notifications',
     icon: Bell,
 };
 
@@ -261,6 +270,11 @@ export const creatorMobileHighlights: MobileNavItem[] = [
         label: 'Kolaborasi',
         href: creatorCollaborationsIndex(),
         icon: Users,
+    },
+    {
+        label: 'Permintaan',
+        href: creatorRequestsIndex(),
+        icon: Inbox,
     },
     {
         label: 'Portofolio',
@@ -313,6 +327,20 @@ export function getNavigationGroupsForRole(role: MarketplaceRole): NavGroup[] {
                             icon: Building2,
                             isActive: (path) => pathStartsWith(path, '/umkm/profile'),
                         },
+                        {
+                            label: 'Produk',
+                            href: umkmProductsIndex(),
+                            icon: Package,
+                            isActive: (path) =>
+                                pathStartsWith(path, buildPath(umkmProductsIndex())),
+                        },
+                        {
+                            label: 'Ulasan',
+                            href: umkmReviewsIndex(),
+                            icon: Star,
+                            isActive: (path) =>
+                                pathStartsWith(path, buildPath(umkmReviewsIndex())),
+                        },
                     ],
                 },
                 {
@@ -351,11 +379,25 @@ export function getNavigationGroupsForRole(role: MarketplaceRole): NavGroup[] {
                             isActive: (path) =>
                                 pathStartsWith(path, buildPath(creatorCollaborationsIndex())),
                         },
+                        {
+                            label: 'Permintaan',
+                            href: creatorRequestsIndex(),
+                            icon: Inbox,
+                            isActive: (path) =>
+                                pathStartsWith(path, buildPath(creatorRequestsIndex())),
+                        },
                     ],
                 },
                 {
                     heading: 'Profil',
                     items: [
+                        {
+                            label: 'Profil Creator',
+                            href: creatorProfileEdit(),
+                            icon: Building2,
+                            isActive: (path) =>
+                                pathStartsWith(path, buildPath(creatorProfileEdit())),
+                        },
                         {
                             label: 'Portofolio',
                             href: creatorPortfolioIndex(),
@@ -364,12 +406,18 @@ export function getNavigationGroupsForRole(role: MarketplaceRole): NavGroup[] {
                                 pathStartsWith(path, buildPath(creatorPortfolioIndex())),
                         },
                         {
-                            label: 'Profil & Verifikasi',
+                            label: 'Keahlian',
+                            href: creatorSkillsEdit(),
+                            icon: Briefcase,
+                            isActive: (path) =>
+                                pathStartsWith(path, buildPath(creatorSkillsEdit())),
+                        },
+                        {
+                            label: 'Verifikasi',
                             href: creatorVerificationShow(),
                             icon: ShieldCheck,
                             isActive: (path) =>
-                                pathStartsWith(path, buildPath(creatorVerificationShow())) ||
-                                pathStartsWith(path, '/creator/profile'),
+                                pathStartsWith(path, buildPath(creatorVerificationShow())),
                         },
                     ],
                 },

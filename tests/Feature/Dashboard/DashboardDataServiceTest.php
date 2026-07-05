@@ -28,6 +28,7 @@ test('creator dashboard returns efferd-style payload shape', function (): void {
             'stats',
             'profile',
             'portfolio_completion',
+            'onboarding_steps',
             'charts',
             'recent_collaborations',
             'activity',

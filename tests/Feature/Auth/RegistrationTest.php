@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
+use App\Models\Category;
+use App\Models\Skill;
 use App\Models\User;
 
 test('registration screen can be rendered', function (): void {
@@ -58,6 +60,9 @@ it('rejects mismatched password confirmation', function (): void {
 });
 
 it('registers a creator with profile', function (): void {
+    $skill = Skill::factory()->create();
+    $category = Category::factory()->create();
+
     $response = $this->post(route('register.creator.store'), [
         'name' => 'Andi',
         'email' => 'andi@creator.test',
@@ -65,6 +70,8 @@ it('registers a creator with profile', function (): void {
         'password_confirmation' => 'password123',
         'city' => 'Bandung',
         'contact_phone' => '08123456789',
+        'skill_ids' => [$skill->id],
+        'category_ids' => [$category->id],
     ]);
 
     $response->assertRedirect(route('verification.notice'));
@@ -72,4 +79,6 @@ it('registers a creator with profile', function (): void {
     $user = User::where('email', 'andi@creator.test')->firstOrFail();
     expect($user->creatorProfile)->not->toBeNull();
     expect($user->creatorProfile->verification_status->value)->toBe('unverified');
+    expect($user->creatorProfile->skills()->pluck('skills.id')->all())->toBe([$skill->id]);
+    expect($user->creatorProfile->categories()->pluck('categories.id')->all())->toBe([$category->id]);
 });

@@ -1,18 +1,26 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
 import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
-import { ListEmptyState } from '@/components/app/list-empty-state';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { PageHeader } from '@/components/app/page-header';
-import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import {
+    TableDeleteForm,
+    TableRowActions,
+} from '@/components/app/table-row-actions';
+import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { store, update as updateRoute, destroy as destroyRoute } from '@/routes/umkm/products';
+import { Textarea } from '@/components/ui/textarea';
+import { fieldErrorProps } from '@/lib/form-errors';
+import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { store, update as updateRoute } from '@/routes/umkm/products';
 
 type Product = {
     id: number;
@@ -36,6 +44,14 @@ export default function Index({ products }: { products: Product[] }): ReactNode 
     const [editingId, setEditingId] = useState<number | null>(null);
 
     const editing = editingId !== null ? products.find((p) => p.id === editingId) ?? null : null;
+    const getSearchText = useCallback(
+        (product: Product) => [product.name, product.description ?? '', product.price ?? ''].join(' '),
+        [],
+    );
+    const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
+        products,
+        getSearchText,
+    );
 
     return (
         <>
@@ -91,6 +107,7 @@ export default function Index({ products }: { products: Product[] }): ReactNode 
                                 }
                             >
                                 <div className="space-y-4">
+                                    <FormErrorSummary errors={errors} />
                                     <div>
                                         <Label htmlFor="name">Nama Produk</Label>
                                         <Input
@@ -99,18 +116,19 @@ export default function Index({ products }: { products: Product[] }): ReactNode 
                                             defaultValue={editing?.name ?? ''}
                                             required
                                             maxLength={160}
+                                            {...fieldErrorProps(errors.name)}
                                         />
                                         <InputError message={errors.name} className="mt-1" />
                                     </div>
                                     <div>
                                         <Label htmlFor="description">Deskripsi</Label>
-                                        <textarea
+                                        <Textarea
                                             id="description"
                                             name="description"
                                             defaultValue={editing?.description ?? ''}
                                             maxLength={2000}
                                             rows={3}
-                                            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="mt-1"
                                         />
                                         <InputError message={errors.description} className="mt-1" />
                                     </div>
@@ -147,7 +165,7 @@ export default function Index({ products }: { products: Product[] }): ReactNode 
                                             type="checkbox"
                                             value="1"
                                             defaultChecked={editing ? editing.is_active : true}
-                                            className="size-4 rounded border-border"
+                                            className="size-4 border-2 border-[var(--neutral-900)] shadow-[2px_2px_0_0_var(--neutral-900)]"
                                         />
                                         <Label htmlFor="is_active">Aktif (tampil di halaman publik)</Label>
                                     </div>
@@ -160,85 +178,86 @@ export default function Index({ products }: { products: Product[] }): ReactNode 
                         <h2 className="mb-4 text-base font-semibold text-foreground">
                             Daftar Produk ({products.length})
                         </h2>
-                        {products.length === 0 ? (
-                            <ListEmptyState
-                                description="Tambahkan produk pertama Anda di formulir samping."
-                                title="Belum ada produk"
-                            />
-                        ) : (
-                            <div className="space-y-3">
-                                {products.map((product) => (
-                                    <ResourceCard key={product.id}>
-                                        <div className="flex gap-4">
-                                            <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                        <WorkspaceTable
+                            columns={[
+                                {
+                                    header: 'Produk',
+                                    cell: (product) => (
+                                        <div className="flex min-w-[14rem] items-center gap-3">
+                                            <div className={brutalThumb}>
                                                 {product.image_url ? (
                                                     <img
-                                                        src={product.image_url}
                                                         alt={product.name}
                                                         className="h-full w-full object-cover"
+                                                        src={product.image_url}
                                                     />
                                                 ) : (
-                                                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                                                        No image
+                                                    <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                                                        —
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <h3 className="font-semibold text-foreground">
-                                                            {product.name}
-                                                        </h3>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {formatPrice(product.price)}
-                                                        </p>
-                                                    </div>
-                                                    <StatusBadge
-                                                        label={product.is_active ? 'Aktif' : 'Nonaktif'}
-                                                        tone={product.is_active ? 'success' : 'neutral'}
-                                                    />
-                                                </div>
-                                                {product.description ? (
-                                                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                                                        {product.description}
-                                                    </p>
-                                                ) : null}
-                                                <div className="mt-3 flex justify-end gap-2 border-t border-border pt-3">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setEditingId(product.id)}
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    <Form
-                                                        {...destroyRoute.form(product.id)}
-                                                        options={{ preserveScroll: true }}
-                                                    >
-                                                        {({ processing }) => (
-                                                            <Button
-                                                                type="submit"
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                disabled={processing}
-                                                                onClick={(event) => {
-                                                                    if (!confirm('Hapus produk ini?')) {
-                                                                        event.preventDefault();
-                                                                    }
-                                                                }}
-                                                            >
-                                                                Hapus
-                                                            </Button>
-                                                        )}
-                                                    </Form>
-                                                </div>
+                                            <div>
+                                                <p className="font-medium text-foreground">
+                                                    {product.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatPrice(product.price)}
+                                                </p>
                                             </div>
                                         </div>
-                                    </ResourceCard>
-                                ))}
-                            </div>
-                        )}
+                                    ),
+                                },
+                                {
+                                    header: 'Deskripsi',
+                                    cell: (product) => (
+                                        <p className="max-w-xs truncate text-muted-foreground">
+                                            {product.description ?? '—'}
+                                        </p>
+                                    ),
+                                },
+                                {
+                                    header: 'Status',
+                                    cell: (product) => (
+                                        <StatusBadge
+                                            label={product.is_active ? 'Aktif' : 'Nonaktif'}
+                                            tone={product.is_active ? 'success' : 'neutral'}
+                                        />
+                                    ),
+                                },
+                                {
+                                    header: 'Aksi',
+                                    className: 'text-right',
+                                    cell: (product) => (
+                                        <TableRowActions>
+                                            <Button
+                                                size="sm"
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setEditingId(product.id)}
+                                            >
+                                                Edit
+                                            </Button>
+                                            <TableDeleteForm
+                                                action={`/umkm/products/${product.id}`}
+                                                confirmMessage="Hapus produk ini?"
+                                            />
+                                        </TableRowActions>
+                                    ),
+                                },
+                            ]}
+                            emptyDescription="Tambahkan produk pertama Anda di formulir samping."
+                            emptyTitle="Belum ada produk"
+                            getRowKey={(product) => product.id}
+                            rows={filteredRows}
+                            search={{
+                                onChange: setQuery,
+                                placeholder: 'Cari nama produk...',
+                                resultCount,
+                                totalCount,
+                                value: query,
+                            }}
+                        />
                     </section>
                 </div>
             </div>

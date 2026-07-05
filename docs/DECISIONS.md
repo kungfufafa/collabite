@@ -41,6 +41,7 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 | ADR-027 | `read_at` per pesan (tanpa tabel `message_reads`) | Accepted |
 | ADR-028 | Single-kategori per campaign | Accepted |
 | ADR-029 | SQLite sebagai database validasi RC; MySQL compatibility ditunda | Accepted |
+| ADR-033 | Konfirmasi pembayaran manual off-platform (MVP+) | Accepted |
 
 ---
 
@@ -468,3 +469,16 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 
 
 | 1.3 (RC.2) | 2026-06-18 | Tambah ADR-032: login form action binding via Wayfinder action helper + `usePage().props.errors` untuk error display. | Product Engineer |
+
+## ADR-033 — Konfirmasi Pembayaran Manual Off-Platform (MVP+)
+
+- **Status:** Accepted
+- **Context:** PRD §19 menyatakan pembayaran terjadi di luar platform tanpa payment gateway (ADR-011). Creator tetap membutuhkan jejak transfer agar kolaborasi dapat ditutup dengan jelas.
+- **Decision:** Tambah tabel `collaboration_payments` dengan alur: UMKM unggah bukti transfer → Creator konfirmasi terima → UMKM menyelesaikan kolaborasi. Tidak ada pemrosesan uang di dalam Collabite.
+- **Consequences:**
+  - `CompleteCollaborationAction` mewajibkan `PaymentStatus::Confirmed`.
+  - Bukti transfer disimpan di disk `private` dengan signed URL.
+  - Dashboard Creator menampilkan pendapatan terkonfirmasi (informasional).
+- **Alternatives Considered:**
+  - **Payment gateway (Midtrans/Xendit)** → ditolak: tetap di luar scope MVP.
+  - **Complete tanpa konfirmasi pembayaran** → ditolak: Creator tidak punya jejak transfer.

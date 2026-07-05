@@ -1,10 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
+import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
-import { ListEmptyState } from '@/components/app/list-empty-state';
 import { PageHeader } from '@/components/app/page-header';
-import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
+import { TableDetailLink, TableRowActions } from '@/components/app/table-row-actions';
+import { WorkspaceTable } from '@/components/app/workspace-table';
+import { useClientTableSearch } from '@/hooks/use-client-table-search';
 
 type Review = {
     id: number;
@@ -17,6 +19,15 @@ type Review = {
 
 export default function Index({ reviews }: { reviews: { data: Review[] } | Review[] }): ReactNode {
     const list = Array.isArray(reviews) ? reviews : reviews.data;
+    const getSearchText = useCallback(
+        (review: Review) =>
+            [review.reviewer.name, review.campaign.title, review.body ?? ''].join(' '),
+        [],
+    );
+    const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
+        list,
+        getSearchText,
+    );
 
     return (
         <>
@@ -27,41 +38,69 @@ export default function Index({ reviews }: { reviews: { data: Review[] } | Revie
                     description="Review yang diberikan Creator kepada Anda."
                 />
 
-                {list.length === 0 ? (
-                    <div className="mt-8">
-                        <ListEmptyState
-                            description="Review akan muncul setelah kolaborasi selesai."
-                            title="Belum ada review masuk"
-                        />
-                    </div>
-                ) : (
-                    <div className="mt-8 space-y-3">
-                        {list.map((r) => (
-                            <ResourceCard key={r.id}>
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <p className="font-medium text-foreground">
-                                            {r.reviewer.name}
-                                        </p>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            <Link
-                                                href={`/umkm/campaigns/${r.campaign.id}`}
-                                                className="hover:text-foreground hover:underline"
-                                            >
-                                                {r.campaign.title}
-                                            </Link>{' '}
-                                            · {r.created_at}
-                                        </p>
-                                    </div>
+                <div className="mt-8">
+                    <WorkspaceTable
+                        columns={[
+                            {
+                                header: 'Reviewer',
+                                cell: (r) => (
+                                    <p className="font-medium text-foreground">{r.reviewer.name}</p>
+                                ),
+                            },
+                            {
+                                header: 'Campaign',
+                                cell: (r) => (
+                                    <Link
+                                        className="text-foreground hover:underline"
+                                        href={`/umkm/campaigns/${r.campaign.id}`}
+                                    >
+                                        {r.campaign.title}
+                                    </Link>
+                                ),
+                            },
+                            {
+                                header: 'Rating',
+                                cell: (r) => (
                                     <StatusBadge label={`${r.rating}/5`} tone="info" />
-                                </div>
-                                {r.body ? (
-                                    <p className="mt-3 text-sm text-muted-foreground">{r.body}</p>
-                                ) : null}
-                            </ResourceCard>
-                        ))}
-                    </div>
-                )}
+                                ),
+                            },
+                            {
+                                header: 'Ulasan',
+                                cell: (r) => (
+                                    <p className="max-w-md truncate text-muted-foreground">
+                                        {r.body ?? '—'}
+                                    </p>
+                                ),
+                            },
+                            {
+                                header: 'Tanggal',
+                                cell: (r) => r.created_at,
+                            },
+                            {
+                                header: 'Aksi',
+                                className: 'text-right',
+                                cell: (r) => (
+                                    <TableRowActions>
+                                        <TableDetailLink
+                                            href={`/umkm/campaigns/${r.campaign.id}`}
+                                        />
+                                    </TableRowActions>
+                                ),
+                            },
+                        ]}
+                        emptyDescription="Review akan muncul setelah kolaborasi selesai."
+                        emptyTitle="Belum ada review masuk"
+                        getRowKey={(r) => r.id}
+                        rows={filteredRows}
+                        search={{
+                            onChange: setQuery,
+                            placeholder: 'Cari reviewer atau campaign...',
+                            resultCount,
+                            totalCount,
+                            value: query,
+                        }}
+                    />
+                </div>
             </div>
         </>
     );

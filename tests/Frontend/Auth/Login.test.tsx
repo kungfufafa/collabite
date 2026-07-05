@@ -1,13 +1,11 @@
 import { render, screen, act } from '@testing-library/react';
-import { createElement, forwardRef   } from 'react';
-import type {ReactNode, ForwardedRef} from 'react';
+import { createElement, forwardRef } from 'react';
+import type { ReactNode, ForwardedRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @inertiajs/react Form so we can assert the props it received
-// and simulate success / validation-error responses.
 let lastFormProps: Record<string, unknown> | null = null;
 const formSpy = vi.fn();
-let willFail = false;
+let mockFormErrors: Record<string, string> = {};
 
 vi.mock('@inertiajs/react', async () => {
     const MockHead = ({ title }: { title?: string }) =>
@@ -27,8 +25,6 @@ vi.mock('@inertiajs/react', async () => {
                 children?: unknown;
                 className?: string;
                 resetOnSuccess?: unknown;
-                onSuccess?: () => void;
-                onError?: (errors: Record<string, string>) => void;
             }
         >((props, ref: ForwardedRef<HTMLFormElement>) => {
             lastFormProps = props as Record<string, unknown>;
@@ -45,18 +41,12 @@ vi.mock('@inertiajs/react', async () => {
                         : (props.action as { url?: string })?.url,
                     onSubmit: (e: { preventDefault: () => void }) => {
                         e.preventDefault();
-
-                        if (willFail) {
-                            props.onError?.({ email: 'Kredensial tidak cocok.' });
-                        } else {
-                            props.onSuccess?.();
-                        }
                     },
                 },
                 typeof props.children === 'function'
                     ? (props.children as (p: unknown) => ReactNode)({
                           processing: false,
-                          errors: {},
+                          errors: mockFormErrors,
                           values: {},
                           setData: () => undefined,
                       })
@@ -74,7 +64,6 @@ vi.mock('@inertiajs/react', async () => {
     };
 });
 
-// Stub the route binding the page uses.
 vi.mock('@/routes', () => ({
     register: () => '/register',
 }));
@@ -91,7 +80,7 @@ describe('Auth/Login', () => {
     beforeEach(() => {
         lastFormProps = null;
         formSpy.mockClear();
-        willFail = false;
+        mockFormErrors = {};
     });
 
     afterEach(() => {
@@ -124,29 +113,27 @@ describe('Auth/Login', () => {
         expect(resolvedAction).toBe('http://collabite.test/login');
     });
 
-    it('surfaces server validation error passed via onError', async () => {
+    it('surfaces validation errors from Form render props', async () => {
+        mockFormErrors = { email: 'Kredensial tidak cocok.' };
+
         await act(async () => {
             render(<Login canResetPassword />);
         });
 
-        const lastProps = lastFormProps as { onError?: (errors: Record<string, string>) => void } | null;
-        await act(async () => {
-            lastProps?.onError?.({ email: 'Kredensial tidak cocok.' });
-        });
-
-        expect(screen.getByText('Kredensial tidak cocok.')).toBeInTheDocument();
+        expect(screen.getAllByText('Kredensial tidak cocok.')).toHaveLength(2);
+        expect(screen.getByText('Periksa isian berikut')).toBeInTheDocument();
     });
 
     it('renders nothing for InputError when no error provided', () => {
         const { container } = render(<Login canResetPassword />);
 
-        const errorMessages = container.querySelectorAll('p.text-red-600, p.text-red-400');
+        const errorMessages = container.querySelectorAll('[role="alert"]');
         expect(errorMessages).toHaveLength(0);
     });
 
     it('surfaces email error from props immediately', () => {
         render(<Login canResetPassword errors={{ email: 'Akun Anda dinonaktifkan.' }} />);
 
-        expect(screen.getByText('Akun Anda dinonaktifkan.')).toBeInTheDocument();
+        expect(screen.getAllByText('Akun Anda dinonaktifkan.')).toHaveLength(2);
     });
 });

@@ -2,6 +2,7 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { PageHeader } from '@/components/app/page-header';
 import { SectionPanel } from '@/components/app/section-panel';
@@ -9,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { update } from '@/routes/umkm/profile';
 
 type Profile = {
@@ -57,6 +59,8 @@ export default function Edit({ profile }: { profile: Profile }): ReactNode {
                                 }
                             >
                                 <div className="space-y-5">
+                                    <FormErrorSummary errors={errors} />
+
                                     <div className="flex items-center gap-4">
                                         <Avatar className="size-16">
                                             {profile.logo_url ? (
@@ -77,6 +81,7 @@ export default function Edit({ profile }: { profile: Profile }): ReactNode {
                                                 type="file"
                                                 accept="image/png,image/jpeg,image/jpg,image/webp"
                                                 className="mt-1"
+                                                aria-invalid={Boolean(errors.logo) || undefined}
                                             />
                                             <p className="mt-1 text-xs text-muted-foreground">
                                                 JPG/PNG/WebP, maksimal 2MB.
@@ -112,13 +117,13 @@ export default function Edit({ profile }: { profile: Profile }): ReactNode {
 
                                     <div>
                                         <Label htmlFor="description">Deskripsi</Label>
-                                        <textarea
+                                        <Textarea
                                             id="description"
                                             name="description"
                                             defaultValue={profile.description ?? ''}
                                             maxLength={2000}
                                             rows={4}
-                                            className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 mt-1 flex w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="mt-1"
                                         />
                                         <InputError message={errors.description} className="mt-1" />
                                     </div>

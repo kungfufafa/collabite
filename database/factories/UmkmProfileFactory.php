@@ -31,4 +31,14 @@ class UmkmProfileFactory extends Factory
             'website_url' => fake()->url(),
         ];
     }
+
+    public function incomplete(): static
+    {
+        return $this->state(fn (): array => [
+            'city' => null,
+            'description' => null,
+            'contact_phone' => null,
+            'contact_email' => null,
+        ]);
+    }
 }

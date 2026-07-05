@@ -5,6 +5,10 @@ declare(strict_types=1);
 use App\Enums\AccountStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use Database\Seeders\AdminUserSeeder;
+use Database\Seeders\CategorySeeder;
+use Database\Seeders\DemoDataSeeder;
+use Database\Seeders\SkillSeeder;
 
 test('login screen can be rendered', function (): void {
     $response = $this->get(route('login'));
@@ -48,6 +52,23 @@ test('suspended users cannot authenticate', function (): void {
 
     $this->assertGuest();
     $response->assertSessionHasErrors('email');
+});
+
+test('seeded admin can authenticate with demo password', function (): void {
+    $this->seed([
+        AdminUserSeeder::class,
+        CategorySeeder::class,
+        SkillSeeder::class,
+        DemoDataSeeder::class,
+    ]);
+
+    $response = $this->post(route('login'), [
+        'email' => 'admin@collabite.test',
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
 });
 
 test('users can logout', function (): void {

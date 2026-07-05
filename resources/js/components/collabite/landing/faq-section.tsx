@@ -1,7 +1,8 @@
-import { ChevronDown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
+import { brutalCard } from '@/components/collabite/landing/brutal-styles';
 import { SectionHeading } from '@/components/collabite/section-heading';
 import { cn } from '@/lib/utils';
 
@@ -40,22 +41,24 @@ function FaqItem({ q, a }: { q: string; a: string }): ReactNode {
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="border-b last:border-b-0">
+        <div className="border-b-[3px] border-[var(--neutral-900)] last:border-b-0">
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-start justify-between gap-4 py-4 text-left text-[0.95rem] font-medium text-foreground"
+                className="flex w-full items-start justify-between gap-4 py-4 text-left text-[0.95rem] font-black text-foreground"
             >
                 {q}
-                <ChevronDown
+                <span
                     className={cn(
-                        'size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform',
-                        open && 'rotate-180',
+                        'flex size-8 shrink-0 items-center justify-center border-2 border-[var(--neutral-900)] bg-white shadow-[2px_2px_0_0_var(--neutral-900)] transition-transform',
+                        open && 'rotate-45 bg-[var(--brand-secondary)] text-white',
                     )}
-                />
+                >
+                    <Plus className="size-4" />
+                </span>
             </button>
             {open ? (
-                <p className="pb-4 text-sm leading-relaxed text-muted-foreground">
+                <p className="pb-4 text-sm font-medium leading-relaxed text-muted-foreground">
                     {a}
                 </p>
             ) : null}
@@ -67,18 +70,22 @@ export function FaqSection(): ReactNode {
     return (
         <section
             id="faq"
-            className="border-y border-border bg-card py-16 lg:py-24"
+            className="brutal-section-alt border-y-[3px] border-[var(--neutral-900)] py-16 lg:py-24"
         >
-            <div className="mx-auto max-w-3xl px-5 sm:px-8">
-                <SectionHeading
-                    eyebrow="FAQ"
-                    title="Pertanyaan yang Sering Diajukan"
-                />
+            <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+                <div className="grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+                    <SectionHeading
+                        brutal
+                        eyebrow="FAQ"
+                        title="Pertanyaan yang Sering Diajukan"
+                        align="left"
+                    />
 
-                <div className="mt-10 rounded-xl border border-border bg-[var(--neutral-50)] px-5 sm:px-7">
-                    {FAQS.map((item) => (
-                        <FaqItem key={item.q} q={item.q} a={item.a} />
-                    ))}
+                    <div className={`${brutalCard} bg-white px-5 sm:px-7`}>
+                        {FAQS.map((item) => (
+                            <FaqItem key={item.q} q={item.q} a={item.a} />
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

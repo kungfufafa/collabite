@@ -22,7 +22,15 @@ class CreatorDirectoryController extends Controller
     public function index(Request $request): Response
     {
         $query = CreatorProfile::query()
-            ->with(['user', 'categories', 'skills'])
+            ->with([
+                'user',
+                'categories',
+                'skills',
+                'portfolioItems' => fn ($q) => $q
+                    ->whereNotNull('media_path')
+                    ->orderBy('display_order')
+                    ->limit(3),
+            ])
             ->withCount('portfolioItems');
 
         $keyword = trim((string) $request->query('q', ''));
@@ -80,6 +88,14 @@ class CreatorDirectoryController extends Controller
      */
     private function serialize(CreatorProfile $creator): array
     {
+        /** @var array<int, string|null> $portfolioUrls */
+        $portfolioUrls = $creator->portfolioItems
+            ->map(fn ($item): ?string => $this->files->publicUrl($item->media_path))
+            ->filter()
+            ->values()
+            ->take(3)
+            ->all();
+
         return [
             'id' => $creator->id,
             'name' => $creator->user?->name,
@@ -91,6 +107,7 @@ class CreatorDirectoryController extends Controller
             'profile_photo_url' => $this->files->publicUrl($creator->profile_photo_path),
             'categories' => $creator->categories->pluck('name'),
             'portfolio_count' => $creator->portfolio_items_count ?? $creator->portfolioItems->count(),
+            'portfolio_urls' => $portfolioUrls,
         ];
     }
 

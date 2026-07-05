@@ -7,6 +7,7 @@ namespace App\Actions\Review;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Collaboration;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,13 @@ class CompleteCollaborationAction
             ->exists();
         if (! $approved) {
             throw ValidationException::withMessages(['collaboration' => 'Belum ada submission yang disetujui.']);
+        }
+
+        if (config('collabite.manual_payment_enabled')) {
+            $payment = $collaboration->payment;
+            if ($payment === null || $payment->status !== PaymentStatus::Confirmed) {
+                throw ValidationException::withMessages(['payment' => 'Pembayaran belum dikonfirmasi oleh Creator.']);
+            }
         }
 
         $collaboration->update([

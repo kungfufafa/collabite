@@ -1,11 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { brutalSelectField } from '@/components/collabite/landing/brutal-styles';
 import { FilterPanel } from '@/components/app/filter-panel';
-import { ListEmptyState } from '@/components/app/list-empty-state';
-import { PageHeader } from '@/components/app/page-header';
-import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
+import { TableDetailLink, TableRowActions } from '@/components/app/table-row-actions';
+import { WorkspacePage } from '@/components/app/workspace-page';
+import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +24,7 @@ type Campaign = {
 
 function formatBudget(value: string | null): string {
     if (!value) {
-        return 'Budget fleksibel';
+        return 'Fleksibel';
     }
 
     return 'Rp ' + Number(value).toLocaleString('id-ID');
@@ -43,31 +44,29 @@ export default function Index({
     return (
         <>
             <Head title="Cari Campaign" />
-            <div>
-                <PageHeader
-                    description="Temukan campaign UMKM yang sesuai untuk Anda."
-                    title="Cari Campaign"
-                />
-
-                <div className="mt-8">
-                    <FilterPanel>
+            <WorkspacePage
+                description="Temukan campaign UMKM yang sesuai keahlian dan kategori konten Anda."
+                title="Cari Campaign"
+            >
+                <FilterPanel title="Filter & Pencarian">
                         <form
                             action="/creator/campaigns"
                             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
                             method="GET"
                         >
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-1.5 sm:col-span-2">
                                 <Label htmlFor="q">Kata kunci</Label>
                                 <Input
                                     defaultValue={filters.q ?? ''}
                                     id="q"
                                     name="q"
+                                    placeholder="Judul, deskripsi, atau nama UMKM"
                                 />
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="category_id">Kategori</Label>
                                 <select
-                                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    className={brutalSelectField + ' h-11'}
                                     defaultValue={filters.category_id ?? ''}
                                     id="category_id"
                                     name="category_id"
@@ -103,44 +102,77 @@ export default function Index({
                             </div>
                         </form>
                     </FilterPanel>
-                </div>
 
-                {list.length === 0 ? (
-                    <div className="mt-8">
-                        <ListEmptyState
-                            description="Coba ubah filter atau cek lagi nanti."
-                            title="Belum ada campaign yang cocok"
-                        />
-                    </div>
-                ) : (
-                    <div className="mt-8 flex flex-col gap-3">
-                        {list.map((c) => (
-                            <ResourceCard key={c.id}>
-                                <div className="flex items-start justify-between gap-4">
+                <WorkspaceTable
+                        columns={[
+                            {
+                                header: 'Judul',
+                                headClassName: 'w-[26%]',
+                                className: 'whitespace-normal',
+                                cell: (c) => (
                                     <div className="min-w-0">
-                                        <Link
-                                            className="text-base font-semibold text-foreground hover:underline"
-                                            href={`/creator/campaigns/${c.id}`}
-                                        >
+                                        <p className="truncate font-medium text-foreground">
                                             {c.title}
-                                        </Link>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {c.umkm.name ?? 'UMKM'} · {c.umkm.city ?? '-'} ·{' '}
-                                            {c.category ?? 'Tanpa kategori'} ·{' '}
-                                            {formatBudget(c.budget)}
-                                            {c.deadline ? ` · Deadline ${c.deadline}` : ''}
                                         </p>
-                                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                                        <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
                                             {c.description}
                                         </p>
                                     </div>
-                                    <StatusBadge label="Terbuka" tone="success" />
-                                </div>
-                            </ResourceCard>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                ),
+                            },
+                            {
+                                header: 'UMKM',
+                                headClassName: 'w-[16%]',
+                                className: 'whitespace-normal',
+                                cell: (c) => (
+                                    <div className="min-w-0">
+                                        <p className="truncate">{c.umkm.name ?? '—'}</p>
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            {c.umkm.city ?? '—'}
+                                        </p>
+                                    </div>
+                                ),
+                            },
+                            {
+                                header: 'Kategori',
+                                headClassName: 'w-[12%]',
+                                className: 'truncate',
+                                cell: (c) => c.category ?? '—',
+                            },
+                            {
+                                header: 'Budget',
+                                headClassName: 'w-[14%]',
+                                className: 'truncate',
+                                cell: (c) => formatBudget(c.budget),
+                            },
+                            {
+                                header: 'Deadline',
+                                headClassName: 'w-[12%]',
+                                className: 'truncate',
+                                cell: (c) => c.deadline ?? '—',
+                            },
+                            {
+                                header: 'Status',
+                                headClassName: 'w-[10%]',
+                                cell: () => <StatusBadge label="Terbuka" tone="success" />,
+                            },
+                            {
+                                header: 'Aksi',
+                                headClassName: 'w-[10%]',
+                                className: 'text-right',
+                                cell: (c) => (
+                                    <TableRowActions>
+                                        <TableDetailLink href={`/creator/campaigns/${c.id}`} />
+                                    </TableRowActions>
+                                ),
+                            },
+                        ]}
+                        emptyDescription="Coba ubah filter atau cek lagi nanti."
+                        emptyTitle="Belum ada campaign yang cocok"
+                        getRowKey={(c) => c.id}
+                        rows={list}
+                    />
+            </WorkspacePage>
         </>
     );
 }

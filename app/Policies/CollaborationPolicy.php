@@ -27,6 +27,13 @@ class CollaborationPolicy
         return $this->view($actor, $collaboration);
     }
 
+    public function createProgress(User $actor, Collaboration $collaboration): Response
+    {
+        return $actor->is($collaboration->creator)
+            ? Response::allow()
+            : Response::deny('Hanya Creator yang dapat memperbarui progres.');
+    }
+
     public function complete(User $actor, Collaboration $collaboration): Response
     {
         return $actor->is($collaboration->umkm)

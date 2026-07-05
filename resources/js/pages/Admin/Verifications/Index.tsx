@@ -1,10 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
-import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
+import { TableActionLink, TableRowActions } from '@/components/app/table-row-actions';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
-import { Button } from '@/components/ui/button';
+import { useClientTableSearch } from '@/hooks/use-client-table-search';
 
 type Verification = {
     id: number;
@@ -40,68 +42,86 @@ function statusTone(status: string): 'warning' | 'success' | 'danger' | 'neutral
 
 export default function Index({ verifications, pagination }: Props): ReactNode {
     const rows = verifications.data ?? [];
+    const getSearchText = useCallback(
+        (verification: Verification) =>
+            [
+                verification.creator.name ?? '',
+                verification.creator.email ?? '',
+                verification.status,
+            ].join(' '),
+        [],
+    );
+    const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
+        rows,
+        getSearchText,
+    );
 
     return (
         <>
             <Head title="Antrian Verifikasi" />
-            <div>
-                <PageHeader
-                    description={`${pagination.total} pengajuan terdaftar. Pending ditampilkan di paling atas.`}
-                    title="Antrian Verifikasi Creator"
-                />
-
-                <div className="mt-8">
-                    <WorkspaceTable
-                        columns={[
-                            {
-                                header: 'Creator',
-                                cell: (v) => (
-                                    <div>
-                                        <p className="font-medium">
-                                            {v.creator.name ?? '—'}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {v.creator.email}
-                                        </p>
-                                    </div>
-                                ),
-                            },
-                            {
-                                header: 'Status',
-                                cell: (v) => (
-                                    <StatusBadge
-                                        label={v.status}
-                                        tone={statusTone(v.status)}
+            <WorkspacePage
+                description={`${pagination.total} pengajuan terdaftar. Pending ditampilkan di paling atas.`}
+                title="Antrian Verifikasi Creator"
+            >
+                <WorkspaceTable
+                    columns={[
+                        {
+                            header: 'Creator',
+                            cell: (v) => (
+                                <div className="min-w-[12rem]">
+                                    <p className="font-medium">{v.creator.name ?? '—'}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {v.creator.email}
+                                    </p>
+                                </div>
+                            ),
+                        },
+                        {
+                            header: 'Status',
+                            cell: (v) => (
+                                <StatusBadge
+                                    label={v.status}
+                                    tone={statusTone(v.status)}
+                                />
+                            ),
+                        },
+                        {
+                            header: 'Berkas',
+                            cell: (v) => (
+                                <span className="tabular-nums">{v.documents_count}</span>
+                            ),
+                        },
+                        {
+                            header: 'Diajukan',
+                            cell: (v) => v.submitted_at ?? '—',
+                        },
+                        {
+                            header: 'Aksi',
+                            className: 'text-right',
+                            cell: (v) => (
+                                <TableRowActions>
+                                    <TableActionLink
+                                        href={`/admin/verifications/${v.id}`}
+                                        label="Tinjau"
                                     />
-                                ),
-                            },
-                            {
-                                header: 'Berkas',
-                                cell: (v) => v.documents_count,
-                            },
-                            {
-                                header: 'Diajukan',
-                                cell: (v) => v.submitted_at ?? '—',
-                            },
-                            {
-                                header: '',
-                                className: 'text-right',
-                                cell: (v) => (
-                                    <Button asChild size="sm" variant="outline">
-                                        <Link href={`/admin/verifications/${v.id}`}>
-                                            Tinjau
-                                        </Link>
-                                    </Button>
-                                ),
-                            },
-                        ]}
-                        emptyDescription="Tidak ada pengajuan verifikasi saat ini."
-                        emptyTitle="Tidak ada pengajuan"
-                        getRowKey={(v) => v.id}
-                        rows={rows}
-                    />
-                </div>
-            </div>
+                                </TableRowActions>
+                            ),
+                        },
+                    ]}
+                    emptyDescription="Tidak ada pengajuan verifikasi saat ini."
+                    emptyTitle="Tidak ada pengajuan"
+                    getRowKey={(v) => v.id}
+                    paginationLinks={verifications.links}
+                    rows={filteredRows}
+                    search={{
+                        onChange: setQuery,
+                        placeholder: 'Cari creator atau email...',
+                        resultCount,
+                        totalCount,
+                        value: query,
+                    }}
+                />
+            </WorkspacePage>
         </>
     );
 }

@@ -22,6 +22,8 @@ vi.mock('@inertiajs/react', async () => {
                     },
                 },
                 sidebarOpen: true,
+                unreadNotificationsCount: 0,
+                recentNotifications: [],
             },
         }),
     };
@@ -56,6 +58,7 @@ describe('AdminDashboardLayout', () => {
         const labels = links.map((link) => link.textContent?.trim());
         expect(labels).toEqual([
             expect.stringContaining('Collabite'),
+            'Notifikasi',
             'Dashboard',
             'Pengguna',
             'Verifikasi Creator',
@@ -74,7 +77,7 @@ describe('AdminDashboardLayout', () => {
                 return;
             }
 
-            expect(href.startsWith('/admin')).toBe(true);
+            expect(href.startsWith('/admin') || href.startsWith('/notifications')).toBe(true);
         });
     });
 });

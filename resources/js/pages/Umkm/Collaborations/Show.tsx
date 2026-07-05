@@ -1,18 +1,24 @@
 import { Form as InertiaForm, Head, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { sendMessage } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
-import { storeProgress } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
-import { storeSubmission } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
+import { cancel, sendMessage } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { requestRevision } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { approveSubmission } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { complete } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
+import { submitPaymentProof } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { storeForUmkm as submitReview } from '@/actions/App/Http/Controllers/Umkm/ReviewsController';
 import InputError from '@/components/input-error';
+import {
+    brutalDivider,
+    brutalInlinePanel,
+    brutalNativeSelect,
+} from '@/components/collabite/landing/brutal-styles';
+import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { SectionPanel } from '@/components/app/section-panel';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useCollaborationMessagePolling } from '@/hooks/use-collaboration-message-polling';
 import CollaborationWorkspaceLayout, {
     type CollaborationTab,
 } from '@/layouts/collaboration-workspace-layout';
@@ -49,6 +55,18 @@ type Review = {
     is_hidden: boolean;
 };
 
+type Payment = {
+    id: number;
+    amount: string;
+    status: string;
+    status_label: string;
+    note: string | null;
+    proof_url: string | null;
+    proof_original_name: string | null;
+    submitted_at: string | null;
+    confirmed_at: string | null;
+};
+
 type Collaboration = {
     id: number;
     status: string;
@@ -59,20 +77,65 @@ type Collaboration = {
     progress: Progress[];
     submissions: Submission[];
     reviews: Review[];
+    payment: Payment | null;
+    budget: string | number | null;
 };
 
 type Props = { collaboration: Collaboration; isUmkm?: boolean };
 
 export default function Show({ collaboration, isUmkm = true }: Props): ReactNode {
     const [tab, setTab] = useState<CollaborationTab>('messages');
-    const flash = usePage().props.status as string | undefined;
+    const page = usePage<{ features?: { manualPaymentEnabled?: boolean } }>();
+    const flash = page.props.status as string | undefined;
+    const manualPaymentEnabled = page.props.features?.manualPaymentEnabled ?? false;
     const [message, setMessage] = useState('');
-    const [progress, setProgress] = useState('');
-    const [submissionTitle, setSubmissionTitle] = useState('');
-    const [submissionDesc, setSubmissionDesc] = useState('');
-    const [, setSubmissionFiles] = useState<FileList | null>(null);
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewBody, setReviewBody] = useState('');
+    const [showCancelForm, setShowCancelForm] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+
+    useCollaborationMessagePolling(tab);
+
+    const paymentConfirmed = collaboration.payment?.status === 'confirmed';
+    const hasApprovedSubmission = collaboration.submissions.some(
+        (submission) => submission.status === 'approved',
+    );
+    const canCancel = collaboration.status === 'active' && !hasApprovedSubmission;
+
+    const workspaceTabs = [
+        {
+            value: 'messages' as const,
+            label: 'Pesan',
+            count: collaboration.messages.length,
+        },
+        {
+            value: 'progress' as const,
+            label: 'Progres',
+            count: collaboration.progress.length,
+        },
+        {
+            value: 'content' as const,
+            label: 'Submission',
+            count: collaboration.submissions.length,
+        },
+        ...(manualPaymentEnabled
+            ? [
+                  {
+                      value: 'payment' as const,
+                      label: 'Pembayaran',
+                      count: collaboration.payment ? 1 : 0,
+                  },
+              ]
+            : []),
+        {
+            value: 'review' as const,
+            label: 'Review',
+            count: collaboration.reviews.length,
+        },
+    ];
+
+    const canComplete =
+        hasApprovedSubmission && (!manualPaymentEnabled || paymentConfirmed);
 
     return (
         <>
@@ -89,28 +152,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                     backHref: isUmkm ? '/umkm/collaborations' : '/creator/collaborations',
                     backLabel: 'Kolaborasi',
                 }}
-                tabs={[
-                    {
-                        value: 'messages',
-                        label: 'Pesan',
-                        count: collaboration.messages.length,
-                    },
-                    {
-                        value: 'progress',
-                        label: 'Progres',
-                        count: collaboration.progress.length,
-                    },
-                    {
-                        value: 'content',
-                        label: 'Submission',
-                        count: collaboration.submissions.length,
-                    },
-                    {
-                        value: 'review',
-                        label: 'Review',
-                        count: collaboration.reviews.length,
-                    },
-                ]}
+                tabs={workspaceTabs}
                 activeTab={tab}
                 onTabChange={setTab}
             >
@@ -127,7 +169,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                     <p className="text-sm text-muted-foreground">Belum ada pesan.</p>
                                 ) : (
                                     collaboration.messages.map((m) => (
-                                        <div key={m.id} className="rounded-md border border-border p-3">
+                                        <div key={m.id} className={brutalInlinePanel}>
                                             <div className="text-xs text-muted-foreground">
                                                 {m.sender_name ?? 'Sistem'} • {m.created_at}
                                                 {m.read_at ? ' ✓' : ''}
@@ -170,32 +212,12 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                     <p className="text-sm text-muted-foreground">Belum ada update progres.</p>
                                 ) : (
                                     collaboration.progress.map((p) => (
-                                        <div key={p.id} className="rounded-md border border-border p-3">
+                                        <div key={p.id} className={brutalInlinePanel}>
                                             <div className="text-xs text-muted-foreground">{p.created_at}</div>
                                             <div className="mt-1 text-sm">{p.message}</div>
                                         </div>
                                     ))
                                 )}
-                                {!isUmkm ? (
-                                    <InertiaForm {...storeProgress.form(collaboration.id)} resetOnSuccess>
-                                        {({ processing }) => (
-                                            <>
-                                                <Textarea
-                                                    name="message"
-                                                    rows={2}
-                                                    value={progress}
-                                                    onChange={(e) => setProgress(e.target.value)}
-                                                    placeholder="Update progres..."
-                                                />
-                                                <div className="mt-2">
-                                                    <Button type="submit" disabled={processing || progress.trim() === ''}>
-                                                        Posting Progres
-                                                    </Button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </InertiaForm>
-                                ) : null}
                             </div>
                         </SectionPanel>
                 ) : null}
@@ -210,7 +232,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                     <p className="text-sm text-muted-foreground">Belum ada submission.</p>
                                 ) : (
                                     collaboration.submissions.map((s) => (
-                                        <div key={s.id} className="rounded-md border border-border p-3">
+                                        <div key={s.id} className={brutalInlinePanel}>
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <div className="font-medium">v{s.version}: {s.title}</div>
@@ -227,7 +249,12 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                             })}
                                                         >
                                                             {({ processing }) => (
-                                                                <Button size="sm" type="submit" disabled={processing}>
+                                                                <Button
+                                                                    disabled={processing}
+                                                                    size="sm"
+                                                                    type="submit"
+                                                                    variant="success"
+                                                                >
                                                                     Setujui
                                                                 </Button>
                                                             )}
@@ -239,7 +266,12 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                             })}
                                                         >
                                                             {({ processing }) => (
-                                                                <Button size="sm" variant="outline" type="submit" disabled={processing}>
+                                                                <Button
+                                                                    disabled={processing}
+                                                                    size="sm"
+                                                                    type="submit"
+                                                                    variant="warning"
+                                                                >
                                                                     Minta Revisi
                                                                 </Button>
                                                             )}
@@ -265,59 +297,18 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                         </div>
                                     ))
                                 )}
-
-                                {!isUmkm ? (
-                                    <InertiaForm
-                                        {...storeSubmission.form(collaboration.id)}
-                                        encType="multipart/form-data"
-                                        resetOnSuccess
-                                    >
-                                        {({ processing, errors }) => (
-                                            <>
-                                                <div className="grid gap-2 sm:grid-cols-2">
-                                                    <div>
-                                                        <label className="text-sm font-medium">Judul</label>
-                                                        <input
-                                                            type="text"
-                                                            name="title"
-                                                            value={submissionTitle}
-                                                            onChange={(e) => setSubmissionTitle(e.target.value)}
-                                                            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                                                            required
-                                                        />
-                                                        <InputError message={errors.title} className="mt-1" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium">File (maks 5)</label>
-                                                        <input
-                                                            type="file"
-                                                            name="files[]"
-                                                            multiple
-                                                            onChange={(e) => setSubmissionFiles(e.target.files)}
-                                                            className="mt-1 w-full text-sm"
-                                                            accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf"
-                                                        />
-                                                        <InputError message={errors['files.0']} className="mt-1" />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-2">
-                                                    <label className="text-sm font-medium">Deskripsi</label>
-                                                    <Textarea
-                                                        name="description"
-                                                        rows={3}
-                                                        value={submissionDesc}
-                                                        onChange={(e) => setSubmissionDesc(e.target.value)}
-                                                    />
-                                                </div>
-                                                <Button type="submit" disabled={processing} className="mt-2">
-                                                    Upload Submission
-                                                </Button>
-                                            </>
-                                        )}
-                                    </InertiaForm>
-                                ) : null}
                             </div>
                         </SectionPanel>
+                ) : null}
+
+                {tab === 'payment' && manualPaymentEnabled ? (
+                    <CollaborationPaymentPanel
+                        budget={collaboration.budget}
+                        collaborationId={collaboration.id}
+                        isUmkm={isUmkm}
+                        payment={collaboration.payment}
+                        submitProofForm={submitPaymentProof}
+                    />
                 ) : null}
 
                 {tab === 'review' ? (
@@ -330,7 +321,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                     <p className="text-sm text-muted-foreground">Belum ada review.</p>
                                 ) : (
                                     collaboration.reviews.map((r) => (
-                                        <div key={r.id} className="rounded-md border border-border p-3">
+                                        <div key={r.id} className={brutalInlinePanel}>
                                             <div className="text-sm font-medium">★{r.rating}/5</div>
                                             <p className="mt-1 text-sm">{r.body ?? '-'}</p>
                                         </div>
@@ -351,7 +342,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                             max="5"
                                                             value={reviewRating}
                                                             onChange={(e) => setReviewRating(Number(e.target.value))}
-                                                            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                                                            className={brutalNativeSelect}
                                                         />
                                                         <InputError message={errors.rating} className="mt-1" />
                                                     </div>
@@ -374,22 +365,94 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                 ) : null}
 
                                 {isUmkm && collaboration.status === 'active' ? (
-                                    <InertiaForm {...complete.form(collaboration.id)}>
-                                        {({ processing }) => (
+                                    <div className="space-y-2">
+                                        {!manualPaymentEnabled ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                Pembayaran dilakukan di luar platform Collabite.
+                                            </p>
+                                        ) : null}
+                                        {manualPaymentEnabled &&
+                                        !paymentConfirmed &&
+                                        hasApprovedSubmission ? (
+                                            <p className="text-sm text-amber-700">
+                                                Unggah bukti pembayaran dan tunggu konfirmasi Creator
+                                                sebelum menyelesaikan kolaborasi.
+                                            </p>
+                                        ) : null}
+                                        <InertiaForm {...complete.form(collaboration.id)}>
+                                            {({ processing }) => (
+                                                <Button
+                                                    className="mt-2"
+                                                    disabled={processing || !canComplete}
+                                                    type="submit"
+                                                    variant="success"
+                                                    onClick={(e) => {
+                                                        if (!confirm('Tandai kolaborasi selesai?')) {
+                                                            e.preventDefault();
+                                                        }
+                                                    }}
+                                                >
+                                                    Selesaikan Kolaborasi
+                                                </Button>
+                                            )}
+                                        </InertiaForm>
+                                    </div>
+                                ) : null}
+
+                                {canCancel ? (
+                                    <div className={`mt-6 ${brutalDivider} pt-4`}>
+                                        {!showCancelForm ? (
                                             <Button
-                                                type="submit"
-                                                variant="default"
-                                                disabled={processing}
-                                                onClick={(e) => {
-                                                    if (!confirm('Tandai kolaborasi selesai?')) {
-e.preventDefault();
-}
-                                                }}
+                                                type="button"
+                                                variant="destructive"
+                                                onClick={() => setShowCancelForm(true)}
                                             >
-                                                Selesaikan Kolaborasi
+                                                Batalkan Kolaborasi
                                             </Button>
+                                        ) : (
+                                            <InertiaForm
+                                                {...cancel.form(collaboration.id)}
+                                                onSuccess={() => setShowCancelForm(false)}
+                                            >
+                                                {({ processing, errors }) => (
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium">
+                                                            Alasan pembatalan (min. 10 karakter)
+                                                        </label>
+                                                        <Textarea
+                                                            name="reason"
+                                                            required
+                                                            rows={3}
+                                                            value={cancelReason}
+                                                            onChange={(e) => setCancelReason(e.target.value)}
+                                                        />
+                                                        <InputError message={errors.reason} />
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                disabled={
+                                                                    processing || cancelReason.length < 10
+                                                                }
+                                                                type="submit"
+                                                                variant="destructive"
+                                                            >
+                                                                Konfirmasi Batalkan
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    setShowCancelForm(false);
+                                                                    setCancelReason('');
+                                                                }}
+                                                            >
+                                                                Batal
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </InertiaForm>
                                         )}
-                                    </InertiaForm>
+                                    </div>
                                 ) : null}
                             </div>
                         </SectionPanel>

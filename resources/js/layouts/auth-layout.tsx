@@ -50,6 +50,8 @@ export default function AuthLayout({
             description={panel.description}
             quote={panel.quote}
             quoteAuthor={panel.quoteAuthor}
+            contentWidth={variant === 'register' ? 'xl' : 'md'}
+            contentVariant={variant === 'register' ? 'flush' : 'card'}
         >
             {children}
         </Auth5Layout>

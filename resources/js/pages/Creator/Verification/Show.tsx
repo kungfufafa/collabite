@@ -2,9 +2,10 @@ import { Head, router } from '@inertiajs/react';
 import { useState, useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
-import { PageHeader } from '@/components/app/page-header';
+import { brutalDangerBanner, brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -76,16 +77,14 @@ export default function Show({ profile, current_verification, document_types }: 
     return (
         <>
             <Head title="Verifikasi Creator" />
-            <div>
-                <PageHeader
-                    title="Verifikasi Creator"
-                    description="Ajukan verifikasi agar profil Anda tampil lebih kredibel di marketplace."
-                />
-
-                <div className="mt-8 max-w-3xl space-y-6">
+            <WorkspacePage
+                description="Ajukan verifikasi agar profil Anda tampil lebih kredibel di marketplace."
+                title="Verifikasi Creator"
+            >
+                <div className="max-w-3xl space-y-6">
                     <SectionPanel
-                        title="Status Verifikasi"
                         description={`Status saat ini: ${profile.verification_status}`}
+                        title="Status Verifikasi"
                     >
                         {!profile.has_profile ? (
                             <p className="text-sm text-destructive">Lengkapi profil Creator terlebih dahulu.</p>
@@ -100,7 +99,7 @@ export default function Show({ profile, current_verification, document_types }: 
                                     <StatusBadge label={current_verification.status} tone="info" />
                                 </div>
                                 {current_verification.rejection_reason ? (
-                                    <p className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive">
+                                    <p className={brutalDangerBanner}>
                                         Alasan penolakan: {current_verification.rejection_reason}
                                     </p>
                                 ) : null}
@@ -131,7 +130,7 @@ export default function Show({ profile, current_verification, document_types }: 
                             {documents.map((entry, i) => (
                                 <div
                                     key={`${baseId}-${i}`}
-                                    className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-2"
+                                    className={`grid gap-3 md:grid-cols-2 ${brutalPanel} p-4`}
                                 >
                                     <div className="space-y-2">
                                         <Label>Jenis Dokumen</Label>
@@ -187,7 +186,7 @@ export default function Show({ profile, current_verification, document_types }: 
                         </form>
                     </SectionPanel>
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

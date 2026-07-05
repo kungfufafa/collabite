@@ -1,14 +1,18 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import type { FormEventHandler, ReactNode } from 'react';
 
+import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
+import InputError from '@/components/input-error';
 import { ListEmptyState } from '@/components/app/list-empty-state';
-import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { fieldErrorProps } from '@/lib/form-errors';
 
 type PortfolioItem = {
     id: number;
@@ -49,18 +53,14 @@ export default function Index({ portfolio_items }: Props): ReactNode {
     return (
         <>
             <Head title="Portofolio" />
-            <div>
-                <PageHeader
-                    description="Unggah karya terbaik untuk menarik undangan UMKM."
-                    title="Portofolio"
-                />
-
-                <div className="mt-8">
-                    <SectionPanel
-                        description="Unggah karya terbaik dalam format gambar."
-                        title="Tambah Portofolio"
-                    >
+            <WorkspacePage
+                description="Unggah karya terbaik untuk menarik undangan UMKM."
+                title="Portofolio"
+            >
+                <SectionPanel title="Tambah Portofolio">
                         <form className="space-y-4" onSubmit={submit}>
+                            <FormErrorSummary errors={form.errors} />
+
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="title">Judul</Label>
                                 <Input
@@ -68,10 +68,9 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                     onChange={(e) => form.setData('title', e.target.value)}
                                     required
                                     value={form.data.title}
+                                    {...fieldErrorProps(form.errors.title)}
                                 />
-                                {form.errors.title ? (
-                                    <p className="text-sm text-[var(--danger)]">{form.errors.title}</p>
-                                ) : null}
+                                <InputError message={form.errors.title} />
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="description">Deskripsi</Label>
@@ -79,7 +78,9 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                     id="description"
                                     onChange={(e) => form.setData('description', e.target.value)}
                                     value={form.data.description}
+                                    {...fieldErrorProps(form.errors.description)}
                                 />
+                                <InputError message={form.errors.description} />
                             </div>
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-1.5">
@@ -109,10 +110,9 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                     id="media"
                                     onChange={(e) => form.setData('media', e.target.files?.[0] ?? null)}
                                     type="file"
+                                    {...fieldErrorProps(form.errors.media)}
                                 />
-                                {form.errors.media ? (
-                                    <p className="text-sm text-[var(--danger)]">{form.errors.media}</p>
-                                ) : null}
+                                <InputError message={form.errors.media} />
                             </div>
                             <div className="flex justify-end">
                                 <Button disabled={form.processing} type="submit">
@@ -120,11 +120,9 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                 </Button>
                             </div>
                         </form>
-                    </SectionPanel>
-                </div>
+                </SectionPanel>
 
-                <div className="mt-8">
-                    <SectionPanel title="Daftar Portofolio">
+                <SectionPanel title="Daftar Portofolio">
                         {portfolio_items.length === 0 ? (
                             <ListEmptyState
                                 description="Tambahkan minimal satu karya agar profilmu lebih menarik."
@@ -141,11 +139,11 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                             {item.media_url ? (
                                                 <img
                                                     alt={item.title}
-                                                    className="size-12 rounded-md object-cover"
+                                                    className={brutalThumb}
                                                     src={item.media_url}
                                                 />
                                             ) : (
-                                                <div className="size-12 rounded-md bg-muted" />
+                                                <div className={brutalThumb} />
                                             )}
                                             <div>
                                                 <p className="font-semibold text-foreground">
@@ -174,9 +172,8 @@ export default function Index({ portfolio_items }: Props): ReactNode {
                                 ))}
                             </div>
                         )}
-                    </SectionPanel>
-                </div>
-            </div>
+                </SectionPanel>
+            </WorkspacePage>
         </>
     );
 }

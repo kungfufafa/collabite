@@ -8,11 +8,12 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { ActivityTimeline } from '@/components/app/activity-timeline';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { MetricTile } from '@/components/app/metric-tile';
-import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import type {
     DashboardActivityLogItem,
     DashboardHealth,
@@ -52,20 +53,20 @@ export default function Index({
     const content = moderation_queues?.content ?? [];
 
     const activityItems = recent_activity.map((item) => ({
-        title: [item.actor, item.action, item.subject].filter(Boolean).join(' · '),
+        title: [item.actor, item.subject].filter(Boolean).join(' · ') || 'Sistem',
+        subtitle: item.action,
         time: item.created_at,
     }));
 
     return (
         <>
             <Head title="Dashboard Admin" />
-            <div data-testid="admin-dashboard">
-                <PageHeader
-                    description="Pantauan operasional Collabite."
-                    title="Dashboard Admin"
-                />
-
-                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <WorkspacePage
+                description="Pantauan operasional Collabite."
+                testId="admin-dashboard"
+                title="Dashboard Admin"
+            >
+                <div className="grid gap-4 lg:grid-cols-4">
                     <MetricTile
                         hint={
                             summary
@@ -102,21 +103,19 @@ export default function Index({
                 </div>
 
                 {!health.caught_up ? (
-                    <div className="mt-8">
-                        <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-foreground">{health.message}</p>
-                            <Button asChild className="shrink-0" variant="outline">
-                                <Link href="/admin/verifications">
-                                    Buka antrean
-                                    <ArrowRight className="size-4" />
-                                </Link>
-                            </Button>
-                        </ResourceCard>
-                    </div>
+                    <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-foreground">{health.message}</p>
+                        <Button asChild className="shrink-0" variant="outline">
+                            <Link href="/admin/verifications">
+                                Buka antrean
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        </Button>
+                    </ResourceCard>
                 ) : null}
 
-                <div className="mt-8 grid gap-8 lg:grid-cols-3">
-                    <div className="lg:col-span-2 flex flex-col gap-8">
+                <div className="grid gap-10 lg:grid-cols-3">
+                    <div className="flex flex-col gap-10 lg:col-span-2">
                         <DashboardSection
                             action={{
                                 href: '/admin/verifications',
@@ -125,7 +124,10 @@ export default function Index({
                             description="Pengajuan Creator yang perlu ditinjau."
                             title="Antrean verifikasi"
                         >
-                            <QueueList empty="Tidak ada pengajuan menunggu." items={verifications} />
+                            <QueueList
+                                empty="Tidak ada pengajuan menunggu."
+                                items={verifications}
+                            />
                         </DashboardSection>
 
                         <DashboardSection
@@ -136,7 +138,10 @@ export default function Index({
                             description="Campaign tersembunyi yang dapat dipulihkan."
                             title="Moderasi campaign"
                         >
-                            <QueueList empty="Tidak ada campaign tersembunyi." items={campaigns} />
+                            <QueueList
+                                empty="Tidak ada campaign tersembunyi."
+                                items={campaigns}
+                            />
                         </DashboardSection>
 
                         <DashboardSection
@@ -147,7 +152,10 @@ export default function Index({
                             description="Submission tersembunyi yang dapat dipulihkan."
                             title="Moderasi konten"
                         >
-                            <QueueList empty="Tidak ada submission tersembunyi." items={content} />
+                            <QueueList
+                                empty="Tidak ada submission tersembunyi."
+                                items={content}
+                            />
                         </DashboardSection>
                     </div>
 
@@ -162,7 +170,7 @@ export default function Index({
                         <ActivityTimeline items={activityItems} />
                     </DashboardSection>
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }
@@ -179,10 +187,10 @@ function QueueList({
     }
 
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
             {items.map((item) => (
-                <ResourceCard
-                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                <div
+                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${brutalPanel} p-4`}
                     key={item.id}
                 >
                     <div className="min-w-0">
@@ -192,7 +200,7 @@ function QueueList({
                     <Button asChild className="shrink-0" size="sm" variant="outline">
                         <Link href={item.href}>{item.cta}</Link>
                     </Button>
-                </ResourceCard>
+                </div>
             ))}
         </div>
     );

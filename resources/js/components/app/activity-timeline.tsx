@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 type ActivityTimelineItem = {
     title: string;
+    subtitle?: string;
     time: string;
 };
 
@@ -19,18 +20,27 @@ export function ActivityTimeline({ items }: ActivityTimelineProps): ReactNode {
     }
 
     return (
-        <ol className="flex flex-col">
+        <ol className="flex max-h-[32rem] flex-col gap-5 overflow-y-auto pr-1">
             {items.map((item, index) => (
-                <li className="flex gap-3 pb-4 last:pb-0" key={`${item.title}-${index}`}>
-                    <div className="flex flex-col items-center">
-                        <span className="mt-1 size-2 rounded-full bg-[var(--brand-secondary)]" />
+                <li className="flex gap-4" key={`${item.title}-${index}`}>
+                    <div className="flex flex-col items-center pt-1.5">
+                        <span className="size-3 shrink-0 border-2 border-[var(--neutral-900)] bg-[var(--brand-secondary)] shadow-[1px_1px_0_0_var(--neutral-900)]" />
                         {index < items.length - 1 ? (
-                            <span className="my-1 w-px flex-1 bg-border" />
+                            <span className="mt-2 w-[2px] flex-1 bg-[var(--neutral-900)]" />
                         ) : null}
                     </div>
-                    <div className="-mt-0.5">
-                        <p className="text-sm text-foreground">{item.title}</p>
-                        <p className="text-xs text-muted-foreground">{item.time}</p>
+                    <div className="min-w-0 flex-1 pb-1">
+                        <p className="text-sm font-bold leading-relaxed text-foreground">
+                            {item.title}
+                        </p>
+                        {item.subtitle ? (
+                            <p className="mt-1 break-all font-mono text-xs leading-relaxed text-muted-foreground">
+                                {item.subtitle}
+                            </p>
+                        ) : null}
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            {item.time}
+                        </p>
                     </div>
                 </li>
             ))}

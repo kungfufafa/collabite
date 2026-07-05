@@ -1,17 +1,21 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { apply } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
 import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
-import { PageHeader } from '@/components/app/page-header';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
+import { NoticeBanner } from '@/components/app/notice-banner';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { fieldErrorProps } from '@/lib/form-errors';
 import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
+import { index as creatorRequestsIndex } from '@/routes/creator/requests';
 
 type Deliverable = { id: number; title: string; description: string | null; quantity: number };
 type Campaign = {
@@ -21,10 +25,32 @@ type Campaign = {
     budget: string | null;
     deadline: string | null;
     category: string | null;
+    status?: string;
+    status_label?: string;
     deliverables: Deliverable[];
     umkm: { name: string | null; city: string | null; business_type: string | null };
     published_at: string | null;
 };
+
+function statusTone(status: string | undefined): 'success' | 'neutral' | 'danger' | 'info' | 'warning' {
+    if (status === 'open') {
+        return 'success';
+    }
+
+    if (status === 'in_collaboration') {
+        return 'info';
+    }
+
+    if (status === 'completed') {
+        return 'neutral';
+    }
+
+    if (status === 'cancelled') {
+        return 'danger';
+    }
+
+    return 'warning';
+}
 
 export default function Show({
     campaign,
@@ -40,20 +66,21 @@ export default function Show({
     return (
         <>
             <Head title={`Campaign - ${campaign.title}`} />
-            <div>
-                <PageHeader
-                    description={`${campaign.umkm.name ?? 'UMKM'} · ${campaign.umkm.city ?? '-'} · ${campaign.umkm.business_type ?? ''}`}
-                    meta={<StatusBadge label="Terbuka" tone="success" />}
-                    title={campaign.title}
-                />
+            <WorkspacePage
+                actions={<PageBackButton href={creatorCampaignsIndex().url} label="Daftar campaign" />}
+                description={`${campaign.umkm.name ?? 'UMKM'} · ${campaign.umkm.city ?? '-'} · ${campaign.umkm.business_type ?? ''}`}
+                meta={
+                    <StatusBadge
+                        label={campaign.status_label ?? 'Terbuka'}
+                        tone={statusTone(campaign.status)}
+                    />
+                }
+                title={campaign.title}
+                titleUppercase={false}
+            >
+                {flash ? <FlashBanner message={flash} /> : null}
 
-                {flash ? (
-                    <div className="mt-6">
-                        <FlashBanner message={flash} />
-                    </div>
-                ) : null}
-
-                <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                <div className="grid gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-2 space-y-8">
                         <SectionPanel title="Deskripsi campaign">
                             <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
@@ -83,17 +110,28 @@ export default function Show({
                             </dl>
                         </SectionPanel>
 
-                        {already_applied ? (
-                            <ResourceCard>
-                                <p className="text-sm text-muted-foreground">
-                                    Anda sudah mengajukan lamaran untuk campaign ini.
-                                </p>
-                            </ResourceCard>
+                        {campaign.status && campaign.status !== 'open' ? (
+                            <NoticeBanner
+                                message="Campaign ini sudah tidak menerima lamaran baru."
+                                title="Campaign ditutup"
+                                tone="warning"
+                            />
+                        ) : already_applied ? (
+                            <NoticeBanner
+                                action={{
+                                    href: creatorRequestsIndex().url,
+                                    label: 'Lihat status lamaran',
+                                }}
+                                message="Anda sudah mengajukan lamaran untuk campaign ini. Pantau respons UMKM di halaman Permintaan."
+                                title="Lamaran terkirim"
+                                tone="info"
+                            />
                         ) : showForm ? (
                             <SectionPanel title="Kirim Lamaran">
                                 <Form {...apply.form(campaign.id)}>
-                                    {({ processing }) => (
+                                    {({ errors, processing }) => (
                                         <>
+                                            <FormErrorSummary errors={errors} />
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-sm font-medium" htmlFor="message">
                                                     Pesan
@@ -104,11 +142,12 @@ export default function Show({
                                                     name="message"
                                                     placeholder="Ceritakan mengapa Anda tertarik dan bagaimana Anda akan mengerjakannya..."
                                                     rows={4}
+                                                    {...fieldErrorProps(errors.message)}
                                                 />
-                                                <InputError className="mt-1" message={errors?.message} />
+                                                <InputError className="mt-1" message={errors.message} />
                                             </div>
                                             <div className="mt-4 flex gap-2">
-                                                <Button disabled={processing} type="submit">
+                                                <Button disabled={processing} type="submit" variant="success">
                                                     {processing ? 'Mengirim...' : 'Kirim Lamaran'}
                                                 </Button>
                                                 <Button
@@ -152,13 +191,7 @@ export default function Show({
                         )}
                     </SectionPanel>
                 </div>
-
-                <div className="mt-8">
-                    <Button asChild variant="link">
-                        <Link href={creatorCampaignsIndex().url}>Kembali ke daftar campaign</Link>
-                    </Button>
-                </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

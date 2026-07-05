@@ -10,6 +10,8 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterCreatorRequest;
 use App\Http\Requests\Auth\RegisterUmkmRequest;
+use App\Models\Category;
+use App\Models\Skill;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,6 +34,8 @@ class RegisteredUserController extends Controller
             'role' => in_array($role, [UserRole::Umkm->value, UserRole::Creator->value], true)
                 ? $role
                 : null,
+            'skills' => Skill::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

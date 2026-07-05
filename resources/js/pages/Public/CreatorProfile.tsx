@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { brutalDivider } from '@/components/collabite/landing/brutal-styles';
 import { ListEmptyState } from '@/components/app/list-empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
@@ -73,7 +74,7 @@ export default function CreatorProfile({ creator }: { creator: Creator }): React
                             ) : (
                                 <StatusBadge label="Belum terverifikasi" tone="neutral" />
                             )}
-                            <div className="w-full border-t border-border pt-4">
+                            <div className={`w-full ${brutalDivider} pt-4`}>
                                 <p className="text-lg font-semibold text-foreground">
                                     {creator.rating_avg.toFixed(1)} / 5
                                 </p>

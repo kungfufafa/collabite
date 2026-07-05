@@ -13,6 +13,7 @@ export type CollaborationTab =
     | 'messages'
     | 'progress'
     | 'content'
+    | 'payment'
     | 'revisions'
     | 'review';
 
@@ -60,7 +61,7 @@ export default function CollaborationWorkspaceLayout({
             className="flex min-h-screen flex-col bg-background"
             data-testid="collaboration-workspace-layout"
         >
-            <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
+            <header className="sticky top-0 z-30 border-b-[3px] border-[var(--neutral-900)] bg-white/95 backdrop-blur-md">
                 <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center gap-3 px-5 sm:px-8">
                     <Button
                         asChild
@@ -83,10 +84,10 @@ export default function CollaborationWorkspaceLayout({
                 className="mx-auto w-full max-w-[1440px] flex-1 px-5 py-6 sm:px-8 lg:py-8"
                 data-testid="collaboration-workspace-main"
             >
-                <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+                <section className="brutal-surface border-2 border-[var(--neutral-900)] bg-card p-5 shadow-[3px_3px_0_0_var(--neutral-900)] sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                            <h1 className="text-xl font-black uppercase tracking-tight sm:text-2xl">
                                 {context.title}
                             </h1>
                             {context.subtitle ? (
@@ -123,7 +124,7 @@ export default function CollaborationWorkspaceLayout({
                     ) : null}
                 </section>
                 {tabs.length > 0 ? (
-                    <div className="mt-6 border-b border-border" data-testid="collaboration-tabs">
+                    <div className="mt-6 border-b-2 border-[var(--neutral-900)]" data-testid="collaboration-tabs">
                         <nav
                             className="-mb-px flex flex-wrap gap-1"
                             role="tablist"
@@ -141,14 +142,14 @@ export default function CollaborationWorkspaceLayout({
                                             data-active={active ? 'true' : 'false'}
                                             onClick={() => onTabChange(tab.value)}
                                             className={cn(
-                                                'inline-flex h-10 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                                                'inline-flex h-10 items-center gap-2 border-b-[3px] border-transparent px-3 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground',
                                                 active &&
                                                     'border-[var(--brand-primary)] text-[var(--brand-primary)]',
                                             )}
                                         >
                                             <span>{tab.label}</span>
                                             {typeof tab.count === 'number' ? (
-                                                <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">
+                                                <span className="border-2 border-[var(--neutral-900)] bg-muted px-2 py-0.5 text-xs font-bold tabular-nums shadow-[1px_1px_0_0_var(--neutral-900)]">
                                                     {tab.count}
                                                 </span>
                                             ) : null}
@@ -171,14 +172,14 @@ export default function CollaborationWorkspaceLayout({
                                             isCurrentUrl(href) ? 'true' : 'false'
                                         }
                                         className={cn(
-                                            'inline-flex h-10 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                                            'inline-flex h-10 items-center gap-2 border-b-[3px] border-transparent px-3 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground',
                                             isCurrentUrl(href) &&
                                                 'border-primary text-foreground',
                                         )}
                                     >
                                         <span>{tab.label}</span>
                                         {typeof tab.count === 'number' ? (
-                                            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                            <span className="border-2 border-[var(--neutral-900)] bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground shadow-[1px_1px_0_0_var(--neutral-900)]">
                                                 {tab.count}
                                             </span>
                                         ) : null}

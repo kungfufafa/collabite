@@ -114,4 +114,12 @@ class Collaboration extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+    /**
+     * @return HasOne<CollaborationPayment>
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(CollaborationPayment::class);
+    }
 }

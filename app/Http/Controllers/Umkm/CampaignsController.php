@@ -12,6 +12,7 @@ use App\Http\Requests\Umkm\StoreCampaignRequest;
 use App\Http\Requests\Umkm\UpdateCampaignRequest;
 use App\Models\Campaign;
 use App\Models\Category;
+use App\Services\UmkmProfileCompletenessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,6 +20,28 @@ use Inertia\Response;
 
 class CampaignsController extends Controller
 {
+    public function __construct(private readonly UmkmProfileCompletenessService $profileCompleteness) {}
+
+    /**
+     * @return array{isComplete: bool, missingFields: list<string>}
+     */
+    private function profileStatus(Request $request): array
+    {
+        $profile = $request->user()->umkmProfile;
+
+        if ($profile === null) {
+            return [
+                'isComplete' => false,
+                'missingFields' => ['Profil usaha'],
+            ];
+        }
+
+        return [
+            'isComplete' => $this->profileCompleteness->isComplete($profile),
+            'missingFields' => $this->profileCompleteness->missingFieldLabels($profile),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $umkm = $request->user()->umkmProfile()->firstOrFail();
@@ -43,6 +66,7 @@ class CampaignsController extends Controller
 
         return Inertia::render('Umkm/Campaigns/Index', [
             'campaigns' => $campaigns,
+            'profileStatus' => $this->profileStatus($request),
         ]);
     }
 
@@ -51,6 +75,7 @@ class CampaignsController extends Controller
         return Inertia::render('Umkm/Campaigns/Form', [
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'campaign' => null,
+            'profileStatus' => $this->profileStatus($request),
         ]);
     }
 
@@ -94,6 +119,7 @@ class CampaignsController extends Controller
                 ]),
                 'collaboration_id' => $campaign->collaboration?->id,
             ],
+            'profileStatus' => $this->profileStatus($request),
         ]);
     }
 
@@ -117,6 +143,7 @@ class CampaignsController extends Controller
                     'quantity' => $d->quantity,
                 ]),
             ],
+            'profileStatus' => $this->profileStatus($request),
         ]);
     }
 

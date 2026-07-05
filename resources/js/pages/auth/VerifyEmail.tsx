@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { brutalSuccessBanner } from '@/components/collabite/landing/brutal-styles';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/routes';
 
@@ -23,20 +24,20 @@ export default function VerifyEmail({ status }: Props): ReactNode {
             </div>
 
             {status ? (
-                <div className="mt-6 rounded-md border border-[var(--success-border)] bg-[var(--success-soft)] px-3 py-2 text-sm text-[var(--success)]">
+                <div className={`mt-6 ${brutalSuccessBanner}`}>
                     {status}
                 </div>
             ) : null}
 
-            <form
-                method="post"
+            <Form
                 action="/email/verification-notification"
+                method="post"
                 className="mt-5"
             >
                 <Button type="submit" className="h-11 w-full">
                     Kirim Ulang Tautan
                 </Button>
-            </form>
+            </Form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground lg:text-left">
                 <Link

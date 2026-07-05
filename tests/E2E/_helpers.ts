@@ -60,8 +60,19 @@ export async function registerCreator(
     baseURL: string,
     email: string,
     name = 'Creator E2E',
-    extras: Record<string, string> = {},
+    extras: Record<string, string | string[]> = {},
 ): Promise<void> {
+    const skillId = execSync(
+        `php artisan tinker --execute='echo (string) App\\\\Models\\\\Skill::query()->value("id");'`,
+    )
+        .toString()
+        .trim();
+    const categoryId = execSync(
+        `php artisan tinker --execute='echo (string) App\\\\Models\\\\Category::query()->value("id");'`,
+    )
+        .toString()
+        .trim();
+
     const token = await ensureCsrf(request, baseURL);
     const res = await request.post('/register/creator', {
         headers: {
@@ -73,6 +84,8 @@ export async function registerCreator(
             email,
             password,
             password_confirmation: password,
+            skill_ids: skillId ? [skillId] : [],
+            category_ids: categoryId ? [categoryId] : [],
             ...extras,
         },
         maxRedirects: 0,

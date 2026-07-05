@@ -33,7 +33,7 @@ export function InitialsAvatar({
     return (
         <span
             aria-hidden="true"
-            className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${SIZES[size]} ${TONES[tone]} ${className}`}
+            className={`flex shrink-0 items-center justify-center border-2 border-[var(--neutral-900)] font-black shadow-[2px_2px_0_0_var(--neutral-900)] ${SIZES[size]} ${TONES[tone]} ${className}`}
         >
             {initialsOf(name)}
         </span>

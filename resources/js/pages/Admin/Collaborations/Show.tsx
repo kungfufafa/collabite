@@ -2,10 +2,10 @@ import { Form, Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
-import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -56,38 +56,66 @@ type Props = {
     audit_logs: AuditLog[];
 };
 
+function statusTone(status: string): 'success' | 'info' | 'danger' | 'warning' {
+    if (status === 'active') {
+        return 'success';
+    }
+
+    if (status === 'completed') {
+        return 'info';
+    }
+
+    if (status === 'cancelled') {
+        return 'danger';
+    }
+
+    return 'warning';
+}
+
 export default function AdminCollaborationsShow({ collaboration, audit_logs }: Props): ReactNode {
     const isActive = collaboration.status === 'active';
 
     return (
         <>
             <Head title={`Admin: Kolaborasi #${collaboration.id}`} />
-            <div>
-                <PageHeader
-                    title={collaboration.campaign.title}
-                    description={`${collaboration.campaign.umkm_business ?? collaboration.umkm.name} ↔ ${collaboration.creator.name}`}
-                    actions={<StatusBadge label={collaboration.status_label} tone="info" />}
-                />
-
-                <div className="mt-8 space-y-6">
+            <WorkspacePage
+                actions={
+                    <>
+                        <StatusBadge
+                            label={collaboration.status_label}
+                            tone={statusTone(collaboration.status)}
+                        />
+                        <PageBackButton href="/admin/collaborations" />
+                    </>
+                }
+                description={`${collaboration.campaign.umkm_business ?? collaboration.umkm.name} ↔ ${collaboration.creator.name}`}
+                title={collaboration.campaign.title}
+            >
+                <div className="space-y-6">
                     {collaboration.cancelled_at ? (
                         <SectionPanel title="Riwayat Pembatalan">
                             <div className="space-y-1 text-sm text-muted-foreground">
                                 <p>Dibatalkan pada {collaboration.cancelled_at}.</p>
-                                <p>Alasan: {collaboration.cancelled_reason ?? '-'}</p>
+                                <p>Alasan: {collaboration.cancelled_reason ?? '—'}</p>
                             </div>
                         </SectionPanel>
                     ) : null}
 
                     <SectionPanel title="Progress">
                         {collaboration.progress.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Belum ada progress update.</p>
+                            <p className="text-sm text-muted-foreground">
+                                Belum ada progress update.
+                            </p>
                         ) : (
-                            <ol className="space-y-2 text-sm">
-                                {collaboration.progress.map((p) => (
-                                    <ResourceCard key={p.id}>
-                                        <div className="text-xs text-muted-foreground">{p.created_at}</div>
-                                        <div className="mt-1 text-foreground">{p.message}</div>
+                            <ol className="space-y-3">
+                                {collaboration.progress.map((progress) => (
+                                    <ResourceCard key={progress.id}>
+                                        <div className="text-xs text-muted-foreground">
+                                            {progress.created_at}
+                                        </div>
+                                        <div className="mt-1 text-sm text-foreground">
+                                            {progress.message}
+                                        </div>
                                     </ResourceCard>
                                 ))}
                             </ol>
@@ -96,16 +124,21 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
 
                     <SectionPanel title="Submissions">
                         {collaboration.submissions.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Belum ada submission.</p>
+                            <p className="text-sm text-muted-foreground">
+                                Belum ada submission.
+                            </p>
                         ) : (
-                            <ul className="space-y-2 text-sm">
-                                {collaboration.submissions.map((s) => (
-                                    <ResourceCard key={s.id}>
+                            <ul className="space-y-3">
+                                {collaboration.submissions.map((submission) => (
+                                    <ResourceCard key={submission.id}>
                                         <div className="flex items-center justify-between gap-4">
                                             <span className="font-medium text-foreground">
-                                                v{s.version} — {s.title}
+                                                v{submission.version} — {submission.title}
                                             </span>
-                                            <StatusBadge label={s.status} tone="neutral" />
+                                            <StatusBadge
+                                                label={submission.status}
+                                                tone="neutral"
+                                            />
                                         </div>
                                     </ResourceCard>
                                 ))}
@@ -123,13 +156,13 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
                                 columns={[
                                     {
                                         header: 'Waktu',
-                                        cell: (log) => log.created_at ?? '-',
+                                        cell: (log) => log.created_at ?? '—',
                                     },
                                     { header: 'Aksi', cell: (log) => log.action },
                                     {
                                         header: 'Actor',
                                         cell: (log) =>
-                                            `#${log.actor_id ?? '-'} ${log.actor_role ? `(${log.actor_role})` : ''}`,
+                                            `#${log.actor_id ?? '—'} ${log.actor_role ? `(${log.actor_role})` : ''}`,
                                     },
                                 ]}
                                 emptyTitle="Belum ada catatan audit"
@@ -139,16 +172,20 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
                         )}
                     </SectionPanel>
 
-                    <SectionPanel title="Force-close">
+                    <SectionPanel
+                        description="Hanya tersedia untuk kolaborasi berstatus aktif."
+                        title="Force-close"
+                    >
                         {!isActive ? (
                             <p className="text-sm text-muted-foreground">
-                                Kolaborasi tidak dalam status aktif sehingga tidak dapat di-force-close.
+                                Kolaborasi tidak dalam status aktif sehingga tidak dapat
+                                di-force-close.
                             </p>
                         ) : (
                             <Form
                                 action={`/admin/collaborations/${collaboration.id}/force-close`}
-                                method="post"
                                 className="space-y-3"
+                                method="post"
                             >
                                 {({ errors, processing }) => (
                                     <>
@@ -156,25 +193,27 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
                                             <Label htmlFor="reason">Alasan (≥ 10 karakter)</Label>
                                             <Textarea
                                                 id="reason"
-                                                name="reason"
-                                                rows={3}
-                                                required
-                                                minLength={10}
                                                 maxLength={1000}
+                                                minLength={10}
+                                                name="reason"
+                                                required
+                                                rows={3}
                                             />
-                                            <InputError message={errors.reason} className="mt-1" />
+                                            <InputError className="mt-1" message={errors.reason} />
                                         </div>
                                         <Button
-                                            type="submit"
-                                            variant="destructive"
                                             disabled={processing}
                                             onClick={(e) => {
                                                 if (!confirm('Force-close kolaborasi ini?')) {
                                                     e.preventDefault();
                                                 }
                                             }}
+                                            type="submit"
+                                            variant="destructive"
                                         >
-                                            {processing ? 'Memproses...' : 'Force-close kolaborasi'}
+                                            {processing
+                                                ? 'Memproses...'
+                                                : 'Force-close kolaborasi'}
                                         </Button>
                                     </>
                                 )}
@@ -184,21 +223,28 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
 
                     {collaboration.reviews.length > 0 ? (
                         <SectionPanel title="Reviews">
-                            <ul className="space-y-2 text-sm">
-                                {collaboration.reviews.map((r) => (
-                                    <ResourceCard key={r.id}>
+                            <ul className="space-y-3">
+                                {collaboration.reviews.map((review) => (
+                                    <ResourceCard key={review.id}>
                                         <div className="flex justify-between gap-4">
-                                            <span className="text-foreground">
-                                                {r.reviewer} → {r.reviewee}
+                                            <span className="text-sm text-foreground">
+                                                {review.reviewer} → {review.reviewee}
                                             </span>
-                                            <span className="font-medium">{r.rating}/5</span>
+                                            <span className="font-medium tabular-nums">
+                                                {review.rating}/5
+                                            </span>
                                         </div>
-                                        {r.body ? (
-                                            <p className="mt-2 text-muted-foreground">{r.body}</p>
+                                        {review.body ? (
+                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                {review.body}
+                                            </p>
                                         ) : null}
-                                        {r.is_hidden ? (
+                                        {review.is_hidden ? (
                                             <div className="mt-2">
-                                                <StatusBadge label="Tersembunyi" tone="neutral" />
+                                                <StatusBadge
+                                                    label="Tersembunyi"
+                                                    tone="neutral"
+                                                />
                                             </div>
                                         ) : null}
                                     </ResourceCard>
@@ -207,7 +253,7 @@ export default function AdminCollaborationsShow({ collaboration, audit_logs }: P
                         </SectionPanel>
                     ) : null}
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

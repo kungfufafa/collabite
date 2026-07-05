@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Notifications\Auth\CollabiteVerifyEmailNotification;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
 test('email verification screen can be rendered', function (): void {
@@ -30,6 +32,20 @@ test('email can be verified', function (): void {
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     $response->assertRedirect();
+});
+
+test('unverified user can resend verification email', function (): void {
+    Notification::fake();
+
+    $user = User::factory()->unverified()->create();
+
+    $this->actingAs($user)
+        ->from(route('verification.notice'))
+        ->post(route('verification.send'))
+        ->assertRedirect(route('verification.notice'))
+        ->assertSessionHas('status');
+
+    Notification::assertSentTo($user, CollabiteVerifyEmailNotification::class);
 });
 
 test('email is not verified with invalid hash', function (): void {

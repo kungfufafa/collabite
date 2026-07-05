@@ -4,7 +4,9 @@ import type { ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { PageHeader } from '@/components/app/page-header';
+import { ProfileIncompleteBanner } from '@/components/app/profile-incomplete-banner';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { fieldErrorProps } from '@/lib/form-errors';
 import { store, update, publish, cancel } from '@/routes/umkm/campaigns';
 
 type Category = { id: number; name: string };
@@ -34,14 +37,22 @@ type Campaign = {
     deliverables?: Deliverable[];
 } | null;
 
+type ProfileStatus = {
+    isComplete: boolean;
+    missingFields: string[];
+};
+
 export default function CampaignForm({
     campaign,
     categories,
+    profileStatus,
 }: {
     campaign: Campaign;
     categories: Category[];
+    profileStatus?: ProfileStatus;
 }): ReactNode {
     const isEdit = campaign !== null;
+    const canPublish = profileStatus?.isComplete ?? true;
     const flash = usePage().props.status as string | undefined;
     const [deliverables, setDeliverables] = useState<Deliverable[]>(
         isEdit && campaign?.deliverables
@@ -76,12 +87,18 @@ export default function CampaignForm({
                     </div>
                 ) : null}
 
+                <div className="mt-6">
+                    <ProfileIncompleteBanner profileStatus={profileStatus} />
+                </div>
+
                 <InertiaForm
                     {...(isEdit ? update.form(campaign!.id) : store.form())}
                     className="mt-8 space-y-8"
                 >
                     {({ errors, processing }) => (
                         <>
+                            <FormErrorSummary errors={errors} className="mb-2" />
+
                             <SectionPanel
                                 description="Tentukan judul, deskripsi, dan budget campaign."
                                 title="Informasi Campaign"
@@ -95,6 +112,7 @@ export default function CampaignForm({
                                             maxLength={160}
                                             name="title"
                                             required
+                                            {...fieldErrorProps(errors.title)}
                                         />
                                         <InputError className="mt-1" message={errors.title} />
                                     </div>
@@ -107,6 +125,7 @@ export default function CampaignForm({
                                             name="description"
                                             required
                                             rows={5}
+                                            {...fieldErrorProps(errors.description)}
                                         />
                                         <InputError className="mt-1" message={errors.description} />
                                     </div>
@@ -161,6 +180,7 @@ export default function CampaignForm({
                                                 name="budget"
                                                 step="0.01"
                                                 type="number"
+                                                {...fieldErrorProps(errors.budget)}
                                             />
                                             <InputError className="mt-1" message={errors.budget} />
                                         </div>
@@ -172,6 +192,7 @@ export default function CampaignForm({
                                             id="deadline"
                                             name="deadline"
                                             type="date"
+                                            {...fieldErrorProps(errors.deadline)}
                                         />
                                         <InputError className="mt-1" message={errors.deadline} />
                                     </div>
@@ -262,7 +283,7 @@ export default function CampaignForm({
                     <div className="mt-4 flex gap-2">
                         <InertiaForm {...publish.form(campaign!.id)}>
                             {({ processing }) => (
-                                <Button disabled={processing} type="submit">
+                                <Button disabled={processing || !canPublish} type="submit">
                                     Publikasikan
                                 </Button>
                             )}

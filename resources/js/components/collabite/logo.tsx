@@ -86,7 +86,7 @@ export function Logo({
                 </svg>
             </span>
             <span
-                className={`text-[1.2rem] font-bold tracking-tight ${wordColor}`}
+                className={`text-[1.2rem] font-black uppercase tracking-tight ${wordColor}`}
             >
                 Collabite
             </span>

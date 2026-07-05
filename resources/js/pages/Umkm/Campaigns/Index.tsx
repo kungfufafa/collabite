@@ -1,13 +1,19 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
-import { ListEmptyState } from '@/components/app/list-empty-state';
 import { PageHeader } from '@/components/app/page-header';
-import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
+import {
+    TableDetailLink,
+    TableEditLink,
+    TableRowActions,
+} from '@/components/app/table-row-actions';
+import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
-import { create } from '@/routes/umkm/campaigns';
+import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { create, edit } from '@/routes/umkm/campaigns';
 
 type Campaign = {
     id: number;
@@ -42,8 +48,29 @@ function statusTone(status: string): 'success' | 'neutral' | 'danger' | 'info' |
     return 'warning';
 }
 
+function formatBudget(value: string | null): string {
+    if (!value) {
+        return '—';
+    }
+
+    return `Rp ${Number(value).toLocaleString('id-ID')}`;
+}
+
+function canEditCampaign(status: string): boolean {
+    return status === 'draft' || status === 'open';
+}
+
 export default function Index({ campaigns }: { campaigns: { data: Campaign[] } | Campaign[] }): ReactNode {
     const list = Array.isArray(campaigns) ? campaigns : campaigns.data;
+    const getSearchText = useCallback(
+        (campaign: Campaign) =>
+            [campaign.title, campaign.status_label, campaign.deadline ?? ''].join(' '),
+        [],
+    );
+    const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
+        list,
+        getSearchText,
+    );
 
     return (
         <>
@@ -62,79 +89,75 @@ export default function Index({ campaigns }: { campaigns: { data: Campaign[] } |
                     }
                 />
 
-                {list.length === 0 ? (
-                    <div className="mt-8">
-                        <ListEmptyState
-                            action={
-                                <Button asChild>
-                                    <Link href={create().url}>
-                                        <Plus className="size-4" />
-                                        Buat Campaign Pertama
-                                    </Link>
-                                </Button>
-                            }
-                            description="Buat campaign untuk mulai menerima lamaran dari creator."
-                            title="Belum ada campaign"
-                        />
-                    </div>
-                ) : (
-                    <div className="mt-8 flex flex-col gap-3">
-                        {list.map((c) => (
-                            <ResourceCard
-                                className="flex flex-col gap-4"
-                                key={c.id}
-                            >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="min-w-0">
-                                        <Link
-                                            className="text-base font-semibold text-foreground hover:underline"
-                                            href={`/umkm/campaigns/${c.id}`}
-                                        >
-                                            {c.title}
-                                        </Link>
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            {c.budget
-                                                ? `Rp ${Number(c.budget).toLocaleString('id-ID')}`
-                                                : 'Budget belum ditentukan'}
-                                            {c.deadline ? ` · Deadline ${c.deadline}` : ''}
-                                        </p>
-                                    </div>
-                                    <div className="flex shrink-0 flex-col items-end gap-2">
-                                        <StatusBadge
-                                            label={c.status_label}
-                                            tone={statusTone(c.status)}
-                                        />
+                <div className="mt-8">
+                    <WorkspaceTable
+                        columns={[
+                            {
+                                header: 'Judul',
+                                cell: (c) => (
+                                    <div className="min-w-[12rem]">
+                                        <p className="font-medium text-foreground">{c.title}</p>
                                         {c.is_hidden ? (
-                                            <StatusBadge
-                                                label="Disembunyikan admin"
-                                                tone="danger"
-                                            />
+                                            <p className="mt-0.5 text-xs text-destructive">
+                                                Disembunyikan admin
+                                            </p>
                                         ) : null}
                                     </div>
-                                </div>
-                                <div className="flex items-center justify-between gap-4 border-t border-border pt-4 text-sm">
-                                    <div className="flex gap-4 text-muted-foreground">
-                                        <span>
-                                            Pengajuan:{' '}
-                                            <strong className="text-foreground">
-                                                {c.pending_requests}
-                                            </strong>
-                                        </span>
-                                        <span>
-                                            Kolaborasi:{' '}
-                                            <strong className="text-foreground">
-                                                {c.has_collaboration ? 'Aktif' : 'Belum ada'}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                    <Button asChild size="sm" variant="outline">
-                                        <Link href={`/umkm/campaigns/${c.id}`}>Detail</Link>
-                                    </Button>
-                                </div>
-                            </ResourceCard>
-                        ))}
-                    </div>
-                )}
+                                ),
+                            },
+                            {
+                                header: 'Status',
+                                cell: (c) => (
+                                    <StatusBadge
+                                        label={c.status_label}
+                                        tone={statusTone(c.status)}
+                                    />
+                                ),
+                            },
+                            {
+                                header: 'Budget',
+                                cell: (c) => formatBudget(c.budget),
+                            },
+                            {
+                                header: 'Deadline',
+                                cell: (c) => c.deadline ?? '—',
+                            },
+                            {
+                                header: 'Pengajuan',
+                                cell: (c) => (
+                                    <span className="tabular-nums">{c.pending_requests}</span>
+                                ),
+                            },
+                            {
+                                header: 'Kolaborasi',
+                                cell: (c) => (c.has_collaboration ? 'Aktif' : 'Belum ada'),
+                            },
+                            {
+                                header: 'Aksi',
+                                className: 'text-right',
+                                cell: (c) => (
+                                    <TableRowActions>
+                                        <TableDetailLink href={`/umkm/campaigns/${c.id}`} />
+                                        {canEditCampaign(c.status) ? (
+                                            <TableEditLink href={edit(c.id).url} />
+                                        ) : null}
+                                    </TableRowActions>
+                                ),
+                            },
+                        ]}
+                        emptyDescription="Buat campaign untuk mulai menerima lamaran dari creator."
+                        emptyTitle="Belum ada campaign"
+                        getRowKey={(c) => c.id}
+                        rows={filteredRows}
+                        search={{
+                            onChange: setQuery,
+                            placeholder: 'Cari judul atau status campaign...',
+                            resultCount,
+                            totalCount,
+                            value: query,
+                        }}
+                    />
+                </div>
             </div>
         </>
     );

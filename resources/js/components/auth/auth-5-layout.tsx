@@ -3,9 +3,10 @@ import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { Logo } from '@/components/collabite/logo';
-import { FloatingPaths } from '@/components/floating-paths';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { home } from '@/routes';
+import { privacy, terms } from '@/routes/public';
 
 export type Auth5LayoutProps = {
     children: ReactNode;
@@ -13,7 +14,14 @@ export type Auth5LayoutProps = {
     description: string;
     quote: string;
     quoteAuthor: string;
+    contentWidth?: 'md' | 'xl';
+    contentVariant?: 'card' | 'flush';
 };
+
+const WIDTH_CLASS = {
+    md: 'max-w-md',
+    xl: 'max-w-3xl',
+} as const;
 
 export function Auth5Layout({
     children,
@@ -21,47 +29,47 @@ export function Auth5Layout({
     description,
     quote,
     quoteAuthor,
+    contentWidth = 'md',
+    contentVariant = 'card',
 }: Auth5LayoutProps): ReactNode {
     return (
         <main
-            className="relative lg:grid lg:min-h-svh lg:grid-cols-2"
+            className="relative lg:grid lg:min-h-svh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"
             data-testid="auth-5-layout"
         >
-            <div className="relative hidden h-full flex-col border-r border-border bg-secondary p-10 lg:flex">
-                <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background" />
-                <Logo linked={false} className="relative z-10 mr-auto" />
+            <div className="relative hidden h-full flex-col border-r-[3px] border-[var(--neutral-900)] bg-[var(--brand-primary)] p-10 text-white lg:flex">
+                <Logo linked={false} variant="light" className="mr-auto" />
 
-                <div className="relative z-10 mt-auto">
-                    <blockquote className="flex flex-col gap-2">
-                        <p className="text-xl leading-relaxed text-foreground">
+                <div className="my-auto max-w-sm">
+                    <p className="inline-block border-2 border-white/80 px-2 py-0.5 text-[0.65rem] font-black uppercase tracking-widest text-white">
+                        Gratis • Tanpa kartu kredit
+                    </p>
+                    <blockquote className="mt-6 flex flex-col gap-3">
+                        <p className="text-2xl font-black uppercase leading-tight tracking-tight">
                             &ldquo;{quote}&rdquo;
                         </p>
-                        <footer className="font-mono text-sm font-semibold text-muted-foreground">
+                        <footer className="text-sm font-bold uppercase tracking-wide text-white/80">
                             ~ {quoteAuthor}
                         </footer>
                     </blockquote>
                 </div>
 
-                <div className="absolute inset-0">
-                    <FloatingPaths position={1} />
-                    <FloatingPaths position={-1} />
-                </div>
-            </div>
-
-            <div className="relative flex min-h-svh flex-col justify-center overflow-y-auto px-6 py-12 sm:px-8 sm:py-14 lg:px-10 lg:py-16">
                 <div
                     aria-hidden
-                    className="absolute inset-0 isolate -z-10 opacity-60 contain-strict"
-                >
-                    <div className="absolute top-0 right-0 h-320 w-140 -translate-y-87.5 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,--theme(--color-foreground/.06)_0,hsla(0,0%,55%,.02)_50%,--theme(--color-foreground/.01)_80%)]" />
-                    <div className="absolute top-0 right-0 h-320 w-60 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)] [translate:5%_-50%]" />
-                    <div className="absolute top-0 right-0 h-320 w-60 -translate-y-87.5 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,--theme(--color-foreground/.04)_0,--theme(--color-foreground/.01)_80%,transparent_100%)]" />
-                </div>
+                    className="pointer-events-none absolute bottom-10 right-10 size-20 border-[6px] border-[var(--brand-secondary)]"
+                />
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute top-24 right-16 size-12 bg-[var(--brand-secondary)]"
+                    style={{ boxShadow: '4px 4px 0 0 var(--neutral-900)' }}
+                />
+            </div>
 
+            <div className="relative flex min-h-svh flex-col bg-[var(--neutral-50)] px-5 py-12 sm:px-8 sm:py-14 lg:px-10 lg:py-16">
                 <Button
                     asChild
-                    className="absolute top-7 left-5"
-                    variant="ghost"
+                    className="absolute top-6 left-5 lg:top-7"
+                    variant="outline"
                     size="sm"
                 >
                     <Link href={home()} prefetch>
@@ -70,29 +78,46 @@ export function Auth5Layout({
                     </Link>
                 </Button>
 
-                <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+                <div
+                    className={cn(
+                        'mx-auto flex w-full flex-col gap-6 pt-10 lg:pt-4',
+                        WIDTH_CLASS[contentWidth],
+                    )}
+                >
                     <Logo linked={false} className="lg:hidden" />
 
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-2xl font-bold tracking-wide text-foreground">
+                        <h1 className="brutal-heading-display text-2xl text-foreground sm:text-[2rem]">
                             {title}
                         </h1>
-                        <p className="text-base text-muted-foreground">
+                        <p className="max-w-2xl text-base font-medium text-muted-foreground">
                             {description}
                         </p>
                     </div>
 
-                    {children}
+                    {contentVariant === 'card' ? (
+                        <div className="brutal-surface bg-white p-5 sm:p-6">
+                            {children}
+                        </div>
+                    ) : (
+                        children
+                    )}
 
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-center text-sm font-medium text-muted-foreground lg:text-left">
                         Dengan melanjutkan, Anda setuju dengan{' '}
-                        <span className="underline underline-offset-4 hover:text-primary">
-                            Ketentuan Layanan
-                        </span>{' '}
+                        <Link
+                            href={terms()}
+                            className="font-bold underline underline-offset-4 hover:text-primary"
+                        >
+                            Syarat dan Ketentuan
+                        </Link>{' '}
                         dan{' '}
-                        <span className="underline underline-offset-4 hover:text-primary">
+                        <Link
+                            href={privacy()}
+                            className="font-bold underline underline-offset-4 hover:text-primary"
+                        >
                             Kebijakan Privasi
-                        </span>
+                        </Link>
                         .
                     </p>
                 </div>

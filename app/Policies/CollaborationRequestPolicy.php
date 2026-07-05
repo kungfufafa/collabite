@@ -31,6 +31,21 @@ class CollaborationRequestPolicy
             : Response::deny('Creator hanya dapat membatalkan application miliknya.');
     }
 
+    public function cancelInvitation(User $actor, CollaborationRequest $request): Response
+    {
+        if ($request->type->value !== 'invitation') {
+            return Response::deny('Hanya undangan yang dapat dibatalkan oleh UMKM.');
+        }
+
+        if (! $request->status->isOpen()) {
+            return Response::deny('Undangan sudah tidak pending.');
+        }
+
+        return $request->campaign->umkmProfile?->user_id === $actor->id
+            ? Response::allow()
+            : Response::deny('Hanya UMKM pemilik campaign yang dapat membatalkan undangan.');
+    }
+
     public function respond(User $actor, CollaborationRequest $request): Response
     {
         // UMKM menerima/menolak application & Creator menerima/menolak invitation.

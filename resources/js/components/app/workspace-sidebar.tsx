@@ -31,11 +31,11 @@ export function WorkspaceSidebar({ role }: WorkspaceSidebarProps): ReactNode {
 
     return (
         <aside
-            className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-border bg-card lg:flex"
+            className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r-2 border-[var(--neutral-900)] bg-card shadow-[4px_0_0_0_var(--neutral-900)] lg:flex"
             data-slot="sidebar-wrapper"
             data-testid={sidebarTestId}
         >
-            <div className="flex h-16 items-center border-b border-border px-5">
+            <div className="flex h-16 items-center border-b-2 border-[var(--neutral-900)] px-5">
                 <Logo />
             </div>
             <WorkspaceSidebarNav
@@ -73,7 +73,7 @@ export function WorkspaceMobileNav({
                 side="left"
             >
                 <SheetTitle className="sr-only">Navigasi</SheetTitle>
-                <div className="flex h-16 items-center border-b border-border px-5">
+                <div className="flex h-16 items-center border-b-2 border-[var(--neutral-900)] px-5">
                     <Logo />
                 </div>
                 <WorkspaceSidebarNav

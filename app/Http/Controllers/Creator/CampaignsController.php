@@ -74,9 +74,9 @@ class CampaignsController extends Controller
 
     public function show(Request $request, Campaign $campaign): Response
     {
-        abort_unless($campaign->status === CampaignStatus::Open && ! $campaign->is_hidden, 404);
+        $this->authorize('view', $campaign);
 
-        $campaign->load(['category', 'deliverables', 'umkmProfile']);
+        $campaign->load(['category', 'deliverables', 'umkmProfile', 'collaboration']);
         $user = $request->user();
 
         $alreadyApplied = $user->isCreator() && $campaign->collaborationRequests()
@@ -92,6 +92,8 @@ class CampaignsController extends Controller
                 'budget' => $campaign->budget,
                 'deadline' => $campaign->deadline?->toDateString(),
                 'category' => $campaign->category?->name,
+                'status' => $campaign->status->value,
+                'status_label' => $campaign->status->label(),
                 'deliverables' => $campaign->deliverables->map(fn ($d): array => [
                     'id' => $d->id,
                     'title' => $d->title,

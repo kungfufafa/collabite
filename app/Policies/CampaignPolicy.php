@@ -15,18 +15,27 @@ class CampaignPolicy
 {
     public function view(User $actor, Campaign $campaign): Response
     {
-        // Public view untuk UMKM pemilik + Creator yang login (saat published)
         if ($actor->isUmkm() && $campaign->umkmProfile?->user_id === $actor->id) {
             return Response::allow();
         }
 
-        if ($actor->isCreator() && $campaign->status->isPubliclyVisible() && ! $campaign->is_hidden) {
+        if ($actor->isAdmin()) {
             return Response::allow();
         }
 
-        return $actor->isAdmin()
-            ? Response::allow()
-            : Response::deny('Anda tidak berhak melihat campaign ini.');
+        if ($actor->isCreator()) {
+            if ($campaign->collaboration && $campaign->collaboration->creator_id === $actor->id) {
+                return Response::allow();
+            }
+
+            if ($campaign->status->isPubliclyVisible() && ! $campaign->is_hidden) {
+                return Response::allow();
+            }
+
+            return Response::deny('Anda tidak berhak melihat campaign ini.');
+        }
+
+        return Response::deny('Anda tidak berhak melihat campaign ini.');
     }
 
     public function update(User $actor, Campaign $campaign): Response

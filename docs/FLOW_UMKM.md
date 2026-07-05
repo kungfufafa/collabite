@@ -76,3 +76,12 @@
 | --- | --- | --- | --- | --- |
 | 1 | Buka `/umkm/reviews` | Daftar review diterima | 162 char | PASS |
 | 2 | Filter hidden/sembunyi | Hidden review dikecualikan | OK | PASS |
+
+## Pembayaran Manual (MVP+)
+
+| # | Aksi | Expected | Actual | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Setelah konten disetujui | Tab Pembayaran + record `pending_proof` | OK | PASS |
+| 2 | Upload bukti transfer | `awaiting_confirmation` + notif Creator | OK | PASS |
+| 3 | Complete sebelum Creator konfirmasi | 422 | OK | PASS |
+| 4 | Complete setelah Creator konfirmasi | `Completed` | OK | PASS |

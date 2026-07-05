@@ -1,4 +1,4 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { FilterPanel } from '@/components/app/filter-panel';
@@ -161,9 +161,12 @@ export default function Index({
                                     />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center justify-between gap-2">
-                                            <h3 className="truncate font-semibold text-foreground">
+                                            <Link
+                                                className="truncate font-semibold text-foreground hover:underline"
+                                                href={`/creators/${c.id}`}
+                                            >
                                                 {c.name ?? '-'}
-                                            </h3>
+                                            </Link>
                                             <span className="text-xs font-medium text-[var(--warning)]">
                                                 ★ {Number(c.rating_avg).toFixed(1)} ({c.rating_count})
                                             </span>
@@ -189,6 +192,11 @@ export default function Index({
                                             </p>
                                         ) : null}
                                     </div>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={`/creators/${c.id}`}>Lihat Profil</Link>
+                                    </Button>
                                 </div>
                             </ResourceCard>
                         ))}

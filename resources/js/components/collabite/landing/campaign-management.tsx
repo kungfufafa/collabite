@@ -9,7 +9,12 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import {
+    brutalCard,
+    brutalIconBox,
+} from '@/components/collabite/landing/brutal-styles';
 import { SectionHeading } from '@/components/collabite/section-heading';
+import type { LandingFeaturedCampaign } from '@/pages/Public/Welcome';
 
 const FEATURES = [
     {
@@ -26,7 +31,7 @@ const FEATURES = [
     { icon: ScrollText, text: 'Lihat riwayat aktivitas campaign' },
 ];
 
-const TIMELINE = [
+const FALLBACK_TIMELINE = [
     { label: 'Draft', state: 'done' as const },
     { label: 'Dipublikasikan', state: 'done' as const },
     { label: 'Kolaborasi Aktif', state: 'current' as const },
@@ -34,12 +39,19 @@ const TIMELINE = [
     { label: 'Selesai', state: 'todo' as const },
 ];
 
-export function CampaignManagement(): ReactNode {
+export function CampaignManagement({
+    campaign,
+}: {
+    campaign: LandingFeaturedCampaign | null;
+}): ReactNode {
+    const timeline = campaign?.timeline ?? FALLBACK_TIMELINE;
+
     return (
-        <section className="border-y border-border bg-card py-16 lg:py-24">
+        <section className="brutal-section-alt border-y-[3px] border-[var(--neutral-900)] py-16 lg:py-24">
             <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
                 <div>
                     <SectionHeading
+                        brutal
                         eyebrow="Campaign Management"
                         title="Kelola Campaign dari Brief hingga Konten Disetujui"
                         align="left"
@@ -47,10 +59,10 @@ export function CampaignManagement(): ReactNode {
                     <ul className="mt-7 space-y-3.5">
                         {FEATURES.map(({ icon: Icon, text }) => (
                             <li key={text} className="flex items-start gap-3">
-                                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--brand-primary-soft)] text-[var(--brand-primary)]">
+                                <span className={`${brutalIconBox} mt-0.5 size-7`}>
                                     <Icon className="size-4" />
                                 </span>
-                                <span className="text-sm leading-relaxed text-foreground">
+                                <span className="text-sm font-bold leading-relaxed text-foreground">
                                     {text}
                                 </span>
                             </li>
@@ -58,111 +70,117 @@ export function CampaignManagement(): ReactNode {
                     </ul>
                 </div>
 
-                <div className="rounded-xl border border-border bg-[var(--neutral-50)] p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-xs text-muted-foreground">
-                                Campaign #1024
-                            </p>
-                            <h3 className="mt-0.5 text-base font-semibold text-foreground">
-                                Promosi Produk Kopi Lokal
-                            </h3>
+                {campaign ? (
+                    <div className={`${brutalCard} bg-[var(--neutral-50)] p-6`}>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                    Campaign #{campaign.id}
+                                </p>
+                                <h3 className="mt-0.5 text-base font-black text-foreground">
+                                    {campaign.title}
+                                </h3>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 border-2 border-[var(--neutral-900)] bg-[var(--info-soft)] px-2.5 py-1 text-xs font-bold text-[var(--info)] shadow-[2px_2px_0_0_var(--neutral-900)]">
+                                {campaign.status_label}
+                            </span>
                         </div>
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-[var(--info-soft)] px-2.5 py-1 text-xs font-medium text-[var(--info)] ring-1 ring-inset ring-[var(--info-border)]">
-                            Kolaborasi Aktif
-                        </span>
-                    </div>
 
-                    <div className="mt-6">
-                        <p className="text-xs font-medium text-muted-foreground">
-                            Status Campaign
-                        </p>
-                        <ol className="mt-4 space-y-0">
-                            {TIMELINE.map((step, i) => {
-                                const isLast = i === TIMELINE.length - 1;
+                        <div className="mt-6">
+                            <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+                                Status Campaign
+                            </p>
+                            <ol className="mt-4 space-y-0">
+                                {timeline.map((step, index) => {
+                                    const isLast = index === timeline.length - 1;
 
-                                return (
-                                    <li key={step.label} className="flex gap-3">
-                                        <div className="flex flex-col items-center">
-                                            <span
-                                                className={`flex size-6 items-center justify-center rounded-full text-[0.6rem] font-bold ${
-                                                    step.state === 'done'
-                                                        ? 'bg-[var(--success)] text-white'
-                                                        : step.state ===
-                                                            'current'
-                                                          ? 'bg-[var(--brand-primary)] text-white ring-4 ring-[var(--brand-primary-muted)]'
-                                                          : 'border border-border bg-card text-muted-foreground'
-                                                }`}
-                                            >
-                                                {step.state === 'done' ? (
-                                                    <Check className="size-3" />
-                                                ) : (
-                                                    i + 1
-                                                )}
-                                            </span>
-                                            {!isLast ? (
+                                    return (
+                                        <li key={step.label} className="flex gap-3">
+                                            <div className="flex flex-col items-center">
                                                 <span
-                                                    className={`my-1 w-px flex-1 ${
+                                                    className={`flex size-6 items-center justify-center border-2 border-[var(--neutral-900)] text-[0.6rem] font-black ${
                                                         step.state === 'done'
-                                                            ? 'bg-[var(--success)]'
-                                                            : 'bg-border'
+                                                            ? 'bg-[var(--success)] text-white'
+                                                            : step.state ===
+                                                                'current'
+                                                              ? 'bg-[var(--brand-primary)] text-white'
+                                                              : 'bg-white text-muted-foreground'
                                                     }`}
-                                                />
-                                            ) : null}
-                                        </div>
-                                        <div
-                                            className={
-                                                isLast ? 'pb-0' : 'pb-5'
-                                            }
-                                        >
-                                            <p
-                                                className={`text-sm ${
-                                                    step.state === 'todo'
-                                                        ? 'text-muted-foreground'
-                                                        : 'font-medium text-foreground'
-                                                }`}
+                                                >
+                                                    {step.state === 'done' ? (
+                                                        <Check className="size-3" />
+                                                    ) : (
+                                                        index + 1
+                                                    )}
+                                                </span>
+                                                {!isLast ? (
+                                                    <span
+                                                        className={`my-1 w-[3px] flex-1 ${
+                                                            step.state === 'done'
+                                                                ? 'bg-[var(--success)]'
+                                                                : 'bg-[var(--neutral-900)]'
+                                                        }`}
+                                                    />
+                                                ) : null}
+                                            </div>
+                                            <div
+                                                className={
+                                                    isLast ? 'pb-0' : 'pb-5'
+                                                }
                                             >
-                                                {step.label}
-                                            </p>
-                                            {step.state === 'current' ? (
-                                                <p className="mt-0.5 text-xs text-[var(--brand-primary)]">
-                                                    Sedang berlangsung
+                                                <p
+                                                    className={`text-sm ${
+                                                        step.state === 'todo'
+                                                            ? 'font-medium text-muted-foreground'
+                                                            : 'font-black text-foreground'
+                                                    }`}
+                                                >
+                                                    {step.label}
                                                 </p>
-                                            ) : null}
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ol>
-                    </div>
+                                                {step.state === 'current' ? (
+                                                    <p className="mt-0.5 text-xs font-bold text-[var(--brand-primary)]">
+                                                        Sedang berlangsung
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        </div>
 
-                    <div className="mt-2 grid grid-cols-3 gap-3 border-t border-border pt-4">
-                        <div>
-                            <p className="text-xs text-muted-foreground">
-                                Budget
-                            </p>
-                            <p className="text-sm font-semibold text-foreground">
-                                Rp 2,5jt
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">
-                                Deliverables
-                            </p>
-                            <p className="text-sm font-semibold text-foreground">
-                                3 konten
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-muted-foreground">
-                                Deadline
-                            </p>
-                            <p className="text-sm font-semibold text-foreground">
-                                24 Jun
-                            </p>
+                        <div className="mt-2 grid grid-cols-3 gap-3 border-t-[3px] border-[var(--neutral-900)] pt-4">
+                            <div>
+                                <p className="text-xs font-bold text-muted-foreground">
+                                    Budget
+                                </p>
+                                <p className="text-sm font-black text-foreground">
+                                    {campaign.budget ?? '—'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-muted-foreground">
+                                    Deliverables
+                                </p>
+                                <p className="text-sm font-black text-foreground">
+                                    {campaign.deliverable_count} konten
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-muted-foreground">
+                                    Deadline
+                                </p>
+                                <p className="text-sm font-black text-foreground">
+                                    {campaign.deadline ?? '—'}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="border-[3px] border-dashed border-[var(--neutral-900)] bg-[var(--neutral-50)] p-8 text-center text-sm font-medium text-muted-foreground">
+                        Belum ada campaign demo yang dipublikasikan.
+                    </div>
+                )}
             </div>
         </section>
     );

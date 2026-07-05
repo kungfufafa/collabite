@@ -67,9 +67,22 @@ test('UMKM cannot post a progress update', function (): void {
     [$umkm, , , $collab] = makeCollabForContent();
 
     $this->actingAs($umkm)
-        ->post(route('umkm.collaborations.progress.store', $collab), [
+        ->post(route('creator.collaborations.progress.store', $collab), [
             'message' => 'Test',
         ])
+        ->assertForbidden();
+});
+
+test('UMKM cannot submit content for review', function (): void {
+    [$umkm, , , $collab] = makeCollabForContent();
+    $sub = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'Draft',
+        'status' => ContentSubmissionStatus::Draft,
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('creator.collaborations.submissions.submitForReview', [$collab, $sub]))
         ->assertForbidden();
 });
 

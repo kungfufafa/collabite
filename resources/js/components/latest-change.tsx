@@ -1,15 +1,16 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
+import { cn } from '@/lib/utils';
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 
 const latestChange = {
-	badge: "COLABITE",
-	title: "Platform kolaborasi UMKM × Creator",
-	description: "Kelola campaign dari satu tempat.",
-	readMore: { href: "/", label: "Pelajari lebih lanjut" },
+	badge: "UPDATE",
+	title: "Smarter shipping quotes",
+	description: "Real-time rates at checkout now.", // TIP: Use a single line of text for the description. (max 5 words)
+	readMore: { href: "#", label: "Changelog" },
 } as const;
 
 export function LatestChange() {
@@ -22,7 +23,8 @@ export function LatestChange() {
 	return (
 		<div
 			className={cn(
-				"rounded-lg group/latest-change size-full min-h-27 justify-center border bg-background",
+				brutalPanel,
+				"group/latest-change size-full min-h-27 justify-center",
 				"relative flex size-full flex-col gap-1 overflow-hidden px-4 pt-3 pb-1 *:text-nowrap",
 				"transition-opacity group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:opacity-0"
 			)}
@@ -43,7 +45,7 @@ export function LatestChange() {
 				<a href={latestChange.readMore.href}>{latestChange.readMore.label}</a>
 			</Button>
 			<Button
-				className="absolute top-2 right-2 z-10 size-6 rounded-full opacity-0 transition-opacity group-hover/latest-change:opacity-100"
+				className="absolute top-2 right-2 z-10 size-6 border-2 border-[var(--neutral-900)] opacity-0 shadow-[1px_1px_0_0_var(--neutral-900)] transition-opacity group-hover/latest-change:opacity-100"
 				onClick={() => setIsOpen(false)}
 				size="icon-sm"
 				variant="ghost"

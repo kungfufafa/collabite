@@ -23,13 +23,13 @@ export function Progress({
             aria-valuemax={100}
             data-slot="progress"
             className={cn(
-                'bg-primary/10 relative h-2 w-full overflow-hidden rounded-full',
+                'relative h-3 w-full overflow-hidden border-2 border-[var(--neutral-900)] bg-[var(--neutral-100)]',
                 className,
             )}
             {...props}
         >
             <div
-                className="bg-primary h-full transition-all"
+                className="h-full bg-[var(--brand-primary)] transition-all"
                 style={{ width: `${percent}%` }}
             />
         </div>

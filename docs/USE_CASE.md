@@ -753,11 +753,12 @@ Setiap use case mengikuti format:
 | **Prasyarat** | Login UMKM; campaign `open`; Creator belum diundang. |
 | **Trigger** | UMKM menekan "Undang" pada profil Creator. |
 | **Alur utama** | 1. UMKM menambahkan pesan singkat.<br>2. Sistem membuat `collaboration_request` tipe `invitation`, status `pending`.<br>3. Creator menerima notifikasi. |
-| **Alur alternatif** | - |
+| **Alur alternatif** | UMKM membatalkan undangan pending → status `cancelled_by_umkm`; Creator menerima notifikasi (`CancelInvitationAction`, route `POST /umkm/requests/{request}/cancel-invitation`). |
 | **Alur kegagalan** | - Duplikat invitation ditolak. |
-| **Post-condition** | Invitation `pending`. |
+| **Post-condition** | Invitation `pending` (atau `cancelled_by_umkm` jika dibatalkan). |
 | **Business rules** | BR-004, BR-005. |
 | **Requirement terkait** | FR-COLLAB-002, FR-NOTIF-001. |
+| **Implementasi** | `app/Actions/Collaboration/InviteCreatorAction.php`; batalkan undangan: `app/Actions/Collaboration/CancelInvitationAction.php`. |
 
 ## UC-COLLAB-003 — Cegah Duplikat Request
 
@@ -820,12 +821,13 @@ Setiap use case mengikuti format:
 | **Tujuan** | Menarik kembali pengajuan. |
 | **Prasyarat** | Request `pending`, milik Creator, tipe `application`. |
 | **Trigger** | Creator menekan "Batalkan". |
-| **Alur utama** | 1. Sistem mengubah status request ke `cancelled_by_creator`.<br>2. UMKM menerima notifikasi. |
+| **Alur utama** | 1. Sistem mengubah status request ke `cancelled_by_creator`.<br>2. UMKM menerima notifikasi (`CollaborationRequestCancelledNotification`). |
 | **Alur alternatif** | - |
 | **Alur kegagalan** | - |
 | **Post-condition** | Request `cancelled_by_creator`. |
 | **Business rules** | - |
 | **Requirement terkait** | FR-COLLAB-006. |
+| **Implementasi** | `app/Actions/Collaboration/CancelApplicationAction.php`; route `POST /creator/requests/{request}/cancel`. |
 
 ## UC-COLLAB-007 — Pembentukan Kolaborasi
 
@@ -911,7 +913,7 @@ Setiap use case mengikuti format:
 | **Post-condition** | Kolaborasi `cancelled`; pesan & submission read-only. |
 | **Business rules** | BR-005, BR-009, BR-013. |
 | **Requirement terkait** | FR-COLLAB-011, FR-AUDIT-001. |
-| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. |
+| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. Notifikasi: `app/Notifications/CollaborationCancelledNotification.php`. Route: `POST /umkm/collaborations/{c}/cancel`, `POST /creator/collaborations/{c}/cancel`. |
 
 ---
 
@@ -1095,14 +1097,15 @@ Setiap use case mengikuti format:
 | **Nama** | Selesaikan Kolaborasi |
 | **Aktor** | UMKM |
 | **Tujuan** | Menutup kolaborasi. |
-| **Prasyarat** | Kolaborasi `active`; ada submission `approved`. |
+| **Prasyarat** | Kolaborasi `active`; ada submission `approved`. Jika `COLLABITE_MANUAL_PAYMENT_ENABLED=true`, pembayaran manual juga harus `confirmed` (ADR-033). |
 | **Trigger** | UMKM menekan "Selesaikan". |
-| **Alur utama** | 1. Sistem mengubah status kolaborasi ke `completed`.<br>2. Sistem membuka akses review untuk kedua pihak.<br>3. Sistem mengirim notifikasi. |
-| **Alur alternatif** | - |
-| **Alur kegagalan** | - Belum ada submission approved. |
-| **Post-condition** | Kolaborasi `completed`. |
-| **Business rules** | - |
-| **Requirement terkait** | FR-CONTENT-007. |
+| **Alur utama** | 1. Jika fitur pembayaran manual aktif, sistem memvalidasi pembayaran `confirmed`.<br>2. Sistem mengubah status kolaborasi ke `completed`.<br>3. Sistem membuka akses review untuk kedua pihak.<br>4. Sistem mengirim notifikasi. |
+| **Alur alternatif** | - Pilot default: pembayaran off-platform tanpa gate in-app (`COLLABITE_MANUAL_PAYMENT_ENABLED=false`, ADR-011). |
+| **Alur kegagalan** | - Belum ada submission approved.<br>- Fitur manual payment aktif tetapi pembayaran belum `confirmed` → tolak (422). |
+| **Post-condition** | Kolaborasi `completed`; campaign `completed`. |
+| **Business rules** | ADR-011 (default pilot); ADR-033 (opsional) |
+| **Requirement terkait** | FR-CONTENT-007, ADR-011, ADR-033. |
+| **Implementasi** | `app/Actions/Review/CompleteCollaborationAction.php`; flag `config/collabite.php` → `manual_payment_enabled`. |
 
 ## UC-CONT-009 — Batalkan Kolaborasi oleh UMKM atau Creator
 
@@ -1120,7 +1123,7 @@ Setiap use case mengikuti format:
 | **Post-condition** | Kolaborasi `cancelled`; pesan & submission read-only. |
 | **Business rules** | BR-005, BR-009, BR-013. |
 | **Requirement terkait** | FR-COLLAB-011, FR-AUDIT-001. |
-| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. |
+| **Implementasi** | `app/Actions/Collaboration/CancelCollaborationAction.php` (pihak UMKM/Creator). Request: `app/Http/Requests/Collaboration/CancelCollaborationRequest.php`. Notifikasi: `app/Notifications/CollaborationCancelledNotification.php`. Route: `POST /umkm/collaborations/{c}/cancel`, `POST /creator/collaborations/{c}/cancel`. |
 
 ## UC-CONT-008 — Validasi State Transition
 

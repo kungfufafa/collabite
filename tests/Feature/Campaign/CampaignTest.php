@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Collaboration\AcceptRequestAction;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestType;
 use App\Enums\UserRole;
@@ -305,6 +306,35 @@ test('creator cannot apply to another creator application', function (): void {
         ->assertRedirect();
 
     expect(CollaborationRequest::where('campaign_id', $campaign->id)->count())->toBe(2);
+});
+
+test('creator can view campaign detail after collaboration starts', function (): void {
+    $creator = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    CreatorProfile::factory()->for($creator, 'user')->create();
+    [$owner, $profile] = makeUmkm();
+    $campaign = Campaign::factory()->for($profile, 'umkmProfile')->open()->create();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+        'message' => 'Saya siap kolaborasi.',
+    ]);
+
+    app(AcceptRequestAction::class)->execute($request);
+    $campaign->refresh();
+
+    expect($campaign->status)->toBe(CampaignStatus::InCollaboration);
+
+    $this->actingAs($creator)
+        ->get(route('creator.campaigns.show', $campaign))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Creator/Campaigns/Show')
+            ->where('campaign.status', CampaignStatus::InCollaboration->value),
+        );
 });
 
 test('UMKM discover search filters creators by category, rating, and verified', function (): void {

@@ -3,7 +3,9 @@ import { Menu } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { brutalBtnPrimary } from '@/components/collabite/landing/brutal-styles';
 import { Logo } from '@/components/collabite/logo';
+import { PUBLIC_NAV_LINKS } from '@/config/public-navigation';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -13,14 +15,6 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { login, register } from '@/routes';
-
-const NAV_LINKS = [
-    { label: 'Cara Kerja', href: '#cara-kerja' },
-    { label: 'Untuk UMKM', href: '#umkm' },
-    { label: 'Untuk Creator', href: '#creator' },
-    { label: 'Fitur', href: '#fitur' },
-    { label: 'FAQ', href: '#faq' },
-];
 
 export function Navbar(): ReactNode {
     const [scrolled, setScrolled] = useState(false);
@@ -37,46 +31,53 @@ export function Navbar(): ReactNode {
 
     return (
         <header
-            className={`sticky top-0 z-50 w-full transition-all ${
-                scrolled
-                    ? 'border-b border-border bg-background/85 backdrop-blur-md'
-                    : 'border-b border-transparent bg-background/0'
+            className={`sticky top-0 z-50 w-full border-b-[3px] border-[var(--neutral-900)] bg-white/95 backdrop-blur-md transition-all ${
+                scrolled ? '' : 'border-b-[3px]'
             }`}
             data-testid="public-navbar"
         >
-            <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8">
-                <Logo />
+            <div className="mx-auto grid h-16 max-w-[1280px] grid-cols-[auto_1fr] items-center gap-4 px-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="justify-self-start">
+                    <Logo />
+                </div>
 
-                <nav className="hidden items-center gap-7 lg:flex">
-                    {NAV_LINKS.map((link) => (
+                <nav
+                    aria-label="Navigasi utama"
+                    className="hidden items-center justify-center gap-7 lg:flex"
+                >
+                    {PUBLIC_NAV_LINKS.map((link) => (
                         <a
                             key={link.href}
                             href={link.href}
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                            className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {link.label}
                         </a>
                     ))}
                 </nav>
 
-                <div className="hidden items-center gap-2 lg:flex">
-                    {user ? (
-                        <Button asChild>
-                            <Link href="/dashboard">Buka Dashboard</Link>
-                        </Button>
-                    ) : (
-                        <>
-                            <Button asChild variant="ghost" className="text-foreground">
-                                <Link href={login()}>Masuk</Link>
-                            </Button>
-                            <Button asChild className="shadow-sm">
-                                <Link href={register()}>Daftar Gratis</Link>
-                            </Button>
-                        </>
-                    )}
-                </div>
+                <div className="flex items-center justify-end gap-2 justify-self-end">
+                    <div className="hidden items-center gap-2 lg:flex">
+                        {user ? (
+                            <Link href="/dashboard" className={brutalBtnPrimary}>
+                                Buka Dashboard
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    href={login()}
+                                    className="px-4 py-2 text-sm font-bold text-foreground transition-colors hover:text-[var(--brand-primary)]"
+                                >
+                                    Masuk
+                                </Link>
+                                <Link href={register()} className={brutalBtnPrimary}>
+                                    Daftar
+                                </Link>
+                            </>
+                        )}
+                    </div>
 
-                <div className="lg:hidden">
+                    <div className="lg:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button
@@ -95,11 +96,11 @@ export function Navbar(): ReactNode {
                                 <Logo />
                             </div>
                             <nav className="mt-4 flex flex-col px-3">
-                                {NAV_LINKS.map((link) => (
+                                {PUBLIC_NAV_LINKS.map((link) => (
                                     <SheetClose asChild key={link.href}>
                                         <a
                                             href={link.href}
-                                            className="rounded-lg px-3 py-3 text-sm text-foreground transition-colors hover:bg-muted"
+                                            className="px-3 py-3 text-sm font-bold text-foreground transition-colors hover:bg-[var(--neutral-100)]"
                                         >
                                             {link.label}
                                         </a>
@@ -109,11 +110,12 @@ export function Navbar(): ReactNode {
                             <div className="mt-auto flex flex-col gap-2 p-5">
                                 {user ? (
                                     <SheetClose asChild>
-                                        <Button asChild className="w-full">
-                                            <Link href="/dashboard">
-                                                Buka Dashboard
-                                            </Link>
-                                        </Button>
+                                        <Link
+                                            href="/dashboard"
+                                            className={`${brutalBtnPrimary} w-full`}
+                                        >
+                                            Buka Dashboard
+                                        </Link>
                                     </SheetClose>
                                 ) : (
                                     <>
@@ -121,23 +123,25 @@ export function Navbar(): ReactNode {
                                             <Button
                                                 asChild
                                                 variant="outline"
-                                                className="w-full"
+                                                className="w-full font-bold"
                                             >
                                                 <Link href={login()}>Masuk</Link>
                                             </Button>
                                         </SheetClose>
                                         <SheetClose asChild>
-                                            <Button asChild className="w-full">
-                                                <Link href={register()}>
-                                                    Daftar Gratis
-                                                </Link>
-                                            </Button>
+                                            <Link
+                                                href={register()}
+                                                className={`${brutalBtnPrimary} w-full`}
+                                            >
+                                                Daftar
+                                            </Link>
                                         </SheetClose>
                                     </>
                                 )}
                             </div>
                         </SheetContent>
                     </Sheet>
+                    </div>
                 </div>
             </div>
         </header>

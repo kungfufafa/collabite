@@ -18,12 +18,15 @@ use App\Http\Controllers\Creator\CollaborationsController as CreatorCollaboratio
 use App\Http\Controllers\Creator\DashboardController as CreatorDashboardController;
 use App\Http\Controllers\Creator\PortfolioController as CreatorPortfolioController;
 use App\Http\Controllers\Creator\ProfileController as CreatorProfileController;
+use App\Http\Controllers\Creator\RequestsController as CreatorRequestsController;
 use App\Http\Controllers\Creator\SkillsController as CreatorSkillsController;
 use App\Http\Controllers\Creator\VerificationController as CreatorVerificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FilesController;
 use App\Http\Controllers\Public\CreatorDirectoryController as PublicCreatorDirectoryController;
+use App\Http\Controllers\Public\LegalController as PublicLegalController;
 use App\Http\Controllers\Public\ProfileController as PublicProfileController;
+use App\Http\Controllers\Public\WelcomeController;
 use App\Http\Controllers\Umkm\CampaignsController as UmkmCampaignsController;
 use App\Http\Controllers\Umkm\CollaborationsController as UmkmCollaborationsController;
 use App\Http\Controllers\Umkm\DashboardController as UmkmDashboardController;
@@ -38,9 +41,11 @@ use Illuminate\Support\Facades\Route;
 | Public
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => inertia('Public/Welcome'))->name('home');
+Route::get('/', WelcomeController::class)->name('home');
 Route::get('creators', [PublicCreatorDirectoryController::class, 'index'])->name('public.creators.index');
 Route::get('creators/{creatorProfile}', [PublicCreatorDirectoryController::class, 'show'])->name('public.creators.show');
+Route::get('kebijakan-privasi', [PublicLegalController::class, 'privacy'])->name('public.privacy');
+Route::get('syarat-dan-ketentuan', [PublicLegalController::class, 'terms'])->name('public.terms');
 
 /*
 |--------------------------------------------------------------------------
@@ -109,18 +114,17 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::post('collaborations/{collaboration}/messages', [UmkmCollaborationsController::class, 'sendMessage'])->name('collaborations.messages.store');
             Route::post('collaborations/{collaboration}/requests/{request}/accept', [UmkmCollaborationsController::class, 'acceptRequest'])->name('collaborations.requests.accept');
             Route::post('collaborations/{collaboration}/requests/{request}/reject', [UmkmCollaborationsController::class, 'rejectRequest'])->name('collaborations.requests.reject');
-            Route::post('collaborations/{collaboration}/submit-for-review/{submission}', [UmkmCollaborationsController::class, 'submitForReview'])->name('collaborations.submissions.submitForReview');
             Route::post('collaborations/{collaboration}/submissions/{submission}/request-revision', [UmkmCollaborationsController::class, 'requestRevision'])->name('collaborations.submissions.requestRevision');
             Route::post('collaborations/{collaboration}/submissions/{submission}/approve', [UmkmCollaborationsController::class, 'approveSubmission'])->name('collaborations.submissions.approve');
-            Route::post('collaborations/{collaboration}/submissions', [UmkmCollaborationsController::class, 'storeSubmission'])->name('collaborations.submissions.store');
-            Route::post('collaborations/{collaboration}/progress', [UmkmCollaborationsController::class, 'storeProgress'])->name('collaborations.progress.store');
+            Route::post('collaborations/{collaboration}/payment/proof', [UmkmCollaborationsController::class, 'submitPaymentProof'])->name('collaborations.payment.proof');
             Route::post('collaborations/{collaboration}/complete', [UmkmCollaborationsController::class, 'complete'])->name('collaborations.complete');
             Route::post('collaborations/{collaboration}/review', [UmkmReviewsController::class, 'storeForUmkm'])->name('collaborations.review.store');
             Route::post('collaborations/{collaboration}/invitations', [UmkmCollaborationsController::class, 'invite'])->name('collaborations.invitations.store');
+            Route::post('collaborations/{collaboration}/cancel', [UmkmCollaborationsController::class, 'cancel'])->name('collaborations.cancel');
             Route::post('campaigns/{campaign}/invitations', [UmkmCollaborationsController::class, 'inviteByCampaign'])->name('campaigns.invitations.store');
-            Route::post('requests/{request}/accept', [UmkmCollaborationsController::class, 'acceptByRequest'])->name('requests.accept');
-            Route::post('requests/{request}/reject', [UmkmCollaborationsController::class, 'rejectByRequest'])->name('requests.reject');
-            Route::post('collaborations/{collaboration}/review', [UmkmReviewsController::class, 'storeForUmkm'])->name('collaborations.review.store');
+            Route::post('requests/{collaborationRequest}/accept', [UmkmCollaborationsController::class, 'acceptByRequest'])->name('requests.accept');
+            Route::post('requests/{collaborationRequest}/reject', [UmkmCollaborationsController::class, 'rejectByRequest'])->name('requests.reject');
+            Route::post('requests/{collaborationRequest}/cancel-invitation', [UmkmCollaborationsController::class, 'cancelInvitation'])->name('requests.cancel-invitation');
         });
 
     Route::middleware(['verified', 'role:creator'])
@@ -146,6 +150,11 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::get('campaigns/{campaign}', [CreatorCampaignsController::class, 'show'])->name('campaigns.show');
             Route::post('campaigns/{campaign}/apply', [CreatorCollaborationsController::class, 'apply'])->name('campaigns.apply');
 
+            Route::get('requests', [CreatorRequestsController::class, 'index'])->name('requests.index');
+            Route::post('requests/{collaborationRequest}/accept', [CreatorRequestsController::class, 'accept'])->name('requests.accept');
+            Route::post('requests/{collaborationRequest}/reject', [CreatorRequestsController::class, 'reject'])->name('requests.reject');
+            Route::post('requests/{collaborationRequest}/cancel', [CreatorRequestsController::class, 'cancel'])->name('requests.cancel');
+
             Route::get('collaborations', [CreatorCollaborationsController::class, 'index'])->name('collaborations.index');
             Route::get('collaborations/{collaboration}', [CreatorCollaborationsController::class, 'show'])->name('collaborations.show');
             Route::post('collaborations/{collaboration}/messages', [CreatorCollaborationsController::class, 'sendMessage'])->name('collaborations.messages.store');
@@ -157,6 +166,8 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::post('collaborations/{collaboration}/requests/{request}/reject', [CreatorCollaborationsController::class, 'rejectRequest'])->name('collaborations.requests.reject');
             Route::post('collaborations/{collaboration}/requests/{request}/cancel', [CreatorCollaborationsController::class, 'cancelRequest'])->name('collaborations.requests.cancel');
             Route::post('collaborations/{collaboration}/review', [CreatorCollaborationsController::class, 'submitReview'])->name('collaborations.review.store');
+            Route::post('collaborations/{collaboration}/payment/confirm', [CreatorCollaborationsController::class, 'confirmPayment'])->name('collaborations.payment.confirm');
+            Route::post('collaborations/{collaboration}/cancel', [CreatorCollaborationsController::class, 'cancel'])->name('collaborations.cancel');
         });
 
     Route::middleware(['verified', 'role:admin'])

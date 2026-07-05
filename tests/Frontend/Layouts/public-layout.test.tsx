@@ -46,7 +46,7 @@ describe('PublicLayout', () => {
             '/login',
         );
         expect(
-            screen.getByRole('link', { name: 'Daftar Gratis' }),
+            screen.getByRole('link', { name: 'Daftar' }),
         ).toHaveAttribute('href', '/register');
     });
 

@@ -6,6 +6,7 @@ namespace App\Actions\Campaign;
 
 use App\Enums\CampaignStatus;
 use App\Models\Campaign;
+use App\Services\UmkmProfileCompletenessService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,11 +15,27 @@ use Illuminate\Validation\ValidationException;
  */
 class PublishCampaignAction
 {
+    public function __construct(private readonly UmkmProfileCompletenessService $profileCompleteness) {}
+
     public function execute(Campaign $campaign): Campaign
     {
         if ($campaign->status !== CampaignStatus::Draft) {
             throw ValidationException::withMessages([
                 'status' => 'Hanya campaign berstatus draft yang dapat dipublikasikan.',
+            ]);
+        }
+
+        $campaign->loadMissing('umkmProfile');
+
+        if ($campaign->umkmProfile === null) {
+            throw ValidationException::withMessages([
+                'profile' => 'Profil usaha belum tersedia. Lengkapi profil terlebih dahulu.',
+            ]);
+        }
+
+        if (! $this->profileCompleteness->isComplete($campaign->umkmProfile)) {
+            throw ValidationException::withMessages([
+                'profile' => $this->profileCompleteness->incompleteMessage($campaign->umkmProfile),
             ]);
         }
 

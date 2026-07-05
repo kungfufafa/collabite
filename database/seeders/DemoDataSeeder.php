@@ -10,6 +10,7 @@ use App\Enums\CollaborationRequestStatus;
 use App\Enums\CollaborationRequestType;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Enums\VerificationDocumentType;
 use App\Enums\VerificationStatus;
@@ -17,6 +18,7 @@ use App\Models\Campaign;
 use App\Models\CampaignDeliverable;
 use App\Models\Category;
 use App\Models\Collaboration;
+use App\Models\CollaborationPayment;
 use App\Models\CollaborationProgressUpdate;
 use App\Models\CollaborationRequest;
 use App\Models\ContentSubmission;
@@ -32,6 +34,7 @@ use App\Models\Skill;
 use App\Models\UmkmProfile;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Demo\DemoSeedAssetService;
 use Illuminate\Database\Seeder;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Hash;
@@ -66,12 +69,12 @@ class DemoDataSeeder extends Seeder
         $skillSlugs = ['photography', 'video-editing', 'social-media', 'copywriting', 'influencer-marketing'];
         $skills = Skill::whereIn('slug', $skillSlugs)->get()->keyBy('slug');
 
-        // ── Admin (re-ensure, idempotent) ──────────────────────────────────
+        // ── Admin (re-ensure, idempotent — password sama dengan AdminUserSeeder) ──
         $admin = User::updateOrCreate(
             ['email' => 'admin@collabite.test'],
             [
                 'name' => 'Admin Collabite',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'role' => UserRole::Admin,
                 'account_status' => AccountStatus::Active,
                 'email_verified_at' => now(),
@@ -267,6 +270,73 @@ class DemoDataSeeder extends Seeder
         );
         $audit->log($admin, 'demo.verification.rejected', $creator3Profile);
 
+        // creator4–6 — verified creators untuk pratinjau landing (direktori & homepage).
+        $landingCreators = [];
+        foreach ([
+            [
+                'email' => 'creator4@collabite.test',
+                'name' => 'Nadia Putri',
+                'headline' => 'Food & Lifestyle Creator',
+                'city' => 'Bandung',
+                'rating_avg' => 4.9,
+                'rating_count' => 28,
+                'skills' => ['photography', 'social-media', 'copywriting'],
+            ],
+            [
+                'email' => 'creator5@collabite.test',
+                'name' => 'Rizky Visual',
+                'headline' => 'Product Photography',
+                'city' => 'Jakarta',
+                'rating_avg' => 4.8,
+                'rating_count' => 21,
+                'skills' => ['photography', 'video-editing'],
+            ],
+            [
+                'email' => 'creator6@collabite.test',
+                'name' => 'Anisa Daily',
+                'headline' => 'Beauty & Skincare Creator',
+                'city' => 'Surabaya',
+                'rating_avg' => 5.0,
+                'rating_count' => 35,
+                'skills' => ['influencer-marketing', 'social-media', 'copywriting'],
+            ],
+        ] as $row) {
+            $user = User::updateOrCreate(
+                ['email' => $row['email']],
+                [
+                    'name' => $row['name'],
+                    'password' => Hash::make('password'),
+                    'role' => UserRole::Creator,
+                    'account_status' => AccountStatus::Active,
+                    'email_verified_at' => now(),
+                ],
+            );
+
+            $profile = CreatorProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'headline' => $row['headline'],
+                    'bio' => $row['name'].' — creator demo untuk landing Collabite.',
+                    'city' => $row['city'],
+                    'verification_status' => VerificationStatus::Verified,
+                    'rating_avg' => $row['rating_avg'],
+                    'rating_count' => $row['rating_count'],
+                ],
+            );
+
+            if ($categorySlugByName['Food & Beverage']) {
+                $profile->categories()->syncWithoutDetaching([$categorySlugByName['Food & Beverage']->id]);
+            }
+
+            foreach ($row['skills'] as $slug) {
+                if ($skills->has($slug)) {
+                    $profile->skills()->syncWithoutDetaching([$skills[$slug]->id]);
+                }
+            }
+
+            $landingCreators[] = ['user' => $user, 'profile' => $profile];
+        }
+
         // ── Campaigns ───────────────────────────────────────────────────────
         $foodCategory = $categorySlugByName['Food & Beverage'];
 
@@ -457,6 +527,24 @@ class DemoDataSeeder extends Seeder
             ],
         );
 
+        if (config('collabite.manual_payment_enabled')) {
+            CollaborationPayment::updateOrCreate(
+                ['collaboration_id' => $completedCollab->id],
+                [
+                    'amount' => $campaignD->budget ?? 3000000,
+                    'status' => PaymentStatus::Confirmed,
+                    'proof_path' => 'payment/demo/bukti-transfer-skincare.jpg',
+                    'proof_original_name' => 'bukti-transfer-skincare.jpg',
+                    'proof_mime_type' => 'image/jpeg',
+                    'proof_size' => 2048,
+                    'note' => 'Transfer via demo seed (ADR-033).',
+                    'submitted_at' => now()->subDays(4),
+                    'confirmed_at' => now()->subDays(3),
+                    'confirmed_by' => $creator1->id,
+                ],
+            );
+        }
+
         Review::updateOrCreate(
             ['collaboration_id' => $completedCollab->id, 'reviewer_id' => $umkm3['user']->id],
             [
@@ -515,5 +603,144 @@ class DemoDataSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        $this->seedDemoMedia(
+            app(DemoSeedAssetService::class),
+            $umkmProfiles,
+            [
+                ['user' => $creator1, 'profile' => $creator1Profile, 'email' => 'creator1@collabite.test'],
+                ...array_map(
+                    fn (array $entry): array => [
+                        ...$entry,
+                        'email' => $entry['user']->email,
+                    ],
+                    $landingCreators,
+                ),
+            ],
+        );
+    }
+
+    /**
+     * @param  array<string, array{user: User, profile: UmkmProfile}>  $umkmProfiles
+     * @param  array<int, array{user: User, profile: CreatorProfile, email: string}>  $creatorProfiles
+     */
+    private function seedDemoMedia(
+        DemoSeedAssetService $assets,
+        array $umkmProfiles,
+        array $creatorProfiles,
+    ): void {
+        $umkmLogos = [
+            'umkm1@collabite.test' => 'umkm/demo-logo-kopi.png',
+            'umkm2@collabite.test' => 'umkm/demo-logo-batik.png',
+            'umkm3@collabite.test' => 'umkm/demo-logo-skincare.png',
+        ];
+
+        $productImages = [
+            'Kopi Arabica 250g' => 'products/demo-product-kopi-arabica.png',
+            'Kopi Susu Botol 250ml' => 'products/demo-product-kopi-susu.png',
+        ];
+
+        $creatorMedia = [
+            'creator1@collabite.test' => [
+                'profile' => 'creators/demo-citra-profile.png',
+                'portfolio' => [
+                    'portfolio/demo-food-portfolio-1.png',
+                    'portfolio/demo-food-portfolio-2.png',
+                    'portfolio/demo-food-portfolio-3.png',
+                ],
+            ],
+            'creator4@collabite.test' => [
+                'profile' => 'creators/demo-nadia-profile.png',
+                'portfolio' => [
+                    'portfolio/demo-food-portfolio-1.png',
+                    'portfolio/demo-food-portfolio-2.png',
+                    'portfolio/demo-food-portfolio-3.png',
+                ],
+            ],
+            'creator5@collabite.test' => [
+                'profile' => 'creators/demo-rizky-profile.png',
+                'portfolio' => [
+                    'portfolio/demo-product-portfolio-1.png',
+                    'portfolio/demo-product-portfolio-2.png',
+                    'portfolio/demo-product-portfolio-3.png',
+                ],
+            ],
+            'creator6@collabite.test' => [
+                'profile' => 'creators/demo-anisa-profile.png',
+                'portfolio' => [
+                    'portfolio/demo-beauty-portfolio-1.png',
+                    'portfolio/demo-beauty-portfolio-2.png',
+                    'portfolio/demo-beauty-portfolio-3.png',
+                ],
+            ],
+        ];
+
+        foreach ($umkmProfiles as $email => $entry) {
+            $profile = $entry['profile'];
+            $profile->load('products');
+
+            $logoAsset = $umkmLogos[$email] ?? null;
+            if ($logoAsset !== null) {
+                $path = $assets->publish($logoAsset, 'umkm', $profile->id);
+                if ($path !== null) {
+                    $profile->logo_path = $path;
+                    $profile->save();
+                }
+            }
+
+            foreach ($profile->products as $product) {
+                $productAsset = $productImages[$product->name] ?? null;
+                if ($productAsset === null) {
+                    continue;
+                }
+
+                $path = $assets->publish($productAsset, 'product', $product->id);
+                if ($path !== null) {
+                    $product->image_path = $path;
+                    $product->save();
+                }
+            }
+        }
+
+        foreach ($creatorProfiles as $entry) {
+            $profile = $entry['profile'];
+            $media = $creatorMedia[$entry['email']] ?? null;
+
+            if ($media === null) {
+                continue;
+            }
+
+            $photoPath = $assets->publish($media['profile'], 'creator', $profile->id);
+            if ($photoPath !== null) {
+                $profile->profile_photo_path = $photoPath;
+                $profile->save();
+            }
+
+            $portfolioItems = $profile->portfolioItems()->orderBy('display_order')->get();
+
+            while ($portfolioItems->count() < count($media['portfolio'])) {
+                $order = $portfolioItems->count() + 1;
+                PortfolioItem::create([
+                    'creator_profile_id' => $profile->id,
+                    'title' => 'Konten '.$order,
+                    'description' => 'Portofolio demo konten '.$order,
+                    'display_order' => $order,
+                ]);
+                $portfolioItems = $profile->portfolioItems()->orderBy('display_order')->get();
+            }
+
+            foreach ($portfolioItems->values() as $index => $item) {
+                $asset = $media['portfolio'][$index] ?? null;
+                if ($asset === null) {
+                    continue;
+                }
+
+                $path = $assets->publish($asset, 'portfolio', $item->id);
+                if ($path !== null) {
+                    $item->media_path = $path;
+                    $item->save();
+                }
+            }
+        }
     }
 }

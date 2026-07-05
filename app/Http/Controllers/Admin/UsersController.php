@@ -22,14 +22,22 @@ class UsersController extends Controller
 
         $query = User::query()->with('umkmProfile', 'creatorProfile');
 
-        if ($role = $request->query('role')) {
+        $role = $request->query('role');
+        $status = $request->query('status');
+        $keyword = trim((string) $request->query('q', ''));
+
+        if ($role) {
             $query->where('role', $role);
         }
-        if ($status = $request->query('status')) {
+        if ($status) {
             $query->where('account_status', $status);
         }
-
-        $users = $query->latest()->paginate(20)->withQueryString();
+        if ($keyword !== '') {
+            $query->where(function ($builder) use ($keyword): void {
+                $builder->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('email', 'like', "%{$keyword}%");
+            });
+        }
 
         $users = $query->latest()->paginate(20)->withQueryString();
         $users->setCollection(
@@ -49,6 +57,7 @@ class UsersController extends Controller
             'filters' => [
                 'role' => $role,
                 'status' => $status,
+                'q' => $keyword !== '' ? $keyword : null,
             ],
         ]);
     }

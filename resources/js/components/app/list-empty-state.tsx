@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { brutalEmptyState } from '@/components/collabite/landing/brutal-styles';
+
 type ListEmptyStateProps = {
     title: string;
     description?: string;
@@ -12,10 +14,12 @@ export function ListEmptyState({
     action,
 }: ListEmptyStateProps): ReactNode {
     return (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card px-6 py-14 text-center">
-            <p className="text-sm font-medium text-foreground">{title}</p>
+        <div className={brutalEmptyState}>
+            <p className="text-sm font-black uppercase tracking-wide text-foreground">
+                {title}
+            </p>
             {description ? (
-                <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+                <p className="mt-1.5 max-w-sm text-sm font-medium text-muted-foreground">
                     {description}
                 </p>
             ) : null}

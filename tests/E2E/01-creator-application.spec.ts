@@ -141,13 +141,42 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
 
         await context.clearCookies();
 
-        // ====== UMKM: setujui submission & selesaikan kolaborasi ======
+        // ====== UMKM: setujui submission, unggah bukti bayar, selesaikan kolaborasi ======
         await loginPage(page, umkmEmail);
         await page.goto(`/umkm/collaborations/${collabId}`);
         await page.getByRole('tab', { name: /Submission/ }).click();
         await page.getByRole('button', { name: 'Setujui' }).click();
         await expect(page.getByText('Disetujui')).toBeVisible();
 
+        await page.getByRole('tab', { name: /Pembayaran/ }).click();
+        await page.locator('input[name="proof"]').setInputFiles({
+            name: 'bukti.png',
+            mimeType: 'image/png',
+            buffer: Buffer.from([
+                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+                0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x62, 0x00, 0x00, 0x00, 0x00,
+                0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+                0x42, 0x60, 0x82,
+            ]),
+        });
+        await page.getByRole('button', { name: 'Kirim Bukti Pembayaran' }).click();
+        await expect(page.getByText(/Menunggu Konfirmasi Creator/i)).toBeVisible();
+
+        await context.clearCookies();
+
+        // ====== Creator: konfirmasi pembayaran ======
+        await loginPage(page, creatorEmail);
+        await page.goto(`/creator/collaborations/${collabId}`);
+        await page.getByRole('tab', { name: /Pembayaran/ }).click();
+        await page.getByRole('button', { name: 'Konfirmasi Pembayaran Diterima' }).click();
+        await expect(page.getByText(/Pembayaran telah dikonfirmasi/i)).toBeVisible();
+
+        await context.clearCookies();
+
+        // ====== UMKM: selesaikan kolaborasi ======
+        await loginPage(page, umkmEmail);
+        await page.goto(`/umkm/collaborations/${collabId}`);
         page.once('dialog', (d) => d.accept());
         await page.getByRole('tab', { name: /Review/ }).click();
         await page.getByRole('button', { name: 'Selesaikan Kolaborasi' }).click();

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { brutalDivider } from '@/components/collabite/landing/brutal-styles';
 import { ListEmptyState } from '@/components/app/list-empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
@@ -71,7 +72,7 @@ export default function UmkmProfile({ umkm }: { umkm: Umkm }): ReactNode {
                             <p className="text-sm italic text-muted-foreground">Belum ada deskripsi usaha.</p>
                         )}
                         {umkm.address ? (
-                            <div className="mt-6 border-t border-border pt-4">
+                            <div className={`mt-6 ${brutalDivider} pt-4`}>
                                 <h3 className="text-sm font-semibold text-foreground">Alamat</h3>
                                 <p className="mt-1 text-sm text-muted-foreground">{umkm.address}</p>
                             </div>

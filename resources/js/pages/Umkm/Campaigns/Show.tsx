@@ -1,9 +1,11 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import { cancelInvitation } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { PageHeader } from '@/components/app/page-header';
+import { ProfileIncompleteBanner } from '@/components/app/profile-incomplete-banner';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
@@ -34,6 +36,11 @@ type Campaign = {
     collaboration_id: number | null;
 };
 
+type ProfileStatus = {
+    isComplete: boolean;
+    missingFields: string[];
+};
+
 function statusTone(status: string): 'success' | 'neutral' | 'danger' | 'info' | 'warning' {
     if (status === 'open') {
         return 'success';
@@ -54,8 +61,15 @@ function statusTone(status: string): 'success' | 'neutral' | 'danger' | 'info' |
     return 'warning';
 }
 
-export default function Show({ campaign }: { campaign: Campaign }): ReactNode {
+export default function Show({
+    campaign,
+    profileStatus,
+}: {
+    campaign: Campaign;
+    profileStatus?: ProfileStatus;
+}): ReactNode {
     const flash = usePage().props.status as string | undefined;
+    const canPublish = profileStatus?.isComplete ?? true;
 
     return (
         <>
@@ -70,7 +84,7 @@ export default function Show({ campaign }: { campaign: Campaign }): ReactNode {
                             {campaign.status === 'draft' ? (
                                 <Form {...publish.form(campaign.id)}>
                                     {({ processing }) => (
-                                        <Button disabled={processing} type="submit">
+                                        <Button disabled={processing || !canPublish} type="submit" variant="success">
                                             Publikasikan
                                         </Button>
                                     )}
@@ -129,6 +143,10 @@ export default function Show({ campaign }: { campaign: Campaign }): ReactNode {
                     </div>
                 ) : null}
 
+                <div className="mt-6">
+                    <ProfileIncompleteBanner profileStatus={profileStatus} />
+                </div>
+
                 <div className="mt-8 grid gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-2 space-y-8">
                         <SectionPanel description="Ringkasan brief campaign." title="Deskripsi">
@@ -146,12 +164,38 @@ export default function Show({ campaign }: { campaign: Campaign }): ReactNode {
                                 <div className="flex flex-col gap-3">
                                     {campaign.requests.map((r) => (
                                         <ResourceCard key={r.id}>
-                                            <p className="font-medium text-foreground">
-                                                {r.creator_name}
-                                            </p>
-                                            <p className="mt-1 text-xs text-muted-foreground">
-                                                {r.type === 'application' ? 'Lamaran' : 'Undangan'} · {r.status}
-                                            </p>
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="font-medium text-foreground">
+                                                        {r.creator_name}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {r.type === 'application' ? 'Lamaran' : 'Undangan'} · {r.status}
+                                                    </p>
+                                                </div>
+                                                {r.type === 'invitation' && r.status === 'pending' ? (
+                                                    <Form {...cancelInvitation.form(r.id)}>
+                                                        {({ processing }) => (
+                                                            <Button
+                                                                disabled={processing}
+                                                                onClick={(e) => {
+                                                                    if (
+                                                                        !confirm(
+                                                                            'Batalkan undangan ke Creator ini?',
+                                                                        )
+                                                                    ) {
+                                                                        e.preventDefault();
+                                                                    }
+                                                                }}
+                                                                type="submit"
+                                                                variant="outline"
+                                                            >
+                                                                Batalkan Undangan
+                                                            </Button>
+                                                        )}
+                                                    </Form>
+                                                ) : null}
+                                            </div>
                                         </ResourceCard>
                                     ))}
                                 </div>

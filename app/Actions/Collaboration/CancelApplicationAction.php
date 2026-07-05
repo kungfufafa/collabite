@@ -6,6 +6,8 @@ namespace App\Actions\Collaboration;
 
 use App\Enums\CollaborationRequestStatus;
 use App\Models\CollaborationRequest;
+use App\Notifications\CollaborationRequestCancelledNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -26,6 +28,17 @@ class CancelApplicationAction
             'status' => CollaborationRequestStatus::CancelledByCreator,
             'responded_at' => now(),
         ]);
+
+        $request->load(['campaign.umkmProfile.user', 'creator']);
+
+        $umkmUser = $request->campaign->umkmProfile?->user;
+
+        if ($umkmUser !== null) {
+            Notification::sendNow(
+                $umkmUser,
+                new CollaborationRequestCancelledNotification($request, 'cancelled_by_creator'),
+            );
+        }
 
         return $request;
     }

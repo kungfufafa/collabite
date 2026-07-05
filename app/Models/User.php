@@ -6,13 +6,15 @@ namespace App\Models;
 
 use App\Enums\AccountStatus;
 use App\Enums\UserRole;
+use App\Notifications\Auth\CollabiteResetPasswordNotification;
+use App\Notifications\Auth\CollabiteVerifyEmailNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Notifiable;
@@ -96,10 +98,19 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasOne(CreatorProfile::class);
     }
 
-    public function notifications(): HasMany
+    public function notifications(): MorphMany
     {
-        return $this->hasMany(DatabaseNotification::class, 'notifiable_id')
-            ->where('notifiable_type', self::class)
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')
             ->orderByDesc('created_at');
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new CollabiteVerifyEmailNotification);
+    }
+
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new CollabiteResetPasswordNotification($token));
     }
 }

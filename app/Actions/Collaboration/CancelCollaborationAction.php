@@ -9,8 +9,10 @@ use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
 use App\Models\Collaboration;
 use App\Models\User;
+use App\Notifications\CollaborationCancelledNotification;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -60,6 +62,15 @@ class CancelCollaborationAction
                 'collaboration.cancelled',
                 $collaboration,
                 ['reason' => $reason],
+            );
+
+            $otherParty = $actor->is($collaboration->umkm)
+                ? $collaboration->creator
+                : $collaboration->umkm;
+
+            Notification::sendNow(
+                $otherParty,
+                new CollaborationCancelledNotification($collaboration->fresh(['campaign']), $actor, $reason),
             );
 
             return $collaboration->fresh();

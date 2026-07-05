@@ -21,11 +21,29 @@ class AuditLogController extends Controller
 
         $query = ActivityLog::query();
 
-        if ($action = $request->query('action')) {
+        $action = $request->query('action');
+        $actorId = $request->query('actor_id');
+        $keyword = trim((string) $request->query('q', ''));
+
+        if ($action) {
             $query->where('action', $action);
         }
-        if ($actorId = $request->query('actor_id')) {
+        if ($actorId) {
             $query->where('actor_id', $actorId);
+        }
+        if ($keyword !== '') {
+            $query->where(function ($builder) use ($keyword): void {
+                $builder->where('action', 'like', "%{$keyword}%")
+                    ->orWhere('actor_role', 'like', "%{$keyword}%")
+                    ->orWhere('subject_type', 'like', "%{$keyword}%")
+                    ->orWhere('metadata', 'like', "%{$keyword}%");
+
+                if (ctype_digit($keyword)) {
+                    $id = (int) $keyword;
+                    $builder->orWhere('actor_id', $id)
+                        ->orWhere('subject_id', $id);
+                }
+            });
         }
 
         $logs = $query->latest('created_at')->paginate(50)->withQueryString();
@@ -44,6 +62,11 @@ class AuditLogController extends Controller
 
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
+            'filters' => [
+                'action' => $action,
+                'actor_id' => $actorId,
+                'q' => $keyword !== '' ? $keyword : null,
+            ],
         ]);
     }
 }

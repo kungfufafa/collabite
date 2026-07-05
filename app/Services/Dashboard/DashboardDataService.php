@@ -7,10 +7,12 @@ namespace App\Services\Dashboard;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestStatus;
 use App\Enums\CollaborationStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\VerificationStatus;
 use App\Models\ActivityLog;
 use App\Models\Campaign;
 use App\Models\Collaboration;
+use App\Models\CollaborationPayment;
 use App\Models\CollaborationRequest;
 use App\Models\CreatorProfile;
 use App\Models\CreatorVerification;
@@ -138,12 +140,21 @@ class DashboardDataService
         $activeCollaborations = $collaborationQuery->clone()
             ->where('status', CollaborationStatus::Active)
             ->count();
-        $portfolioItems = $profile?->portfolioItems()->count() ?? 0;
         $pendingRequests = $requestQuery->clone()
             ->where('status', CollaborationRequestStatus::Pending)
             ->count();
 
         $portfolioCompletion = $this->portfolioCompletion($profile);
+
+        $confirmedEarnings = CollaborationPayment::query()
+            ->where('status', PaymentStatus::Confirmed)
+            ->whereHas('collaboration', fn ($q) => $q->where('creator_id', $user->id))
+            ->sum('amount');
+
+        $pendingPayments = CollaborationPayment::query()
+            ->whereIn('status', [PaymentStatus::PendingProof, PaymentStatus::AwaitingConfirmation])
+            ->whereHas('collaboration', fn ($q) => $q->where('creator_id', $user->id))
+            ->count();
 
         $stats = [
             [
@@ -155,18 +166,13 @@ class DashboardDataService
                 ),
             ],
             [
-                'label' => 'Item portofolio',
-                'value' => (string) $portfolioItems,
-                'delta' => $profile
-                    ? $this->percentChange(
-                        $this->countSince($profile->portfolioItems(), now()->subDays(7)),
-                        $this->countBetween($profile->portfolioItems(), now()->subDays(14), now()->subDays(7)),
-                    )
-                    : 0.0,
+                'label' => 'Pendapatan terkonfirmasi',
+                'value' => 'Rp '.number_format((float) $confirmedEarnings, 0, ',', '.'),
+                'delta' => 0.0,
             ],
             [
-                'label' => 'Rating rata-rata',
-                'value' => number_format((float) ($profile?->rating_avg ?? 0), 1),
+                'label' => 'Menunggu pembayaran',
+                'value' => (string) $pendingPayments,
                 'delta' => 0.0,
             ],
             [
@@ -179,8 +185,39 @@ class DashboardDataService
             ],
         ];
 
+        $onboardingSteps = [];
+        if ($profile?->verification_status !== VerificationStatus::Verified) {
+            $onboardingSteps[] = [
+                'label' => 'Ajukan verifikasi Creator',
+                'href' => route('creator.verification.show', absolute: false),
+                'done' => $profile?->verification_status === VerificationStatus::Pending,
+            ];
+        }
+        if ($portfolioCompletion['percent'] < 80) {
+            $onboardingSteps[] = [
+                'label' => 'Lengkapi portofolio (min. 80%)',
+                'href' => route('creator.portfolio.index', absolute: false),
+                'done' => false,
+            ];
+        }
+        if ($pendingRequests > 0) {
+            $onboardingSteps[] = [
+                'label' => 'Tinjau undangan/lamaran menunggu',
+                'href' => route('creator.requests.index', absolute: false),
+                'done' => false,
+            ];
+        }
+        if ($activeCollaborations === 0 && $pendingRequests === 0) {
+            $onboardingSteps[] = [
+                'label' => 'Cari campaign terbuka',
+                'href' => route('creator.campaigns.index', absolute: false),
+                'done' => false,
+            ];
+        }
+
         return [
             'stats' => $stats,
+            'onboarding_steps' => $onboardingSteps,
             'profile' => $profile ? [
                 'headline' => $profile->headline,
                 'verification_status' => $profile->verification_status->value,
@@ -448,17 +485,25 @@ class DashboardDataService
     {
         return Collaboration::query()
             ->where('creator_id', $user->id)
-            ->with(['campaign'])
+            ->with(['campaign', 'payment'])
             ->latest()
             ->limit(4)
             ->get()
-            ->map(fn (Collaboration $collaboration): array => [
-                'id' => $collaboration->id,
-                'title' => $collaboration->campaign?->title ?? 'Kolaborasi',
-                'meta' => $collaboration->status->label(),
-                'status' => $collaboration->status->label(),
-                'href' => route('creator.collaborations.show', $collaboration, absolute: false),
-            ])
+            ->map(function (Collaboration $collaboration): array {
+                $paymentLabel = $collaboration->payment?->status->label();
+                $meta = $collaboration->status->label();
+                if ($paymentLabel !== null && $collaboration->status === CollaborationStatus::Active) {
+                    $meta .= ' · '.$paymentLabel;
+                }
+
+                return [
+                    'id' => $collaboration->id,
+                    'title' => $collaboration->campaign?->title ?? 'Kolaborasi',
+                    'meta' => $meta,
+                    'status' => $collaboration->status->label(),
+                    'href' => route('creator.collaborations.show', $collaboration, absolute: false),
+                ];
+            })
             ->all();
     }
 

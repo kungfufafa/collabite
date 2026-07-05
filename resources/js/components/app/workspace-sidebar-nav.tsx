@@ -27,7 +27,7 @@ export function WorkspaceSidebarNav({
             {groups.map((group, groupIndex) => (
                 <div key={group.heading ?? `group-${groupIndex}`} className={groupIndex > 0 ? 'mt-5' : ''}>
                     {group.heading ? (
-                        <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--neutral-400)]">
+                        <p className="px-3 pb-1.5 text-xs font-black uppercase tracking-wide text-[var(--neutral-500)]">
                             {group.heading}
                         </p>
                     ) : null}
@@ -48,10 +48,10 @@ export function WorkspaceSidebarNav({
                                         data-testid={`app-shell-nav-${item.label}`}
                                         onClick={onNavigate}
                                         className={cn(
-                                            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                                            'flex items-center gap-3 border-2 border-transparent px-3 py-2 text-sm font-bold transition-[transform,box-shadow,background-color]',
                                             active
-                                                ? 'bg-[var(--brand-primary-soft)] text-[var(--brand-primary)]'
-                                                : 'text-[var(--neutral-600)] hover:bg-muted hover:text-foreground',
+                                                ? 'border-[var(--neutral-900)] bg-[var(--brand-primary-soft)] text-[var(--brand-primary-active)] shadow-[2px_2px_0_0_var(--neutral-900)]'
+                                                : 'text-[var(--neutral-600)] hover:border-[var(--neutral-900)] hover:bg-muted hover:text-foreground',
                                         )}
                                     >
                                         {Icon ? (
@@ -64,7 +64,7 @@ export function WorkspaceSidebarNav({
                                             <span
                                                 aria-label={`${item.badge} item butuh perhatian`}
                                                 className={cn(
-                                                    'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums',
+                                                    'flex h-5 min-w-5 items-center justify-center border-2 border-[var(--neutral-900)] px-1.5 text-xs font-black tabular-nums shadow-[1px_1px_0_0_var(--neutral-900)]',
                                                     active
                                                         ? 'bg-[var(--brand-primary)] text-white'
                                                         : 'bg-[var(--neutral-200)] text-[var(--neutral-700)]',

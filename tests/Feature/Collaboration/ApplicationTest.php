@@ -163,9 +163,9 @@ test('creator can cancel a pending application', function (): void {
         'status' => 'pending',
     ]);
 
-    // Use the action directly - the route is bound via a collaboration model
-    // that doesn't exist yet.
-    app(CancelApplicationAction::class)->execute($request);
+    $this->actingAs($creator)
+        ->post(route('creator.requests.cancel', $request->id))
+        ->assertRedirect();
 
     $request->refresh();
     expect($request->status->value)->toBe('cancelled_by_creator')
@@ -405,14 +405,57 @@ test('creator can accept an invitation', function (): void {
         'status' => 'pending',
     ]);
 
-    // No collaboration exists yet, so the route binding fails; use action directly.
-    app(AcceptRequestAction::class)->execute($request);
+    $this->actingAs($creator)
+        ->post(route('creator.requests.accept', $request->id))
+        ->assertRedirect(route('creator.collaborations.index'));
 
     $request->refresh();
     expect($request->status->value)->toBe('accepted');
 
     $collaboration = Collaboration::where('campaign_id', $campaign->id)->firstOrFail();
     expect($collaboration->status)->toBe(CollaborationStatus::Active);
+});
+
+test('creator can accept invitation via HTTP route and reject invitation', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $umkm->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($creator)
+        ->post(route('creator.requests.reject', $request->id), ['reason' => 'Jadwal penuh'])
+        ->assertRedirect();
+
+    expect($request->fresh()->status->value)->toBe('rejected');
+});
+
+test('creator requests index lists pending requests', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $umkm->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => 'pending',
+    ]);
+
+    $this->withoutVite()
+        ->actingAs($creator)
+        ->get(route('creator.requests.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Creator/Requests/Index')
+            ->has('requests', 1));
 });
 
 test('re-accepting an already-responded request throws validation', function (): void {

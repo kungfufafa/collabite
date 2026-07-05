@@ -2,12 +2,15 @@ import { Head, useForm } from '@inertiajs/react';
 import type { FormEventHandler, ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
-import { PageHeader } from '@/components/app/page-header';
+import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { SectionPanel } from '@/components/app/section-panel';
+import { StatusBadge } from '@/components/app/status-badge';
+import { WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { fieldErrorProps } from '@/lib/form-errors';
 
 type Profile = {
     id: number;
@@ -40,15 +43,27 @@ export default function Edit({ profile }: Props): ReactNode {
     return (
         <>
             <Head title="Profil Creator" />
-            <div>
-                <PageHeader
-                    title="Profil Creator"
-                    description={`Perbarui bio, lokasi, dan kontak. Status verifikasi: ${profile.verification_status}.`}
-                />
-
-                <div className="mt-8 max-w-3xl">
+            <WorkspacePage
+                description="Perbarui bio, lokasi, dan kontak agar profil lebih menarik di mata UMKM."
+                meta={
+                    <StatusBadge
+                        label={`Verifikasi: ${profile.verification_status}`}
+                        tone={
+                            profile.verification_status === 'verified'
+                                ? 'success'
+                                : profile.verification_status === 'pending'
+                                  ? 'warning'
+                                  : 'neutral'
+                        }
+                    />
+                }
+                title="Profil Creator"
+            >
+                <div className="max-w-3xl">
                     <SectionPanel title="Informasi Profil">
                         <form onSubmit={submit} className="space-y-4">
+                            <FormErrorSummary errors={form.errors} />
+
                             <div className="space-y-2">
                                 <Label htmlFor="headline">Headline</Label>
                                 <Input
@@ -56,6 +71,7 @@ export default function Edit({ profile }: Props): ReactNode {
                                     value={form.data.headline}
                                     onChange={(e) => form.setData('headline', e.target.value)}
                                     maxLength={160}
+                                    {...fieldErrorProps(form.errors.headline)}
                                 />
                                 <InputError message={form.errors.headline} />
                             </div>
@@ -67,6 +83,7 @@ export default function Edit({ profile }: Props): ReactNode {
                                     rows={5}
                                     value={form.data.bio}
                                     onChange={(e) => form.setData('bio', e.target.value)}
+                                    {...fieldErrorProps(form.errors.bio)}
                                 />
                                 <InputError message={form.errors.bio} />
                             </div>
@@ -78,6 +95,7 @@ export default function Edit({ profile }: Props): ReactNode {
                                         id="city"
                                         value={form.data.city}
                                         onChange={(e) => form.setData('city', e.target.value)}
+                                        {...fieldErrorProps(form.errors.city)}
                                     />
                                     <InputError message={form.errors.city} />
                                 </div>
@@ -86,8 +104,12 @@ export default function Edit({ profile }: Props): ReactNode {
                                     <Input
                                         id="contact_phone"
                                         value={form.data.contact_phone}
-                                        onChange={(e) => form.setData('contact_phone', e.target.value)}
+                                        onChange={(e) =>
+                                            form.setData('contact_phone', e.target.value)
+                                        }
+                                        {...fieldErrorProps(form.errors.contact_phone)}
                                     />
+                                    <InputError message={form.errors.contact_phone} />
                                 </div>
                             </div>
 
@@ -98,6 +120,7 @@ export default function Edit({ profile }: Props): ReactNode {
                                     type="email"
                                     value={form.data.contact_email}
                                     onChange={(e) => form.setData('contact_email', e.target.value)}
+                                    {...fieldErrorProps(form.errors.contact_email)}
                                 />
                                 <InputError message={form.errors.contact_email} />
                             </div>
@@ -118,6 +141,7 @@ export default function Edit({ profile }: Props): ReactNode {
                                     onChange={(e) =>
                                         form.setData('profile_photo', e.target.files?.[0] ?? null)
                                     }
+                                    {...fieldErrorProps(form.errors.profile_photo)}
                                 />
                                 <InputError message={form.errors.profile_photo} />
                             </div>
@@ -130,7 +154,7 @@ export default function Edit({ profile }: Props): ReactNode {
                         </form>
                     </SectionPanel>
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

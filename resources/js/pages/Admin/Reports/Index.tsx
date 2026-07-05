@@ -1,9 +1,10 @@
-import { Head } from '@inertiajs/react';
-import { Activity, Briefcase, Star, Users } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Activity, Briefcase, Download, Star, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { MetricTile } from '@/components/app/metric-tile';
-import { PageHeader } from '@/components/app/page-header';
+import { WorkspacePage } from '@/components/app/workspace-page';
+import { Button } from '@/components/ui/button';
 
 type Stats = {
     users_total: number;
@@ -26,13 +27,19 @@ export default function AdminReportsIndex({ stats }: Props): ReactNode {
     return (
         <>
             <Head title="Laporan" />
-            <div>
-                <PageHeader
-                    description="Ringkasan metrik platform. Ekspor CSV tersedia dari endpoint /admin/reports/export."
-                    title="Laporan & Statistik"
-                />
-
-                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <WorkspacePage
+                actions={
+                    <Button asChild variant="outline">
+                        <Link href="/admin/reports/export">
+                            <Download className="size-4" />
+                            Ekspor CSV
+                        </Link>
+                    </Button>
+                }
+                description="Ringkasan metrik platform Collabite."
+                title="Laporan & Statistik"
+            >
+                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <MetricTile
                         hint="Seluruh akun"
                         href="/admin/users"
@@ -90,7 +97,7 @@ export default function AdminReportsIndex({ stats }: Props): ReactNode {
                         value={stats.avg_rating.toFixed(1)}
                     />
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

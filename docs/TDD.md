@@ -564,11 +564,14 @@ Approved --(new version created)-->  Superseded
 ### 15.4 Collaboration
 
 ```
-Active --(UMKM complete)-->               Completed
-Active --(UMKM/Creator cancel pre-approval)--> Cancelled (BR-013, wajib alasan)
+Active --(UMKM approve submission)-->     [opsional] payment pending_proof jika COLLABITE_MANUAL_PAYMENT_ENABLED=true
+Active --(UMKM complete, submission approved)--> Completed (+ Campaign Completed)  [default pilot]
+Active --(UMKM/Creator cancel pre-approval)--> Cancelled (BR-013, wajib alasan; notif ke pihak lain)
 Active --(Admin force close)-->           Cancelled (UC-ADMIN-010)
 Completed --(admin reopen? )-->           Tidak diizinkan pada MVP
 ```
+
+> **Pilot default:** tanpa gate pembayaran in-app (ADR-011). Gate ADR-033 hanya jika `config('collabite.manual_payment_enabled')`.
 
 > Detail transisi dilindungi oleh Policy + Action class untuk mencegah perpindahan invalid (UC-CONT-008).
 

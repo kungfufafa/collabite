@@ -62,7 +62,7 @@ function RecoveryAuthLayout({
     return <AuthLayout variant="recovery">{children}</AuthLayout>;
 }
 
-function RoleAwareSettingsLayout({
+function RoleAwareAppLayout({
     children,
 }: {
     children: ReactNode;
@@ -72,11 +72,7 @@ function RoleAwareSettingsLayout({
     const role = user?.role;
 
     if (role === 'admin') {
-        return (
-            <AdminDashboardLayout>
-                <SettingsLayout>{children}</SettingsLayout>
-            </AdminDashboardLayout>
-        );
+        return <AdminDashboardLayout>{children}</AdminDashboardLayout>;
     }
 
     if (role === 'creator') {
@@ -86,15 +82,27 @@ function RoleAwareSettingsLayout({
                 primaryAction={creatorPrimaryActions[0]}
                 showSearch
             >
-                <SettingsLayout>{children}</SettingsLayout>
+                {children}
             </MarketplaceLayout>
         );
     }
 
     return (
         <MarketplaceLayout role="umkm" primaryAction={umkmPrimaryAction} showSearch>
-            <SettingsLayout>{children}</SettingsLayout>
+            {children}
         </MarketplaceLayout>
+    );
+}
+
+function RoleAwareSettingsLayout({
+    children,
+}: {
+    children: ReactNode;
+}): ReactElement {
+    return (
+        <RoleAwareAppLayout>
+            <SettingsLayout>{children}</SettingsLayout>
+        </RoleAwareAppLayout>
     );
 }
 
@@ -128,11 +136,15 @@ createInertiaApp({
             case name === 'Public/CreatorDirectory':
             case name === 'Public/CreatorProfile':
             case name === 'Public/UmkmProfile':
+            case name === 'Public/PrivacyPolicy':
+            case name === 'Public/TermsOfService':
                 return PublicLayout;
             case name.startsWith('Auth/'):
                 return resolveAuthLayout(name);
             case name.startsWith('settings/'):
                 return RoleAwareSettingsLayout;
+            case name.startsWith('Notifications/'):
+                return RoleAwareAppLayout;
             case name === 'Umkm/Collaborations/Show':
             case name === 'Creator/Collaborations/Show':
                 return PassthroughLayout;
@@ -149,10 +161,12 @@ createInertiaApp({
     strictMode: true,
     withApp(app) {
         return (
-            <TooltipProvider delayDuration={0}>
-                {app}
-                <Toaster />
-            </TooltipProvider>
+            <div className="neo-brutal min-h-screen">
+                <TooltipProvider delayDuration={0}>
+                    {app}
+                    <Toaster />
+                </TooltipProvider>
+            </div>
         );
     },
     progress: {

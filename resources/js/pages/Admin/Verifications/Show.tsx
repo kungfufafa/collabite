@@ -2,9 +2,10 @@ import { Head, useForm } from '@inertiajs/react';
 import type { FormEventHandler, ReactNode } from 'react';
 
 import InputError from '@/components/input-error';
-import { PageHeader } from '@/components/app/page-header';
+import { brutalDangerBanner } from '@/components/collabite/landing/brutal-styles';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,22 @@ type Verification = {
 
 type Props = { verification: Verification };
 
+function statusTone(status: string): 'warning' | 'success' | 'danger' | 'neutral' {
+    if (status === 'pending') {
+        return 'warning';
+    }
+
+    if (status === 'verified') {
+        return 'success';
+    }
+
+    if (status === 'rejected') {
+        return 'danger';
+    }
+
+    return 'neutral';
+}
+
 export default function Show({ verification }: Props): ReactNode {
     const reject = useForm({ rejection_reason: '' });
 
@@ -52,75 +69,122 @@ export default function Show({ verification }: Props): ReactNode {
     return (
         <>
             <Head title={`Verifikasi #${verification.id}`} />
-            <div>
-                <PageHeader
-                    title={`Pengajuan #${verification.id}`}
-                    description={`Creator: ${verification.creator.name} (${verification.creator.email})`}
-                />
-
-                <div className="mt-8 max-w-3xl space-y-6">
+            <WorkspacePage
+                actions={<PageBackButton href="/admin/verifications" />}
+                description={`Creator: ${verification.creator.name} (${verification.creator.email})`}
+                title={`Pengajuan #${verification.id}`}
+            >
+                <div className="max-w-3xl space-y-6">
                     <SectionPanel title="Ringkasan">
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">Status:</span>
-                                <StatusBadge label={verification.status} tone="info" />
+                        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                            <div>
+                                <dt className="text-muted-foreground">Status</dt>
+                                <dd className="mt-1">
+                                    <StatusBadge
+                                        label={verification.status}
+                                        tone={statusTone(verification.status)}
+                                    />
+                                </dd>
                             </div>
-                            <p>Diajukan: {verification.submitted_at ?? '—'}</p>
+                            <div>
+                                <dt className="text-muted-foreground">Diajukan</dt>
+                                <dd className="mt-1 font-medium text-foreground">
+                                    {verification.submitted_at ?? '—'}
+                                </dd>
+                            </div>
                             {verification.reviewed_at ? (
-                                <p>
-                                    Ditinjau: {verification.reviewed_at} oleh{' '}
-                                    {verification.reviewer?.name ?? '—'}
-                                </p>
+                                <div className="sm:col-span-2">
+                                    <dt className="text-muted-foreground">Ditinjau</dt>
+                                    <dd className="mt-1 font-medium text-foreground">
+                                        {verification.reviewed_at} oleh{' '}
+                                        {verification.reviewer?.name ?? '—'}
+                                    </dd>
+                                </div>
                             ) : null}
-                            {verification.rejection_reason ? (
-                                <p className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive">
-                                    Alasan: {verification.rejection_reason}
-                                </p>
-                            ) : null}
-                        </div>
+                        </dl>
+                        {verification.rejection_reason ? (
+                            <p className={`mt-4 ${brutalDangerBanner}`}>
+                                Alasan penolakan: {verification.rejection_reason}
+                            </p>
+                        ) : null}
                     </SectionPanel>
 
-                    <SectionPanel title="Berkas">
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                            {verification.documents.map((d) => (
-                                <li key={d.id}>
-                                    {d.type_label} — {d.original_name}{' '}
-                                    {d.download_url ? (
-                                        <a className="text-primary hover:underline" href={d.download_url}>
-                                            unduh
-                                        </a>
-                                    ) : null}
-                                </li>
-                            ))}
-                        </ul>
+                    <SectionPanel
+                        description={`${verification.documents_count} berkas terlampir.`}
+                        title="Berkas"
+                    >
+                        {verification.documents.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                Tidak ada berkas terlampir.
+                            </p>
+                        ) : (
+                            <ul className="divide-y divide-border">
+                                {verification.documents.map((document) => (
+                                    <li
+                                        className="flex flex-col gap-1 py-3 text-sm first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                                        key={document.id}
+                                    >
+                                        <div>
+                                            <p className="font-medium text-foreground">
+                                                {document.type_label}
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                {document.original_name}
+                                            </p>
+                                        </div>
+                                        {document.download_url ? (
+                                            <a
+                                                className="text-sm font-medium text-primary hover:underline"
+                                                href={document.download_url}
+                                            >
+                                                Unduh
+                                            </a>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </SectionPanel>
 
                     {verification.status === 'pending' ? (
                         <SectionPanel title="Tindakan">
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 <form onSubmit={approve}>
-                                    <Button type="submit" disabled={reject.processing}>
-                                        Setujui
+                                    <Button disabled={reject.processing} type="submit" variant="success">
+                                        Setujui verifikasi
                                     </Button>
                                 </form>
-                                <form onSubmit={rejectSubmit} className="space-y-2">
-                                    <Label htmlFor="rejection_reason">Alasan Penolakan</Label>
-                                    <Textarea
-                                        id="rejection_reason"
-                                        value={reject.data.rejection_reason}
-                                        onChange={(e) => reject.setData('rejection_reason', e.target.value)}
-                                        rows={3}
-                                    />
-                                    <InputError message={reject.errors.rejection_reason} />
-                                    <Button type="submit" variant="destructive" disabled={reject.processing}>
-                                        Tolak
+                                <form className="space-y-3" onSubmit={rejectSubmit}>
+                                    <div>
+                                        <Label htmlFor="rejection_reason">
+                                            Alasan penolakan
+                                        </Label>
+                                        <Textarea
+                                            id="rejection_reason"
+                                            onChange={(e) =>
+                                                reject.setData(
+                                                    'rejection_reason',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            rows={3}
+                                            value={reject.data.rejection_reason}
+                                        />
+                                        <InputError message={reject.errors.rejection_reason} />
+                                    </div>
+                                    <Button
+                                        disabled={reject.processing}
+                                        type="submit"
+                                        variant="destructive"
+                                    >
+                                        Tolak verifikasi
                                     </Button>
                                 </form>
                             </div>
                         </SectionPanel>
                     ) : null}
                 </div>
-            </div>
+            </WorkspacePage>
         </>
     );
 }

@@ -87,7 +87,7 @@ export function WorkspaceTopBar({
               : null;
 
     return (
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/85 px-5 backdrop-blur-md sm:px-8">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b-2 border-[var(--neutral-900)] bg-background px-5 sm:px-8">
             <div className="lg:hidden">
                 <WorkspaceMobileNav role={role} />
             </div>
@@ -105,7 +105,7 @@ export function WorkspaceTopBar({
             )}
 
             {showSearch ? (
-                <div className="hidden max-w-md flex-1 items-center gap-2 rounded-md border border-border bg-card px-3 md:flex">
+                <div className="hidden max-w-md flex-1 items-center gap-2 border-2 border-[var(--neutral-900)] bg-card px-3 shadow-[2px_2px_0_0_var(--neutral-900)] md:flex">
                     <Search className="size-4 text-muted-foreground" />
                     <input
                         aria-label="Cari"
@@ -138,7 +138,7 @@ function IdentityMenu({
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
-                    className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="flex items-center gap-2 border-2 border-transparent px-1.5 py-1 transition-[transform,box-shadow,background-color] hover:border-[var(--neutral-900)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neutral-900)]"
                     data-testid={
                         role === 'admin'
                             ? 'admin-user-menu'

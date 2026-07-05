@@ -8,6 +8,10 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import {
+    brutalCard,
+    brutalIconBox,
+} from '@/components/collabite/landing/brutal-styles';
 import { SectionHeading } from '@/components/collabite/section-heading';
 
 const FEATURES = [
@@ -50,23 +54,21 @@ export function FeatureGrid(): ReactNode {
             className="mx-auto max-w-[1200px] px-5 py-16 sm:px-8 lg:py-24"
         >
             <SectionHeading
+                brutal
                 eyebrow="Fitur"
                 title="Semua yang Dibutuhkan untuk Kolaborasi yang Lebih Terarah"
             />
 
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {FEATURES.map(({ icon: Icon, title, desc }) => (
-                    <div
-                        key={title}
-                        className="rounded-xl border border-border bg-card p-6 transition-colors hover:border-[var(--brand-primary-muted)]"
-                    >
-                        <span className="flex size-11 items-center justify-center rounded-lg bg-[var(--brand-primary-soft)] text-[var(--brand-primary)]">
+                    <div key={title} className={`${brutalCard} p-6`}>
+                        <span className={brutalIconBox}>
                             <Icon className="size-5" />
                         </span>
-                        <h3 className="mt-4 text-base font-semibold text-foreground">
+                        <h3 className="mt-4 text-base font-black text-foreground">
                             {title}
                         </h3>
-                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
                             {desc}
                         </p>
                     </div>
