@@ -1,6 +1,8 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import type { DashboardQueueItem } from '@/components/dashboard/types';
+import { DashboardCard } from '@/components/dashboard-card';
 import { Button } from '@/components/ui/button';
 import {
     CardContent,
@@ -8,9 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { DashboardCard } from '@/components/dashboard-card';
 
-import type { DashboardQueueItem } from '@/components/dashboard/types';
 
 type DashboardQueuePanelProps = {
     title: string;

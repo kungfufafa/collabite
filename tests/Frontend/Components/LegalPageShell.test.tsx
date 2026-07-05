@@ -1,3 +1,4 @@
+import type * as Inertia from '@inertiajs/react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -5,7 +6,7 @@ import { LegalPageShell } from '@/components/collabite/public/legal-page-shell';
 import { privacyPolicyDocument } from '@/content/legal/privacy-policy';
 
 vi.mock('@inertiajs/react', async () => {
-    const actual = await vi.importActual<typeof import('@inertiajs/react')>(
+    const actual = await vi.importActual<typeof Inertia>(
         '@inertiajs/react',
     );
 

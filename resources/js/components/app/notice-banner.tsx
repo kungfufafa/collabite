@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { AlertCircle, CheckCircle2, Info, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, TriangleAlert  } from 'lucide-react';
+import type {LucideIcon} from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';

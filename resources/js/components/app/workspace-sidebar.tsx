@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { Menu } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { SidebarIdentity } from '@/components/app/sidebar-identity';
@@ -15,10 +15,11 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-    getNavigationGroupsForRole,
-    type MarketplaceRole,
-    type NavGroup,
+    getNavigationGroupsForRole
+    
+    
 } from '@/config/navigation';
+import type {MarketplaceRole, NavGroup} from '@/config/navigation';
 
 type WorkspaceSidebarProps = {
     role: MarketplaceRole;

@@ -1,13 +1,13 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import type { FormEventHandler, ReactNode } from 'react';
 
-import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
-import InputError from '@/components/input-error';
 import { ListEmptyState } from '@/components/app/list-empty-state';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { WorkspacePage } from '@/components/app/workspace-page';
+import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

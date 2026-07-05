@@ -1,3 +1,4 @@
+import { PackagePlusIcon, TruckIcon, SettingsIcon, DownloadIcon, ChevronRightIcon } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -14,7 +15,6 @@ import {
 	ItemMedia,
 	ItemTitle,
 } from "@/components/ui/item";
-import { PackagePlusIcon, TruckIcon, SettingsIcon, DownloadIcon, ChevronRightIcon } from "lucide-react";
 
 const actions = [
 	{

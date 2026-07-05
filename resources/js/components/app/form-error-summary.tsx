@@ -2,7 +2,8 @@ import { AlertCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
-import { flattenValidationErrors, type ValidationErrors } from '@/lib/form-errors';
+import { flattenValidationErrors } from '@/lib/form-errors';
+import type { ValidationErrors } from '@/lib/form-errors';
 import { cn } from '@/lib/utils';
 
 type FormErrorSummaryProps = {
@@ -18,14 +19,16 @@ export function FormErrorSummary({
 }: FormErrorSummaryProps): ReactNode {
     const summaryRef = useRef<HTMLDivElement>(null);
     const messages = flattenValidationErrors(errors);
+    const messageKey = messages.join('|');
+    const messageCount = messages.length;
 
     useEffect(() => {
-        if (messages.length === 0 || !summaryRef.current) {
+        if (messageCount === 0 || !summaryRef.current) {
             return;
         }
 
         summaryRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, [messages.join('|')]);
+    }, [messageCount, messageKey]);
 
     if (messages.length === 0) {
         return null;

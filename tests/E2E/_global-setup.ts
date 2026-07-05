@@ -1,17 +1,28 @@
 /**
- * Reset the local SQLite database to a known seeded state before the entire
+ * Reset the local database to a known seeded state before the entire
  * Playwright run. Runs once per `npx playwright test` invocation.
  *
- * - Default .env points DB_CONNECTION=sqlite → database/database.sqlite
- * - Uses --force to skip the production-environment prompt
+ * Uses the active `.env` database (MySQL on Herd for this project).
+ * Retries with `migrate --seed` when `migrate:fresh` fails on MySQL wipe edge cases.
  */
 import { execSync } from 'node:child_process';
 
-export default async function globalSetup(): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log('[e2e] Resetting SQLite database (migrate:fresh --seed --force)…');
-    execSync('php artisan migrate:fresh --seed --force', {
+function runArtisan(command: string): void {
+    execSync(command, {
         cwd: process.cwd(),
         stdio: 'inherit',
     });
+}
+
+export default async function globalSetup(): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.log('[e2e] Resetting database (migrate:fresh --seed --force)…');
+
+    try {
+        runArtisan('php artisan migrate:fresh --seed --force');
+    } catch {
+        // eslint-disable-next-line no-console
+        console.warn('[e2e] migrate:fresh failed; falling back to migrate --seed --force…');
+        runArtisan('php artisan migrate --seed --force');
+    }
 }

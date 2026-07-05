@@ -9,9 +9,10 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { NavUser } from '@/components/nav-user';
 import {
     getNavigationForRole,
-    isNavigationItemActive,
-    type MarketplaceRole,
+    isNavigationItemActive
+    
 } from '@/config/navigation';
+import type {MarketplaceRole} from '@/config/navigation';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';

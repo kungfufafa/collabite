@@ -2,6 +2,8 @@
 
 import type * as React from "react";
 import { Bar, BarChart, XAxis } from "recharts";
+import { DashboardCard } from "@/components/dashboard-card";
+import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import {
 	CardContent,
 	CardDescription,
@@ -9,13 +11,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	type ChartConfig,
+	
 	ChartContainer,
 	ChartTooltip,
-	ChartTooltipContent,
+	ChartTooltipContent
 } from "@/components/ui/chart";
-import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
-import { DashboardCard } from "@/components/dashboard-card";
+import type {ChartConfig} from "@/components/ui/chart";
 
 /** Demo: last 7 days. */
 const salesDaily7 = [

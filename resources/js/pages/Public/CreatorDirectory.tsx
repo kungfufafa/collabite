@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
+import { ListEmptyState } from '@/components/app/list-empty-state';
 import {
     brutalChip,
     brutalChipActive,
@@ -11,10 +12,10 @@ import {
     brutalSelectField,
 } from '@/components/collabite/landing/brutal-styles';
 import {
-    CreatorDirectoryCard,
-    type CreatorDirectoryItem,
+    CreatorDirectoryCard
+    
 } from '@/components/collabite/public/creator-directory-card';
-import { ListEmptyState } from '@/components/app/list-empty-state';
+import type {CreatorDirectoryItem} from '@/components/collabite/public/creator-directory-card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';

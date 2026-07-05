@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
 import { FileTextIcon, RocketIcon, UserPlusIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
+import type { DashboardActivityItem } from '@/components/dashboard/types';
 import { DashboardCard } from '@/components/dashboard-card';
 import {
     CardContent,
@@ -9,7 +10,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-import type { DashboardActivityItem } from '@/components/dashboard/types';
 
 type DashboardActivityFeedProps = {
     title?: string;

@@ -9,15 +9,18 @@ export type DashboardDateStyle = "month" | "day-month" | "full";
 
 export function formatDate(isoDate: string, style: DashboardDateStyle): string {
 	const date = parseIsoCalendarDate(isoDate);
+
 	if (style === "month") {
 		return date.toLocaleDateString(DASHBOARD_LOCALE, { month: "short" });
 	}
+
 	if (style === "day-month") {
 		return date.toLocaleDateString(DASHBOARD_LOCALE, {
 			day: "numeric",
 			month: "short",
 		});
 	}
+
 	return date.toLocaleDateString(DASHBOARD_LOCALE, {
 		day: "numeric",
 		month: "short",
@@ -31,9 +34,11 @@ export function formatChartAxisTick(
 	periodDays: number
 ): string {
 	const date = parseIsoCalendarDate(isoDate);
+
 	if (periodDays <= 7) {
 		return date.toLocaleDateString(DASHBOARD_LOCALE, { weekday: "short" });
 	}
+
 	return formatDate(isoDate, "day-month");
 }
 
@@ -45,6 +50,7 @@ export function formatChartTooltipDate(
 	weekdayStyle: ChartTooltipWeekdayStyle = "short"
 ): string {
 	const date = parseIsoCalendarDate(isoDate);
+
 	return date.toLocaleDateString(DASHBOARD_LOCALE, {
 		weekday: weekdayStyle,
 		day: "numeric",
@@ -57,6 +63,7 @@ export function formatCompactCurrency(
 	options?: { maximumFractionDigits?: number }
 ) {
 	const { maximumFractionDigits = 0 } = options ?? {};
+
 	return new Intl.NumberFormat(DASHBOARD_LOCALE, {
 		currency: "USD",
 		maximumFractionDigits,

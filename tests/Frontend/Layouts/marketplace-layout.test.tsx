@@ -1,10 +1,10 @@
-import type { InertiaLinkProps } from '@inertiajs/react';
 import type * as Inertia from '@inertiajs/react';
 import { usePage } from '@inertiajs/react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useIsMobile } from '@/hooks/use-mobile';
 import MarketplaceLayout from '@/layouts/marketplace-layout';
 
 const defaultPage = {
@@ -30,13 +30,17 @@ vi.mock('@inertiajs/react', async () => {
     };
 });
 
+vi.mock('@/hooks/use-mobile', () => ({
+    useIsMobile: vi.fn(() => false),
+}));
+
 function renderLayout(ui: React.ReactElement): ReturnType<typeof render> {
     return render(ui);
 }
 
 describe('MarketplaceLayout', () => {
     beforeEach(async () => {
-        vi.mocked(usePage).mockReturnValue(defaultPage as ReturnType<typeof usePage>);
+        vi.mocked(usePage).mockReturnValue(defaultPage as unknown as ReturnType<typeof usePage>);
     });
 
     it('renders the UMKM shell with grouped sidebar navigation', () => {
@@ -55,11 +59,14 @@ describe('MarketplaceLayout', () => {
             .map((link) => link.textContent?.trim())
             .filter((label) => label !== 'Collabite');
         expect(labels).toEqual([
+            'Buat Campaign',
             'Dashboard',
             'Campaign',
             'Cari Creator',
             'Kolaborasi',
             'Profil Bisnis',
+            'Produk',
+            'Ulasan',
             'Pengaturan',
         ]);
 
@@ -86,7 +93,7 @@ describe('MarketplaceLayout', () => {
                     },
                 },
             },
-        } as ReturnType<typeof usePage>);
+        } as unknown as ReturnType<typeof usePage>);
 
         renderLayout(
             <MarketplaceLayout role="creator">
@@ -100,6 +107,7 @@ describe('MarketplaceLayout', () => {
     });
 
     it('exposes a mobile menu trigger that opens the sheet', async () => {
+        vi.mocked(useIsMobile).mockReturnValue(true);
         const user = userEvent.setup();
         renderLayout(
             <MarketplaceLayout role="umkm">

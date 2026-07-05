@@ -10,11 +10,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	type ChartConfig,
+	
 	ChartContainer,
 	ChartLegend,
-	ChartLegendContent,
+	ChartLegendContent
 } from "@/components/ui/chart";
+import type {ChartConfig} from "@/components/ui/chart";
 
 export type CategoryMixDatum = {
 	category: string;
@@ -87,6 +88,7 @@ function buildSlices(data: readonly CategoryMixDatum[]): {
 			label: row.category,
 			color,
 		};
+
 		return {
 			key,
 			category: row.category,
@@ -133,6 +135,7 @@ export function CategoryRankChart() {
 								fontWeight={500}
 								formatter={(label) => {
 									const n = Number(label);
+
 									return Number.isFinite(n) ? `${n}%` : String(label ?? "");
 								}}
 								position="inside"

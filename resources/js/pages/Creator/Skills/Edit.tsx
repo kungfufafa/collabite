@@ -1,11 +1,11 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEventHandler, ReactNode } from 'react';
 
-import InputError from '@/components/input-error';
-import { brutalOptionCard } from '@/components/collabite/landing/brutal-styles';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { SectionPanel } from '@/components/app/section-panel';
 import { WorkspacePage } from '@/components/app/workspace-page';
+import { brutalOptionCard } from '@/components/collabite/landing/brutal-styles';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 

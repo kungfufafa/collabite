@@ -1,8 +1,11 @@
 "use client";
 
+import { ArrowRightIcon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { formatChartAxisTick, formatChartTooltipDate } from "@/components/formater";
+import { revenueChartDemo } from "@/components/revenue-chart-data";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,11 +15,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	type ChartConfig,
+	
 	ChartContainer,
 	ChartTooltip,
-	ChartTooltipContent,
+	ChartTooltipContent
 } from "@/components/ui/chart";
+import type {ChartConfig} from "@/components/ui/chart";
 import {
 	Select,
 	SelectContent,
@@ -24,9 +28,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
-import { revenueChartDemo } from "@/components/revenue-chart-data";
-import { ArrowRightIcon } from "lucide-react";
 
 /** Matches `<Select>`; chart uses the last N days of `revenueChartDemo`. */
 type PeriodDays = 7 | 14 | 30 | 60 | 90;
@@ -66,14 +67,17 @@ export function RevenueChart() {
 	const growthPct = useMemo(() => {
 		const first = chartRows[0]?.revenue ?? 0;
 		const last = chartRows.at(-1)?.revenue ?? first;
+
 		if (!first) {
 			return 0;
 		}
+
 		return ((last - first) / first) * 100;
 	}, [chartRows]);
 
 	// Extra spacing so long ranges don’t collide; pairs with `interval` above.
 	let xAxisMinTickGap: number | undefined;
+
 	if (periodDays <= 7) {
 		xAxisMinTickGap = undefined;
 	} else {
@@ -150,9 +154,11 @@ export function RevenueChart() {
 									indicator="line"
 									labelFormatter={(_, payload) => {
 										const row = payload?.[0]?.payload as RevenueRow | undefined;
+
 										if (!row?.date) {
 											return "";
 										}
+
 										return formatChartTooltipDate(row.date, "short");
 									}}
 								/>

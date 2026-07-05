@@ -7,21 +7,20 @@ import { approveSubmission } from '@/actions/App/Http/Controllers/Umkm/Collabora
 import { complete } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { submitPaymentProof } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { storeForUmkm as submitReview } from '@/actions/App/Http/Controllers/Umkm/ReviewsController';
-import InputError from '@/components/input-error';
+import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
+import { FlashBanner } from '@/components/app/flash-banner';
+import { SectionPanel } from '@/components/app/section-panel';
 import {
     brutalDivider,
     brutalInlinePanel,
     brutalNativeSelect,
 } from '@/components/collabite/landing/brutal-styles';
-import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
-import { FlashBanner } from '@/components/app/flash-banner';
-import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollaborationMessagePolling } from '@/hooks/use-collaboration-message-polling';
-import CollaborationWorkspaceLayout, {
-    type CollaborationTab,
-} from '@/layouts/collaboration-workspace-layout';
+import CollaborationWorkspaceLayout from '@/layouts/collaboration-workspace-layout';
+import type {CollaborationTab} from '@/layouts/collaboration-workspace-layout';
 
 type Message = {
     id: number;
@@ -334,8 +333,11 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                             <>
                                                 <div className="grid gap-2 sm:grid-cols-[120px_1fr]">
                                                     <div>
-                                                        <label className="text-sm font-medium">Rating</label>
+                                                        <label className="text-sm font-medium" htmlFor="umkm-review-rating">
+                                                            Rating
+                                                        </label>
                                                         <input
+                                                            id="umkm-review-rating"
                                                             type="number"
                                                             name="rating"
                                                             min="1"
@@ -347,8 +349,11 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                         <InputError message={errors.rating} className="mt-1" />
                                                     </div>
                                                     <div>
-                                                        <label className="text-sm font-medium">Ulasan</label>
+                                                        <label className="text-sm font-medium" htmlFor="umkm-review-body">
+                                                            Ulasan
+                                                        </label>
                                                         <Textarea
+                                                            id="umkm-review-body"
                                                             name="body"
                                                             rows={3}
                                                             value={reviewBody}

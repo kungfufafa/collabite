@@ -1,6 +1,8 @@
 import { Link } from '@inertiajs/react';
+import { ChevronRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import type { SidebarNavGroup } from '@/components/app-shared';
 import {
     Collapsible,
     CollapsibleContent,
@@ -16,8 +18,6 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import type { SidebarNavGroup } from '@/components/app-shared';
-import { ChevronRightIcon } from 'lucide-react';
 
 export function NavGroup({ label, items }: SidebarNavGroup): ReactNode {
     return (

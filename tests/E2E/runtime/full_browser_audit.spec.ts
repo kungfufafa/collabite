@@ -55,8 +55,8 @@ for (const t of pages) {
         if (t.loginAs) {
             const c = creds[t.loginAs];
             await page.goto(baseURL + '/login');
-            await page.getByLabel('Email').fill(c.email);
-            await page.getByLabel('Password').fill(c.password);
+            await page.getByRole('textbox', { name: 'Email' }).fill(c.email);
+            await page.getByRole('textbox', { name: 'Kata Sandi' }).fill(c.password);
             await page.getByRole('button', { name: 'Masuk' }).click();
             await page.waitForURL(new RegExp('/' + t.loginAs + '/dashboard'), { timeout: 10_000 });
         }

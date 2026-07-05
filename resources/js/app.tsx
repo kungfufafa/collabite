@@ -13,12 +13,17 @@ import MarketplaceLayout from '@/layouts/marketplace-layout';
 import type { MarketplaceLayoutProps } from '@/layouts/marketplace-layout';
 import PublicLayout from '@/layouts/public-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import type { Auth } from '@/types/auth';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Collabite';
 
 type UmkmLayoutProps = MarketplaceLayoutProps & { children?: ReactNode };
+type LayoutComponent = ComponentType<{ children?: ReactNode }>;
+type SharedProps = {
+    auth: Auth;
+};
 
-function PassthroughLayout({ children }: { children: ReactNode }): ReactElement {
+function PassthroughLayout({ children }: { children?: ReactNode }): ReactElement {
     return <>{children}</>;
 }
 
@@ -42,14 +47,14 @@ function CreatorLayout({ children }: UmkmLayoutProps): ReactElement {
     );
 }
 
-function LoginAuthLayout({ children }: { children: ReactNode }): ReactElement {
+function LoginAuthLayout({ children }: { children?: ReactNode }): ReactElement {
     return <AuthLayout variant="login">{children}</AuthLayout>;
 }
 
 function RegisterAuthLayout({
     children,
 }: {
-    children: ReactNode;
+    children?: ReactNode;
 }): ReactElement {
     return <AuthLayout variant="register">{children}</AuthLayout>;
 }
@@ -57,7 +62,7 @@ function RegisterAuthLayout({
 function RecoveryAuthLayout({
     children,
 }: {
-    children: ReactNode;
+    children?: ReactNode;
 }): ReactElement {
     return <AuthLayout variant="recovery">{children}</AuthLayout>;
 }
@@ -65,10 +70,10 @@ function RecoveryAuthLayout({
 function RoleAwareAppLayout({
     children,
 }: {
-    children: ReactNode;
+    children?: ReactNode;
 }): ReactElement {
-    const page = usePage();
-    const user = page.props.auth?.user as { role?: string } | null | undefined;
+    const page = usePage<SharedProps>();
+    const user = page.props.auth.user;
     const role = user?.role;
 
     if (role === 'admin') {
@@ -97,7 +102,7 @@ function RoleAwareAppLayout({
 function RoleAwareSettingsLayout({
     children,
 }: {
-    children: ReactNode;
+    children?: ReactNode;
 }): ReactElement {
     return (
         <RoleAwareAppLayout>
@@ -107,12 +112,12 @@ function RoleAwareSettingsLayout({
 }
 
 const layoutBindings = {
-    admin: AdminDashboardLayout as ComponentType,
-    umkm: UmkmLayout as ComponentType,
-    creator: CreatorLayout as ComponentType,
+    admin: AdminDashboardLayout as LayoutComponent,
+    umkm: UmkmLayout as LayoutComponent,
+    creator: CreatorLayout as LayoutComponent,
 } as const;
 
-function resolveAuthLayout(name: string): ComponentType {
+function resolveAuthLayout(name: string): LayoutComponent {
     if (name === 'Auth/Login') {
         return LoginAuthLayout;
     }

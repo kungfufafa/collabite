@@ -118,13 +118,11 @@ export default function Show({
                         </div>
                     }
                     description={
-                        <>
-                            {campaign.category ? `Kategori: ${campaign.category}` : 'Tanpa kategori'}
-                            {campaign.budget
+                        `${campaign.category ? `Kategori: ${campaign.category}` : 'Tanpa kategori'}${
+                            campaign.budget
                                 ? ` · Budget: Rp ${Number(campaign.budget).toLocaleString('id-ID')}`
-                                : ''}
-                            {campaign.deadline ? ` · Deadline: ${campaign.deadline}` : ''}
-                        </>
+                                : ''
+                        }${campaign.deadline ? ` · Deadline: ${campaign.deadline}` : ''}`
                     }
                     meta={
                         <div className="flex flex-wrap gap-2">

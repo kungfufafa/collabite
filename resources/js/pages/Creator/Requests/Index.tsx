@@ -3,11 +3,11 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { accept, cancel, reject } from '@/actions/App/Http/Controllers/Creator/RequestsController';
-import { brutalEmptyState, brutalPanel } from '@/components/collabite/landing/brutal-styles';
-import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { StatusBadge } from '@/components/app/status-badge';
 import { WorkspacePage } from '@/components/app/workspace-page';
+import { brutalEmptyState, brutalPanel } from '@/components/collabite/landing/brutal-styles';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import type { DashboardStat } from '@/components/dashboard/types';
 import { Delta, DeltaIcon, DeltaValue } from '@/components/delta';
 import {
     Card,
@@ -9,7 +10,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-import type { DashboardStat } from '@/components/dashboard/types';
 
 type DashboardStatCardsProps = {
     stats: DashboardStat[];

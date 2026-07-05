@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRightIcon } from "lucide-react";
+import { DashboardCard } from "@/components/dashboard-card";
 import { Button } from "@/components/ui/button";
 import {
 	CardContent,
@@ -16,8 +18,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { DashboardCard } from "@/components/dashboard-card";
-import { ArrowRightIcon } from "lucide-react";
 
 const invoices = [
 	{

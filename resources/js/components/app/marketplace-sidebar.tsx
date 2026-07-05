@@ -18,12 +18,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import {
-    getNavigationGroupsForRole,
-    type MarketplaceRole,
-    type PrimaryAction,
+    getNavigationGroupsForRole
+    
+    
 } from '@/config/navigation';
-import { home } from '@/routes';
+import type {MarketplaceRole, PrimaryAction} from '@/config/navigation';
 import { toUrl } from '@/lib/utils';
+import { home } from '@/routes';
 
 type MarketplaceSidebarProps = {
     role: MarketplaceRole;

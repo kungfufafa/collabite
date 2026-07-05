@@ -1,12 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import { brutalDivider } from '@/components/collabite/landing/brutal-styles';
 import { ListEmptyState } from '@/components/app/list-empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import { brutalDivider } from '@/components/collabite/landing/brutal-styles';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { index as creatorsIndex } from '@/routes/public/creators';

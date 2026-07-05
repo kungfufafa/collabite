@@ -1,6 +1,7 @@
-import { chromium } from '@playwright/test';
+/* global process */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { chromium } from '@playwright/test';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://collabite.test';
 const OUT_DIR = path.resolve('public/demo-screenshots');

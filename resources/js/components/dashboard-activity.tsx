@@ -1,11 +1,11 @@
+import { CreditCardIcon, UserPlusIcon, FileTextIcon, RocketIcon } from "lucide-react";
+import { DashboardCard } from "@/components/dashboard-card";
 import {
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { DashboardCard } from "@/components/dashboard-card";
-import { CreditCardIcon, UserPlusIcon, FileTextIcon, RocketIcon } from "lucide-react";
 
 const items = [
 	{

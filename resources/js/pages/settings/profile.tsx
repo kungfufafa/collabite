@@ -3,18 +3,23 @@ import type { ReactNode } from 'react';
 
 import { FlashBanner } from '@/components/app/flash-banner';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
-import InputError from '@/components/input-error';
 import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { Auth } from '@/types/auth';
 
 type Props = {
     status?: string;
 };
 
 export default function Profile({ status }: Props): ReactNode {
-    const user = usePage().props.auth.user as { name: string; email: string };
+    const user = usePage<{ auth: Auth }>().props.auth.user;
+
+    if (!user) {
+        return null;
+    }
 
     return (
         <>

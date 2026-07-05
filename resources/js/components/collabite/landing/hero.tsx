@@ -16,9 +16,9 @@ import {
     brutalCard,
     brutalCardStatic,
 } from '@/components/collabite/landing/brutal-styles';
-import type { LandingHeroSpotlight } from '@/pages/Public/Welcome';
-import { Progress } from '@/components/ui/progress-placeholder';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress-placeholder';
+import type { LandingHeroSpotlight } from '@/pages/Public/Welcome';
 
 function initials(name: string): string {
     return name

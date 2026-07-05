@@ -2,6 +2,8 @@
 
 import { useId } from "react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { DashboardCard } from "@/components/dashboard-card";
+import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { formatDate } from "@/components/formater";
 import {
 	CardContent,
@@ -10,13 +12,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	type ChartConfig,
+	
 	ChartContainer,
 	ChartTooltip,
-	ChartTooltipContent,
+	ChartTooltipContent
 } from "@/components/ui/chart";
-import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
-import { DashboardCard } from "@/components/dashboard-card";
+import type {ChartConfig} from "@/components/ui/chart";
 
 const VISIBLE_DAYS = 7;
 
@@ -72,18 +73,24 @@ function rowTotal(row: ChannelSalesChartRow) {
 
 function growthPctForWindow(rows: readonly ChannelSalesChartRow[]) {
 	const first = rows[0];
+
 	if (!first) {
 		return 0;
 	}
+
 	const last = rows.at(-1);
+
 	if (!last) {
 		return 0;
 	}
+
 	const a = rowTotal(first);
 	const b = rowTotal(last);
+
 	if (!a) {
 		return 0;
 	}
+
 	return ((b - a) / a) * 100;
 }
 

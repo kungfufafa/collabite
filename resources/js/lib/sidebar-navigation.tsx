@@ -1,14 +1,11 @@
-import type { ReactNode } from 'react';
-
-import type { NavGroup, NavigationItem } from '@/config/navigation';
+import type { SidebarNavGroup, SidebarNavItem } from '@/components/app-shared';
 import {
     getNavigationGroupsForRole,
     isNavigationItemActive,
-    type MarketplaceRole,
 } from '@/config/navigation';
+import type { NavGroup, NavigationItem } from '@/config/navigation';
+import type { MarketplaceRole } from '@/config/navigation';
 import { toUrl } from '@/lib/utils';
-
-import type { SidebarNavGroup, SidebarNavItem } from '@/components/app-shared';
 
 export function buildSidebarNavGroups(
     role: MarketplaceRole,

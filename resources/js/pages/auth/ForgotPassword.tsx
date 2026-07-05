@@ -3,12 +3,13 @@ import { ArrowRight, Mail } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { FormErrorSummary } from '@/components/app/form-error-summary';
-import InputError from '@/components/input-error';
 import { brutalSuccessBanner } from '@/components/collabite/landing/brutal-styles';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { mergeValidationErrors, type ValidationErrors } from '@/lib/form-errors';
+import { mergeValidationErrors  } from '@/lib/form-errors';
+import type {ValidationErrors} from '@/lib/form-errors';
 import { cn } from '@/lib/utils';
 import { login } from '@/routes';
 

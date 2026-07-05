@@ -28,12 +28,13 @@ import { Separator } from '@/components/ui/separator';
 import {
     getNavigationForRole,
     isNavigationItemActive,
-    type MarketplaceRole,
 } from '@/config/navigation';
+import type { MarketplaceRole } from '@/config/navigation';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { cn, toUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { logout } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
+import type { Auth } from '@/types/auth';
 
 const ROLE_LABEL: Record<MarketplaceRole, string> = {
     umkm: 'UMKM',
@@ -162,11 +163,9 @@ export function AppHeader({
     headerSlot,
     breadcrumbs = [],
 }: AppHeaderProps): ReactNode {
-    const page = usePage();
+    const page = usePage<{ auth: Auth }>();
     const { currentUrl } = useCurrentUrl();
-    const user = page.props.auth?.user as
-        | { name: string; email?: string; avatar?: string | null }
-        | undefined;
+    const user = page.props.auth.user;
 
     const activeNavItem = getNavigationForRole(role).find((item) =>
         isNavigationItemActive(item, currentUrl),
@@ -179,7 +178,7 @@ export function AppHeader({
             : activeNavItem
               ? {
                     title: activeNavItem.label,
-                    icon: ActiveIcon ? <ActiveIcon /> : undefined,
+                    icon: ActiveIcon,
                 }
               : null;
 

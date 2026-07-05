@@ -7,7 +7,8 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { mergeValidationErrors, type ValidationErrors } from '@/lib/form-errors';
+import { mergeValidationErrors  } from '@/lib/form-errors';
+import type {ValidationErrors} from '@/lib/form-errors';
 
 type Props = {
     token?: string;

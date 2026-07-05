@@ -41,6 +41,7 @@ describe('CreatorDirectoryCard', () => {
                         '/storage/demo/portfolio-1.png',
                         '/storage/demo/portfolio-2.png',
                     ],
+                }}
             />,
         );
 

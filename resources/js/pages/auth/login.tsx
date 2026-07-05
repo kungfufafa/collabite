@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { mergeValidationErrors, type ValidationErrors } from '@/lib/form-errors';
+import { mergeValidationErrors  } from '@/lib/form-errors';
+import type {ValidationErrors} from '@/lib/form-errors';
 import { register } from '@/routes';
 
 type Props = {

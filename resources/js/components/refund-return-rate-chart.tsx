@@ -1,6 +1,8 @@
 "use client";
 
+import { ArrowRightIcon } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,13 +13,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	type ChartConfig,
+	
 	ChartContainer,
 	ChartTooltip,
-	ChartTooltipContent,
+	ChartTooltipContent
 } from "@/components/ui/chart";
-import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
-import { ArrowRightIcon } from "lucide-react";
+import type {ChartConfig} from "@/components/ui/chart";
 
 /** Daily return rate (% of fulfilled orders returned), last 7 days (demo). */
 const returnDaily7 = [

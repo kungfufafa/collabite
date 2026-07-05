@@ -17,8 +17,8 @@ import {
 } from '@/components/collabite/landing/brutal-styles';
 import { SectionHeading } from '@/components/collabite/section-heading';
 import { ImageWithFallback } from '@/components/image-with-fallback';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import type {
     LandingCategory,
     LandingFeaturedCreator,

@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRightIcon, CircleCheckIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import type { DashboardHealth } from '@/components/dashboard/types';
 import { DashboardCard } from '@/components/dashboard-card';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +21,6 @@ import {
 } from '@/components/ui/empty';
 import { Progress } from '@/components/ui/progress-placeholder';
 
-import type { DashboardHealth } from '@/components/dashboard/types';
 
 type DashboardHealthPanelProps = {
     title: string;

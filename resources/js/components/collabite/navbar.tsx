@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 
 import { brutalBtnPrimary } from '@/components/collabite/landing/brutal-styles';
 import { Logo } from '@/components/collabite/logo';
-import { PUBLIC_NAV_LINKS } from '@/config/public-navigation';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -14,11 +13,13 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { PUBLIC_NAV_LINKS } from '@/config/public-navigation';
 import { login, register } from '@/routes';
+import type { Auth } from '@/types/auth';
 
 export function Navbar(): ReactNode {
     const [scrolled, setScrolled] = useState(false);
-    const page = usePage();
+    const page = usePage<{ auth: Auth }>();
     const user = page.props.auth?.user;
 
     useEffect(() => {

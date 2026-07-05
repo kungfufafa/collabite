@@ -1,11 +1,11 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 
-import { brutalPanelInset } from '@/components/collabite/landing/brutal-styles';
 import { PageHeader } from '@/components/app/page-header';
+import { brutalPanelInset } from '@/components/collabite/landing/brutal-styles';
 import { Separator } from '@/components/ui/separator';
-import { cn, toUrl } from '@/lib/utils';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { cn, toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [

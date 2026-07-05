@@ -2,8 +2,8 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { Logo } from '@/components/collabite/logo';
 import { StatusBadge } from '@/components/app/status-badge';
+import { Logo } from '@/components/collabite/logo';
 import { Button } from '@/components/ui/button';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';

@@ -2,8 +2,6 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
-import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { PageHeader } from '@/components/app/page-header';
@@ -14,12 +12,14 @@ import {
     TableRowActions,
 } from '@/components/app/table-row-actions';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import { brutalThumb } from '@/components/collabite/landing/brutal-styles';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { fieldErrorProps } from '@/lib/form-errors';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { fieldErrorProps } from '@/lib/form-errors';
 import { store, update as updateRoute } from '@/routes/umkm/products';
 
 type Product = {

@@ -52,7 +52,9 @@ test.describe.serial('E2E-LOGIN: Real browser login flow', () => {
         await fillLoginForm(page, CREDENTIALS.admin.email, 'wrong-password');
         await page.getByRole('button', { name: 'Masuk' }).click();
         await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 10_000 });
-        await expect(page.getByText('Kredensial tidak cocok.')).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText('Kredensial tidak cocok.').first()).toBeVisible({
+            timeout: 10_000,
+        });
     });
 
     test('authenticated session survives a page refresh', async ({ page }) => {

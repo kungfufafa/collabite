@@ -10,20 +10,19 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { terms } from '@/routes/public';
-import { OptionChipGrid } from '@/components/auth/option-chip-grid';
-import {
-    RoleSelector,
-    type AuthRole,
-} from '@/components/auth/role-selector';
-import { brutalBtnPrimary, brutalBtnSecondary } from '@/components/collabite/landing/brutal-styles';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
+import { AuthFormSection } from '@/components/auth/auth-form-section';
+import { OptionChipGrid } from '@/components/auth/option-chip-grid';
+import { RoleSelector } from '@/components/auth/role-selector';
+import type { AuthRole } from '@/components/auth/role-selector';
+import { brutalBtnPrimary, brutalBtnSecondary } from '@/components/collabite/landing/brutal-styles';
 import InputError from '@/components/input-error';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { ValidationErrorValue } from '@/lib/form-errors';
 import { login } from '@/routes';
-import { type ValidationErrorValue } from '@/lib/form-errors';
+import { terms } from '@/routes/public';
 
 type Props = {
     role: AuthRole | null;

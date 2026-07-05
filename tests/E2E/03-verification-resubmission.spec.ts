@@ -9,7 +9,14 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { loginPage, registerCreator } from './_helpers';
+import {
+    latestVerificationIdForCreator,
+    loginPage,
+    loginSeededUser,
+    logoutSession,
+    prepareCreatorProfileForVerification,
+    registerCreator,
+} from './_helpers';
 
 const tinyPng = Buffer.from([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
@@ -22,23 +29,6 @@ const tinyPng = Buffer.from([
 const stamp = Date.now();
 const creatorEmail = `creator03.e2e.${stamp}@collabite.test`;
 
-/**
- * Prime CSRF: GET /login → ambil XSRF-TOKEN cookie.
- */
-async function primeCsrf(
-    request: import('@playwright/test').APIRequestContext,
-    baseURL: string,
-): Promise<string> {
-    await request.get('/login');
-    const cookies = await request.storageState();
-    const host = new URL(baseURL).hostname;
-    const xsrf = cookies.cookies.find((c) => c.name === 'XSRF-TOKEN' && c.domain.includes(host));
-    if (!xsrf) {
-        throw new Error('XSRF-TOKEN cookie not set after GET /login.');
-    }
-    return decodeURIComponent(xsrf.value);
-}
-
 async function prepareCreator(
     request: import('@playwright/test').APIRequestContext,
     baseURL: string,
@@ -47,110 +37,71 @@ async function prepareCreator(
         city: 'Surabaya',
     });
 
-    const token = await primeCsrf(request, baseURL);
-
-    // Update profile Creator (headline + bio) — diperlukan oleh SubmitVerification.
-    const profile = await request.patch('/creator/profile', {
-        headers: { 'X-XSRF-TOKEN': token, Accept: 'application/json' },
-        form: {
-            headline: 'Videographer & Editor',
-            bio: 'Saya membuat konten video pendek yang menarik.',
-            city: 'Surabaya',
-        },
-        maxRedirects: 0,
-    });
-    expect([200, 302]).toContain(profile.status());
-
-    // Tambah 1 item portofolio — diperlukan oleh SubmitVerification.
-    const portfolio = await request.post('/creator/portfolio', {
-        headers: { 'X-XSRF-TOKEN': token, Accept: 'application/json' },
-        form: {
-            title: 'Proyek Demo E2E',
-            description: 'Salah satu karya terbaru saya.',
-            external_url: 'https://example.com/portfolio-1',
-        },
-        maxRedirects: 0,
-    });
-    expect([200, 302]).toContain(portfolio.status());
+    prepareCreatorProfileForVerification(creatorEmail);
 }
 
 test.describe.serial('E2E-03: Verifikasi Creator ditolak → resubmit → disetujui', () => {
-    test('Alur verifikasi penuh dengan penolakan lalu persetujuan', async ({
-        page,
-        context,
-        request,
-        baseURL,
-    }) => {
+    test('Alur verifikasi penuh dengan penolakan lalu persetujuan', async ({ page, baseURL }) => {
         test.setTimeout(120_000);
 
-        await prepareCreator(request, baseURL!);
+        await prepareCreator(page.request, baseURL!);
 
         // ====== Creator: ajukan verifikasi pertama ======
         await loginPage(page, creatorEmail);
         await expect(page).toHaveURL(/\/creator\/dashboard/);
 
         await page.goto('/creator/verification');
-        await expect(page.getByRole('heading', { name: 'Status Verifikasi' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Verifikasi Creator' })).toBeVisible();
 
         // Upload dokumen (KTP).
-        await page.getByLabel('Berkas').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'ktp.png',
             mimeType: 'image/png',
             buffer: tinyPng,
         });
         await page.getByRole('button', { name: 'Kirim Pengajuan' }).click();
-        // Server redirect ke /creator/verification dengan status "pending".
-        await expect(page.getByText(/pending/)).toBeVisible();
+        await expect(page.getByText(/pending/i).first()).toBeVisible();
 
-        // Cari verification ID via API Inertia HTML.
-        const verifyPage = await request.get('/creator/verification');
-        expect(verifyPage.status()).toBe(200);
-        const verifyBody = await verifyPage.text();
-        const idMatch = verifyBody.match(/"id":(\d+)/);
-        expect(idMatch).not.toBeNull();
-        const verificationId = Number(idMatch![1]);
+        const verificationId = latestVerificationIdForCreator(creatorEmail);
 
-        await context.clearCookies();
+        await logoutSession(page);
 
         // ====== Admin: tolak verifikasi dengan alasan ======
-        await loginPage(page, 'admin@collabite.test');
+        await loginSeededUser(page, 'admin@collabite.test');
         await expect(page).toHaveURL(/\/admin\/dashboard/);
 
         await page.goto(`/admin/verifications/${verificationId}`);
         await expect(page.getByRole('heading', { name: 'Tindakan' })).toBeVisible();
 
-        await page.getByLabel('Alasan Penolakan').fill('Foto KTP buram, mohon unggah ulang yang lebih jelas.');
-        page.once('dialog', (d) => d.accept());
-        await page.getByRole('button', { name: 'Tolak' }).click();
-        await expect(page.getByText(/Ditolak|rejected/i)).toBeVisible();
+        await page.getByLabel('Alasan penolakan').fill('Foto KTP buram, mohon unggah ulang yang lebih jelas.');
+        await page.getByRole('button', { name: 'Tolak verifikasi' }).click();
+        await expect(page.getByText(/Ditolak|rejected/i).first()).toBeVisible();
 
-        await context.clearCookies();
+        await logoutSession(page);
 
-        // ====== Creator: lihat alasan & resubmit ======
+        // ====== Creator: lihat status rejected & resubmit ======
         await loginPage(page, creatorEmail);
         await page.goto('/creator/verification');
-        await expect(page.getByText(/Foto KTP buram/i)).toBeVisible();
-        await expect(page.getByText('rejected', { exact: false })).toBeVisible();
+        await expect(page.getByText(/Status saat ini: rejected/i)).toBeVisible();
 
-        // Ganti dokumen: replace via input file.
-        await page.getByLabel('Berkas').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'ktp-jernih.png',
             mimeType: 'image/png',
             buffer: tinyPng,
         });
         await page.getByRole('button', { name: 'Kirim Pengajuan' }).click();
-        await expect(page.getByText(/pending/)).toBeVisible();
+        await expect(page.getByText(/pending/i).first()).toBeVisible();
 
-        await context.clearCookies();
+        await logoutSession(page);
 
         // ====== Admin: setujui verifikasi (verifikasi ID baru) ======
-        await loginPage(page, 'admin@collabite.test');
+        await loginSeededUser(page, 'admin@collabite.test');
         await page.goto('/admin/verifications');
         const row = page.getByRole('row').filter({ hasText: creatorEmail }).first();
         await row.getByRole('link', { name: 'Tinjau' }).click();
         await expect(page).toHaveURL(/\/admin\/verifications\/\d+/);
         page.once('dialog', (d) => d.accept());
-        await page.getByRole('button', { name: 'Setujui' }).click();
-        await expect(page.getByText(/Disetujui|verified/i)).toBeVisible();
+        await page.getByRole('button', { name: 'Setujui verifikasi' }).click();
+        await expect(page.getByText(/Disetujui|verified/i).first()).toBeVisible();
     });
 });

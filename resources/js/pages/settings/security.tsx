@@ -1,10 +1,10 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

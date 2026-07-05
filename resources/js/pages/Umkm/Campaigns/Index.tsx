@@ -1,7 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import { useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';

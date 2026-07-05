@@ -1,7 +1,8 @@
 import { AlertCircle } from 'lucide-react';
 import type { HTMLAttributes } from 'react';
 
-import { formatFieldError, type ValidationErrorValue } from '@/lib/form-errors';
+import { formatFieldError  } from '@/lib/form-errors';
+import type {ValidationErrorValue} from '@/lib/form-errors';
 import { cn } from '@/lib/utils';
 
 export default function InputError({

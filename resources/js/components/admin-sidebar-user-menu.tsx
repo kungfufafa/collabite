@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/hooks/use-initials';
 import { logout } from '@/routes';
-import type { User } from '@/types';
+import type { Auth } from '@/types/auth';
 
 export function AdminSidebarUserMenu(): React.ReactElement {
-    const { auth } = usePage().props;
+    const { auth } = usePage<{ auth: Auth }>().props;
     const getInitials = useInitials();
-    const user = auth?.user as User | undefined;
+    const user = auth.user;
 
     if (!user) {
         return <></>;

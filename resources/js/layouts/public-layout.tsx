@@ -4,7 +4,7 @@ import { Footer } from '@/components/collabite/footer';
 import { Navbar } from '@/components/collabite/navbar';
 
 export type PublicLayoutProps = {
-    children: ReactNode;
+    children?: ReactNode;
     hideFooter?: boolean;
 };
 

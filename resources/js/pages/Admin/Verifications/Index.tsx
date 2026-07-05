@@ -68,9 +68,11 @@ export default function Index({ verifications, pagination }: Props): ReactNode {
                         {
                             header: 'Creator',
                             cell: (v) => (
-                                <div className="min-w-[12rem]">
-                                    <p className="font-medium">{v.creator.name ?? '—'}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                <div className="min-w-0">
+                                    <p className="truncate font-medium">
+                                        {v.creator.name ?? '—'}
+                                    </p>
+                                    <p className="break-all text-xs text-muted-foreground">
                                         {v.creator.email}
                                     </p>
                                 </div>

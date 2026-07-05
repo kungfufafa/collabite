@@ -1,12 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import InputError from '@/components/input-error';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
 import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';

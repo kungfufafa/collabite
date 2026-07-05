@@ -8,12 +8,12 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { ActivityTimeline } from '@/components/app/activity-timeline';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { MetricTile } from '@/components/app/metric-tile';
 import { ResourceCard } from '@/components/app/resource-card';
 import { WorkspacePage } from '@/components/app/workspace-page';
+import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import type {
     DashboardActivityLogItem,
     DashboardHealth,

@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import type { DashboardTableRow } from '@/components/dashboard/types';
 import { DashboardCard } from '@/components/dashboard-card';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +21,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-import type { DashboardTableRow } from '@/components/dashboard/types';
 
 type DashboardTablePanelProps = {
     title: string;

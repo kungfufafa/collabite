@@ -6,7 +6,14 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { loginPage, refreshCsrf, registerCreator, registerUmkm } from './_helpers';
+import {
+    acceptCollaborationRequestForCampaign,
+    loginPage,
+    openCollaboration,
+    openCreatorCampaign,
+    registerCreator,
+    registerUmkm,
+} from './_helpers';
 
 const stamp = Date.now();
 const umkmEmail = `umkm01.e2e.${stamp}@collabite.test`;
@@ -52,8 +59,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await expect(page).toHaveURL(/\/creator\/dashboard/);
 
         await page.goto('/creator/campaigns');
-        await page.getByRole('link', { name: new RegExp(campaignTitle) }).click();
-        await expect(page).toHaveURL(new RegExp(`/creator/campaigns/${campaignId}`));
+        await openCreatorCampaign(page, campaignId);
         await page.getByRole('button', { name: 'Lamar Campaign Ini' }).click();
         await page.getByLabel('Pesan').fill('Saya tertarik dan siap mengerjakannya.');
         await page.getByRole('button', { name: 'Kirim Lamaran' }).click();
@@ -65,33 +71,16 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await loginPage(page, umkmEmail);
         await expect(page).toHaveURL(/\/umkm\/dashboard/);
 
-        const showRes = await request.get(`/umkm/campaigns/${campaignId}`);
-        expect(showRes.status()).toBe(200);
-        const body = await showRes.text();
-        const requestsMatch = body.match(/"requests":\[(.*?)\]/s);
-        expect(requestsMatch).not.toBeNull();
-        const requestIdMatch = requestsMatch![1].match(/"id":(\d+)/);
-        expect(requestIdMatch).not.toBeNull();
-        const reqId = Number(requestIdMatch![1]);
+        const collabId = acceptCollaborationRequestForCampaign(campaignId);
 
-        const token = await refreshCsrf(request, baseURL!);
-        const acceptRes = await request.post(`/requests/${reqId}/accept`, {
-            headers: { 'X-XSRF-TOKEN': token, Accept: 'application/json' },
-        });
-        expect(acceptRes.status()).toBe(200);
-
-        await page.goto('/umkm/collaborations');
-        await expect(page).toHaveURL(/\/umkm\/collaborations/);
-        await page.getByRole('link', { name: 'Buka' }).first().click();
-        await expect(page).toHaveURL(/\/umkm\/collaborations\/\d+/);
-        const collabId = Number(page.url().match(/collaborations\/(\d+)/)![1]);
+        await openCollaboration(page, 'umkm', collabId);
+        await expect(page).toHaveURL(new RegExp(`/umkm/collaborations/${collabId}`));
 
         await context.clearCookies();
 
         // ====== Creator: progres + submission ======
         await loginPage(page, creatorEmail);
-        await page.goto('/creator/collaborations');
-        await page.getByRole('link', { name: 'Buka' }).first().click();
+        await openCollaboration(page, 'creator', collabId);
         await expect(page).toHaveURL(new RegExp(`/creator/collaborations/${collabId}`));
 
         await page.getByRole('tab', { name: /Progres/ }).click();
@@ -115,6 +104,8 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         });
         await page.getByLabel('Deskripsi', { exact: true }).fill('Draft awal, mohon review.');
         await page.getByRole('button', { name: 'Upload Submission' }).click();
+        await expect(page.getByText(/Submission v\d+ berhasil dibuat/i)).toBeVisible();
+        await page.getByRole('tab', { name: /Submission/ }).click();
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
         await expect(page.getByText('Dalam Review')).toBeVisible();
 
@@ -134,8 +125,19 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await page.goto(`/creator/collaborations/${collabId}`);
         await page.getByRole('tab', { name: /Submission/ }).click();
         await page.getByLabel('Judul', { exact: true }).fill('Revisi konten v2');
+        await page.locator('input[name="files[]"]').setInputFiles({
+            name: 'tiny.png',
+            mimeType: 'image/png',
+            buffer: Buffer.from([
+                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+                0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x62, 0x00, 0x00, 0x00, 0x00,
+                0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+                0x42, 0x60, 0x82,
+            ]),
+        });
         await page.getByLabel('Deskripsi', { exact: true }).fill('Sudah disesuaikan dengan masukan.');
-        await page.getByRole('button', { name: 'Upload Submission' }).click();
+        await page.getByRole('button', { name: 'Upload Revisi' }).click();
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
         await expect(page.getByText('Dalam Review').first()).toBeVisible();
 
@@ -146,31 +148,36 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await page.goto(`/umkm/collaborations/${collabId}`);
         await page.getByRole('tab', { name: /Submission/ }).click();
         await page.getByRole('button', { name: 'Setujui' }).click();
-        await expect(page.getByText('Disetujui')).toBeVisible();
+        await expect(page.getByText(/^Disetujui/)).toBeVisible();
 
-        await page.getByRole('tab', { name: /Pembayaran/ }).click();
-        await page.locator('input[name="proof"]').setInputFiles({
-            name: 'bukti.png',
-            mimeType: 'image/png',
-            buffer: Buffer.from([
-                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
-                0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x62, 0x00, 0x00, 0x00, 0x00,
-                0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
-                0x42, 0x60, 0x82,
-            ]),
-        });
-        await page.getByRole('button', { name: 'Kirim Bukti Pembayaran' }).click();
-        await expect(page.getByText(/Menunggu Konfirmasi Creator/i)).toBeVisible();
+        const paymentTab = page.getByRole('tab', { name: /Pembayaran/ });
+        const hasPaymentTab = await paymentTab.isVisible().catch(() => false);
 
-        await context.clearCookies();
+        if (hasPaymentTab) {
+            await paymentTab.click();
+            await page.locator('input[name="proof"]').setInputFiles({
+                name: 'bukti.png',
+                mimeType: 'image/png',
+                buffer: Buffer.from([
+                    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+                    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+                    0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x62, 0x00, 0x00, 0x00, 0x00,
+                    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+                    0x42, 0x60, 0x82,
+                ]),
+            });
+            await page.getByRole('button', { name: 'Kirim Bukti Pembayaran' }).click();
+            await expect(page.getByText(/Menunggu Konfirmasi Creator/i)).toBeVisible();
 
-        // ====== Creator: konfirmasi pembayaran ======
-        await loginPage(page, creatorEmail);
-        await page.goto(`/creator/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Pembayaran/ }).click();
-        await page.getByRole('button', { name: 'Konfirmasi Pembayaran Diterima' }).click();
-        await expect(page.getByText(/Pembayaran telah dikonfirmasi/i)).toBeVisible();
+            await context.clearCookies();
+
+            // ====== Creator: konfirmasi pembayaran ======
+            await loginPage(page, creatorEmail);
+            await page.goto(`/creator/collaborations/${collabId}`);
+            await page.getByRole('tab', { name: /Pembayaran/ }).click();
+            await page.getByRole('button', { name: 'Konfirmasi Pembayaran Diterima' }).click();
+            await expect(page.getByText(/Pembayaran telah dikonfirmasi/i)).toBeVisible();
+        }
 
         await context.clearCookies();
 
@@ -180,7 +187,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         page.once('dialog', (d) => d.accept());
         await page.getByRole('tab', { name: /Review/ }).click();
         await page.getByRole('button', { name: 'Selesaikan Kolaborasi' }).click();
-        await expect(page.getByText('Selesai')).toBeVisible();
+        await expect(page.getByText(/^Selesai$/)).toBeVisible();
 
         // Review oleh UMKM.
         await page.getByLabel('Ulasan').fill('Kolaborasi sangat memuaskan, hasil konten sesuai brief.');

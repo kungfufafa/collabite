@@ -2,7 +2,6 @@ import {
     BadgeCheck,
     ClipboardList,
     History,
-    Plus,
     Star,
 } from 'lucide-react';
 import type { ReactNode } from 'react';

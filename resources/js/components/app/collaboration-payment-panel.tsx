@@ -1,8 +1,8 @@
 import { Form as InertiaForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import InputError from '@/components/input-error';
 import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 

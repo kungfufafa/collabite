@@ -3,7 +3,6 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { apply } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
-import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { NoticeBanner } from '@/components/app/notice-banner';
@@ -11,6 +10,7 @@ import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
 import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { fieldErrorProps } from '@/lib/form-errors';
@@ -60,7 +60,6 @@ export default function Show({
     already_applied: boolean;
 }): ReactNode {
     const flash = usePage().props.status as string | undefined;
-    const errors = usePage().props.errors as Record<string, string> | undefined;
     const [showForm, setShowForm] = useState(false);
 
     return (

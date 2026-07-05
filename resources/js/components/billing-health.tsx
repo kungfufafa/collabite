@@ -1,3 +1,5 @@
+import { CircleCheckIcon, ArrowRightIcon } from "lucide-react";
+import { DashboardCard } from "@/components/dashboard-card";
 import { Button } from "@/components/ui/button";
 import {
 	CardContent,
@@ -13,8 +15,6 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { DashboardCard } from "@/components/dashboard-card";
-import { CircleCheckIcon, ArrowRightIcon } from "lucide-react";
 
 export function BillingHealth() {
 	return (

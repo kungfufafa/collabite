@@ -1,10 +1,10 @@
 "use client";
 
-import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
-import { cn } from '@/lib/utils';
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import { useState } from "react";
+import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
+import { Button } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
 
 const latestChange = {
 	badge: "UPDATE",

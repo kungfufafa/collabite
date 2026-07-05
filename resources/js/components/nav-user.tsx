@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/sidebar';
 import type { MarketplaceRole } from '@/config/navigation';
 import { logout } from '@/routes';
+import type { Auth } from '@/types/auth';
 
 const MENU_LINK_CLASS =
     'flex w-full cursor-default items-center gap-2';
@@ -151,10 +152,8 @@ export function NavUser({
     role,
     variant = 'header',
 }: NavUserProps): ReactNode {
-    const page = usePage();
-    const user = page.props.auth?.user as
-        | { name: string; email?: string; avatar?: string | null }
-        | undefined;
+    const page = usePage<{ auth: Auth }>();
+    const user = page.props.auth.user;
 
     if (!user) {
         return null;

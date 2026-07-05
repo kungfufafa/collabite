@@ -4,6 +4,7 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 
+import type { DashboardDualPoint } from '@/components/dashboard/types';
 import { DashboardCard } from '@/components/dashboard-card';
 import { Delta, DeltaIcon, DeltaValue } from '@/components/delta';
 import {
@@ -13,13 +14,13 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
-    type ChartConfig,
+    
     ChartContainer,
     ChartTooltip,
-    ChartTooltipContent,
+    ChartTooltipContent
 } from '@/components/ui/chart';
+import type {ChartConfig} from '@/components/ui/chart';
 
-import type { DashboardDualPoint } from '@/components/dashboard/types';
 
 type DashboardLineChartPanelProps = {
     title: string;

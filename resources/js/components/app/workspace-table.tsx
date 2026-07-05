@@ -1,9 +1,9 @@
 import type { FormEvent, ReactNode } from 'react';
 
-import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { ListEmptyState } from '@/components/app/list-empty-state';
 import { TablePagination } from '@/components/app/table-pagination';
 import { TableToolbar } from '@/components/app/table-toolbar';
+import { brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import {
     Table,
     TableBody,
@@ -130,7 +130,7 @@ export function WorkspaceTable<T>({
                                     {columns.map((column) => (
                                         <TableCell
                                             className={cn(
-                                                'px-2 py-3 align-middle text-sm font-medium whitespace-normal text-foreground lg:px-3',
+                                                'min-w-0 overflow-hidden px-2 py-3 align-middle text-sm font-medium whitespace-normal text-foreground [overflow-wrap:anywhere] lg:px-3',
                                                 column.className,
                                             )}
                                             key={column.header}

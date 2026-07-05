@@ -2,10 +2,10 @@ import { Head, router } from '@inertiajs/react';
 import { useState, useId } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
-import { brutalDangerBanner, brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
 import { WorkspacePage } from '@/components/app/workspace-page';
+import { brutalDangerBanner, brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

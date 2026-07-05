@@ -1,8 +1,8 @@
 "use client";
-import { cn } from "@/lib/utils";
+import { MinusIcon, TrendingUpIcon, ArrowUpIcon, ChevronUpIcon, TrendingDownIcon, ArrowDownIcon, ChevronDownIcon } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import { MinusIcon, TrendingUpIcon, ArrowUpIcon, ChevronUpIcon, TrendingDownIcon, ArrowDownIcon, ChevronDownIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DeltaIconVariant = "default" | "trend" | "arrow";
 type DeltaVariant = "default" | "badge";

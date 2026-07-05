@@ -8,6 +8,7 @@ use App\Enums\CollaborationStatus;
 use App\Models\Collaboration;
 use App\Models\Review;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 
 class StoreReviewAction
@@ -31,13 +32,21 @@ class StoreReviewAction
             throw ValidationException::withMessages(['review' => 'Anda sudah memberi review untuk kolaborasi ini.']);
         }
 
-        $review = Review::create([
-            'collaboration_id' => $collaboration->id,
-            'reviewer_id' => $reviewer->id,
-            'reviewee_id' => $reviewee->id,
-            'rating' => $data['rating'],
-            'body' => $data['body'] ?? null,
-        ]);
+        try {
+            $review = Review::create([
+                'collaboration_id' => $collaboration->id,
+                'reviewer_id' => $reviewer->id,
+                'reviewee_id' => $reviewee->id,
+                'rating' => $data['rating'],
+                'body' => $data['body'] ?? null,
+            ]);
+        } catch (QueryException $exception) {
+            if ($exception->getCode() === '23000') {
+                throw ValidationException::withMessages(['review' => 'Anda sudah memberi review untuk kolaborasi ini.']);
+            }
+
+            throw $exception;
+        }
 
         // Update agregat rating Creator
         $this->recomputeCreatorRating($reviewee);

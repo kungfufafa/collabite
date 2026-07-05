@@ -4,25 +4,24 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { NotificationsMenu } from '@/components/app/notifications-menu';
-import { NavUser } from '@/components/nav-user';
-import { NavGroup } from '@/components/nav-group';
 import { Logo } from '@/components/collabite/logo';
+import { NavGroup } from '@/components/nav-group';
+import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarGroup,
     SidebarHeader,
-    SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
     creatorPrimaryActions,
-    type MarketplaceRole,
     umkmPrimaryAction,
 } from '@/config/navigation';
+import type { MarketplaceRole } from '@/config/navigation';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { buildSidebarNavGroups } from '@/lib/sidebar-navigation';
 import { toUrl } from '@/lib/utils';

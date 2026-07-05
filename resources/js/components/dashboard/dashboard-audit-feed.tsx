@@ -1,6 +1,9 @@
+import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
+import type { DashboardActivityLogItem } from '@/components/dashboard/types';
 import { DashboardCard } from '@/components/dashboard-card';
+import { Button } from '@/components/ui/button';
 import {
     CardContent,
     CardDescription,
@@ -8,10 +11,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Link } from '@inertiajs/react';
 
-import type { DashboardActivityLogItem } from '@/components/dashboard/types';
 
 type DashboardAuditFeedProps = {
     items: DashboardActivityLogItem[];

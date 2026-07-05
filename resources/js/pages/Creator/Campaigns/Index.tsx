@@ -1,12 +1,12 @@
 import { Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import { brutalSelectField } from '@/components/collabite/landing/brutal-styles';
 import { FilterPanel } from '@/components/app/filter-panel';
 import { StatusBadge } from '@/components/app/status-badge';
 import { TableDetailLink, TableRowActions } from '@/components/app/table-row-actions';
 import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import { brutalSelectField } from '@/components/collabite/landing/brutal-styles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

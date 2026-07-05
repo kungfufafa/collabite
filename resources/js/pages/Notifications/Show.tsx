@@ -5,6 +5,7 @@ import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
 import { PageBackButton, WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
+import { toUrl } from '@/lib/utils';
 import { index } from '@/routes/notifications';
 
 type NotificationDetail = {
@@ -28,7 +29,7 @@ export default function NotificationsShow({ notification }: Props): ReactNode {
         <>
             <Head title={notification.title} />
             <WorkspacePage
-                actions={<PageBackButton href={index()} label="Semua notifikasi" />}
+                actions={<PageBackButton href={toUrl(index())} label="Semua notifikasi" />}
                 description={notification.created_at ?? undefined}
                 meta={
                     <StatusBadge

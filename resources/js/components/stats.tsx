@@ -1,3 +1,4 @@
+import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 import {
 	Card,
 	CardContent,
@@ -5,7 +6,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Delta, DeltaIcon, DeltaValue } from "@/components/delta";
 
 type Stat = {
 	label: string;
@@ -53,6 +53,7 @@ export function DashboardStats() {
 
 function StatCard({ stat }: { stat: Stat }) {
 	const { label, value, delta, hint } = stat;
+
 	return (
 		<Card>
 			<CardHeader>

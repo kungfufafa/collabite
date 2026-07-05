@@ -2,13 +2,13 @@ import { Form as InertiaForm, Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-import InputError from '@/components/input-error';
 import { FlashBanner } from '@/components/app/flash-banner';
 import { FormErrorSummary } from '@/components/app/form-error-summary';
 import { PageHeader } from '@/components/app/page-header';
 import { ProfileIncompleteBanner } from '@/components/app/profile-incomplete-banner';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

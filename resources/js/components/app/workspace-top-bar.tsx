@@ -26,12 +26,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
     getNavigationForRole,
-    isNavigationItemActive,
-    type MarketplaceRole,
+    isNavigationItemActive
+    
 } from '@/config/navigation';
+import type {MarketplaceRole} from '@/config/navigation';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { logout } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
+import type { Auth } from '@/types/auth';
 
 const ROLE_LABEL: Record<MarketplaceRole, string> = {
     umkm: 'UMKM',
@@ -69,11 +71,9 @@ export function WorkspaceTopBar({
     headerSlot,
     breadcrumbs = [],
 }: WorkspaceTopBarProps): ReactNode {
-    const page = usePage();
+    const page = usePage<{ auth: Auth }>();
     const { currentUrl } = useCurrentUrl();
-    const user = page.props.auth?.user as
-        | { name: string; email?: string; avatar?: string | null }
-        | undefined;
+    const user = page.props.auth.user;
 
     const activeNavItem = getNavigationForRole(role).find((item) =>
         isNavigationItemActive(item, currentUrl),

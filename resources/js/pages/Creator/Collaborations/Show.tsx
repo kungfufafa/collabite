@@ -10,7 +10,9 @@ import { storeProgress } from '@/actions/App/Http/Controllers/Creator/Collaborat
 import { storeSubmission } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
 import { submitForReview } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
 import { submitReview } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
-import InputError from '@/components/input-error';
+import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
+import { FlashBanner } from '@/components/app/flash-banner';
+import { SectionPanel } from '@/components/app/section-panel';
 import {
     brutalDashedPanel,
     brutalDivider,
@@ -18,14 +20,11 @@ import {
     brutalNativeSelect,
     brutalWarningBanner,
 } from '@/components/collabite/landing/brutal-styles';
-import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
-import { FlashBanner } from '@/components/app/flash-banner';
-import { SectionPanel } from '@/components/app/section-panel';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import CollaborationWorkspaceLayout, {
-    type CollaborationTab,
-} from '@/layouts/collaboration-workspace-layout';
+import CollaborationWorkspaceLayout from '@/layouts/collaboration-workspace-layout';
+import type {CollaborationTab} from '@/layouts/collaboration-workspace-layout';
 
 type Message = {
     id: number;
@@ -104,6 +103,8 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
 
     const hasApprovedSubmission = collaboration.submissions.some((s) => s.status === 'approved');
     const revisionSubmission = collaboration.submissions.find((s) => s.status === 'revision_requested');
+    const activeResubmitSubmissionId =
+        resubmitSubmissionId ?? revisionSubmission?.id ?? null;
     const canCancel =
         collaboration.status === 'active' && !hasApprovedSubmission;
 
@@ -233,6 +234,7 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                     {({ processing }) => (
                                         <>
                                             <Textarea
+                                                aria-label="Update progres..."
                                                 name="message"
                                                 rows={2}
                                                 value={progress}
@@ -322,11 +324,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                 ))
                             )}
 
-                            {resubmitSubmissionId !== null ? (
+                            {activeResubmitSubmissionId !== null ? (
                                 <InertiaForm
                                     {...resubmit.form({
                                         collaboration: collaboration.id,
-                                        submission: resubmitSubmissionId,
+                                        submission: activeResubmitSubmissionId,
                                     })}
                                     encType="multipart/form-data"
                                     resetOnSuccess
@@ -341,8 +343,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                             <p className="text-sm font-medium">Upload revisi</p>
                                             <div className="mt-3 grid gap-2 sm:grid-cols-2">
                                                 <div>
-                                                    <label className="text-sm font-medium">Judul</label>
+                                                    <label className="text-sm font-medium" htmlFor="resubmit-title">
+                                                        Judul
+                                                    </label>
                                                     <input
+                                                        id="resubmit-title"
                                                         className={brutalNativeSelect}
                                                         name="title"
                                                         required
@@ -353,8 +358,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                     <InputError message={errors.title} className="mt-1" />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm font-medium">File</label>
+                                                    <label className="text-sm font-medium" htmlFor="resubmit-files">
+                                                        File
+                                                    </label>
                                                     <input
+                                                        id="resubmit-files"
                                                         accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf"
                                                         className="mt-1 w-full text-sm"
                                                         name="files[]"
@@ -365,6 +373,7 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                 </div>
                                             </div>
                                             <Textarea
+                                                aria-label="Deskripsi"
                                                 className="mt-2"
                                                 name="description"
                                                 rows={2}
@@ -379,6 +388,7 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                     type="button"
                                                     variant="outline"
                                                     onClick={() => setResubmitSubmissionId(null)}
+                                                    className={revisionSubmission ? 'hidden' : undefined}
                                                 >
                                                     Batal
                                                 </Button>
@@ -398,8 +408,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                         <>
                                             <div className="grid gap-2 sm:grid-cols-2">
                                                 <div>
-                                                    <label className="text-sm font-medium">Judul</label>
+                                                    <label className="text-sm font-medium" htmlFor="submission-title">
+                                                        Judul
+                                                    </label>
                                                     <input
+                                                        id="submission-title"
                                                         className={brutalNativeSelect}
                                                         name="title"
                                                         required
@@ -410,8 +423,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                     <InputError message={errors.title} className="mt-1" />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm font-medium">File (maks 5)</label>
+                                                    <label className="text-sm font-medium" htmlFor="submission-files">
+                                                        File (maks 5)
+                                                    </label>
                                                     <input
+                                                        id="submission-files"
                                                         accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf"
                                                         className="mt-1 w-full text-sm"
                                                         multiple
@@ -422,8 +438,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                 </div>
                                             </div>
                                             <div className="mt-2">
-                                                <label className="text-sm font-medium">Deskripsi</label>
+                                                <label className="text-sm font-medium" htmlFor="submission-description">
+                                                    Deskripsi
+                                                </label>
                                                 <Textarea
+                                                    id="submission-description"
                                                     name="description"
                                                     rows={3}
                                                     value={submissionDesc}
@@ -471,8 +490,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                         <>
                                             <div className="grid gap-2 sm:grid-cols-[120px_1fr]">
                                                 <div>
-                                                    <label className="text-sm font-medium">Rating</label>
+                                                    <label className="text-sm font-medium" htmlFor="review-rating">
+                                                        Rating
+                                                    </label>
                                                     <input
+                                                        id="review-rating"
                                                         className={brutalNativeSelect}
                                                         max="5"
                                                         min="1"
@@ -484,8 +506,11 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                     <InputError message={errors.rating} className="mt-1" />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm font-medium">Ulasan</label>
+                                                    <label className="text-sm font-medium" htmlFor="review-body">
+                                                        Ulasan
+                                                    </label>
                                                     <Textarea
+                                                        id="review-body"
                                                         name="body"
                                                         rows={3}
                                                         value={reviewBody}
