@@ -10,7 +10,10 @@ use App\Models\Collaboration;
 use App\Models\ContentSubmission;
 use App\Models\ContentSubmissionFile;
 use App\Models\Review;
+use App\Services\AuditLogger;
 use App\Services\FileUrlService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,9 +29,10 @@ class ModerationController extends Controller
         abort_unless($request->user()?->isAdmin(), 403);
 
         $campaigns = Campaign::query()->with('umkmProfile')
-            ->where('is_hidden', true)
+            ->tap(fn ($q) => $this->scopeVisibility($q, $request))
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->appends(['status' => $request->input('status', 'visible')]);
         $campaigns->setCollection(
             $campaigns->getCollection()->map(fn (Campaign $c): array => [
                 'id' => $c->id,
@@ -41,13 +45,20 @@ class ModerationController extends Controller
 
         return Inertia::render('Admin/Campaigns/Index', [
             'campaigns' => $campaigns,
+            'filter' => $request->input('status', 'visible'),
         ]);
     }
 
     public function toggleCampaignHide(Request $request, Campaign $campaign): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
+        $previous = (bool) $campaign->is_hidden;
         $campaign->update(['is_hidden' => ! $campaign->is_hidden]);
+
+        app(AuditLogger::class)->log($request->user(), 'campaign.moderation.hide_toggled', $campaign->fresh(), [
+            'previous_is_hidden' => $previous,
+            'new_is_hidden' => ! $previous,
+        ]);
 
         return back()->with('status', 'Status hide campaign diperbarui.');
     }
@@ -57,9 +68,10 @@ class ModerationController extends Controller
         abort_unless($request->user()?->isAdmin(), 403);
 
         $submissions = ContentSubmission::query()->with(['collaboration.campaign', 'collaboration.creator'])
-            ->where('is_hidden', true)
+            ->tap(fn ($q) => $this->scopeVisibility($q, $request))
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->appends(['status' => $request->input('status', 'visible')]);
         $submissions->setCollection(
             $submissions->getCollection()->map(fn (ContentSubmission $s): array => [
                 'id' => $s->id,
@@ -73,13 +85,20 @@ class ModerationController extends Controller
 
         return Inertia::render('Admin/Content/Index', [
             'submissions' => $submissions,
+            'filter' => $request->input('status', 'visible'),
         ]);
     }
 
     public function toggleSubmissionHide(Request $request, ContentSubmission $submission): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
+        $previous = (bool) $submission->is_hidden;
         $submission->update(['is_hidden' => ! $submission->is_hidden]);
+
+        app(AuditLogger::class)->log($request->user(), 'submission.moderation.hide_toggled', $submission->fresh(), [
+            'previous_is_hidden' => $previous,
+            'new_is_hidden' => ! $previous,
+        ]);
 
         return back()->with('status', 'Status hide submission diperbarui.');
     }
@@ -89,9 +108,10 @@ class ModerationController extends Controller
         abort_unless($request->user()?->isAdmin(), 403);
 
         $reviews = Review::query()->with(['collaboration.campaign', 'reviewer', 'reviewee'])
-            ->where('is_hidden', true)
+            ->tap(fn ($q) => $this->scopeVisibility($q, $request))
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->appends(['status' => $request->input('status', 'visible')]);
         $reviews->setCollection(
             $reviews->getCollection()->map(fn (Review $r): array => [
                 'id' => $r->id,
@@ -105,13 +125,40 @@ class ModerationController extends Controller
 
         return Inertia::render('Admin/Reviews/Index', [
             'reviews' => $reviews,
+            'filter' => $request->input('status', 'visible'),
         ]);
+    }
+
+    /**
+     * Filter visibilitas: ?status=visible (default) | hidden | all.
+     * Default `visible` agar admin dapat menemukan item baru untuk di-hide,
+     * bukan hanya melihat item yang sudah disembunyikan.
+     *
+     * @param  Builder<Model>  $query
+     */
+    private function scopeVisibility($query, Request $request): void
+    {
+        $status = $request->input('status', 'visible');
+
+        if ($status === 'hidden') {
+            $query->where('is_hidden', true);
+        } elseif ($status === 'all') {
+            // tanpa filter
+        } else {
+            $query->where('is_hidden', false);
+        }
     }
 
     public function toggleReviewHide(Request $request, Review $review): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
+        $previous = (bool) $review->is_hidden;
         $review->update(['is_hidden' => ! $review->is_hidden]);
+
+        app(AuditLogger::class)->log($request->user(), 'review.moderation.hide_toggled', $review->fresh(), [
+            'previous_is_hidden' => $previous,
+            'new_is_hidden' => ! $previous,
+        ]);
 
         return back()->with('status', 'Status hide review diperbarui.');
     }

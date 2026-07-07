@@ -6,8 +6,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\RejectVerificationRequest;
 use App\Models\CreatorVerification;
 use App\Models\CreatorVerificationDocument;
+use App\Notifications\VerificationReviewedNotification;
+use App\Services\AuditLogger;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -71,18 +74,22 @@ class VerificationsController extends Controller
             $verification->creatorProfile()->update([
                 'verification_status' => VerificationStatus::Verified,
             ]);
+
+            app(AuditLogger::class)->log($request->user(), 'verification.approved', $verification->fresh(), [
+                'creator_profile_id' => $verification->creator_profile_id,
+            ]);
         });
+
+        $this->notifyCreator($verification);
 
         return back()->with('status', 'Verifikasi disetujui.');
     }
 
-    public function reject(Request $request, CreatorVerification $verification): RedirectResponse
+    public function reject(RejectVerificationRequest $request, CreatorVerification $verification): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
 
-        $data = $request->validate([
-            'rejection_reason' => ['required', 'string', 'min:5', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
         DB::transaction(function () use ($verification, $data, $request): void {
             $verification->forceFill([
@@ -95,9 +102,30 @@ class VerificationsController extends Controller
             $verification->creatorProfile()->update([
                 'verification_status' => VerificationStatus::Rejected,
             ]);
+
+            app(AuditLogger::class)->log($request->user(), 'verification.rejected', $verification->fresh(), [
+                'creator_profile_id' => $verification->creator_profile_id,
+                'rejection_reason' => $data['rejection_reason'],
+            ]);
         });
 
+        $this->notifyCreator($verification);
+
         return back()->with('status', 'Verifikasi ditolak.');
+    }
+
+    /**
+     * Kirim notifikasi hasil review ke Creator pemilik pengajuan.
+     */
+    private function notifyCreator(CreatorVerification $verification): void
+    {
+        $creator = $verification->creatorProfile?->user;
+        if ($creator !== null) {
+            $creator->notify(new VerificationReviewedNotification(
+                $verification->fresh(),
+                $verification->rejection_reason,
+            ));
+        }
     }
 
     /**

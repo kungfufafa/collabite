@@ -7,9 +7,13 @@ namespace App\Actions\Collaboration;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Collaboration;
+use App\Models\CollaborationPayment;
 use App\Models\User;
 use App\Notifications\CollaborationCancelledNotification;
+use App\Notifications\PaymentRefundedNotification;
+use App\Notifications\PaymentVoidedNotification;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -45,7 +49,7 @@ class CancelCollaborationAction
             }
         }
 
-        return DB::transaction(function () use ($collaboration, $actor, $reason): Collaboration {
+        return DB::transaction(function () use ($collaboration, $actor, $reason, $forceAdmin): Collaboration {
             $collaboration->update([
                 'status' => CollaborationStatus::Cancelled,
                 'cancelled_at' => now(),
@@ -56,6 +60,11 @@ class CancelCollaborationAction
 
             // Kembalikan campaign ke open (request lain tidak dipulihkan, BR-005).
             $collaboration->campaign->update(['status' => CampaignStatus::Open]);
+
+            // Lindungi integritas escrow (defense-in-depth). Record payment hanya
+            // tercipta setelah submission disetujui, yang sudah diblokir di atas
+            // untuk non-admin; blok ini menutup kemungkinan edge case di masa depan.
+            $this->settlePaymentOnCancel($collaboration, $actor, $reason, $forceAdmin);
 
             app(AuditLogger::class)->log(
                 $actor,
@@ -75,6 +84,83 @@ class CancelCollaborationAction
 
             return $collaboration->fresh();
         });
+    }
+
+    /**
+     * Selesaikan record payment saat kolaborasi dibatalkan.
+     *
+     * Non-admin: tolak jika payment Confirmed (dana sah diterima Creator —
+     * harus lewat admin force-close). Payment aktif -> Voided.
+     * Admin (forceAdmin): Confirmed -> Refunded, aktif -> Voided.
+     */
+    private function settlePaymentOnCancel(Collaboration $collaboration, User $actor, string $reason, bool $forceAdmin): void
+    {
+        $payment = CollaborationPayment::query()
+            ->where('collaboration_id', $collaboration->id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($payment === null || $payment->status->isClosed()) {
+            return;
+        }
+
+        if ($payment->status === PaymentStatus::Confirmed && ! $forceAdmin) {
+            throw ValidationException::withMessages(['payment' => 'Pembayaran sudah dikonfirmasi Creator. Hubungi admin untuk penyelesaian.']);
+        }
+
+        $logger = app(AuditLogger::class);
+
+        if ($payment->status === PaymentStatus::Confirmed) {
+            $payment->update([
+                'status' => PaymentStatus::Refunded,
+                'voided_at' => now(),
+                'voided_reason' => 'Kolaborasi dibatalkan: dana perlu direfund manual. '.$reason,
+                'voided_by' => $actor->id,
+            ]);
+
+            $logger->log($actor, 'payment.refunded', $payment->fresh(), [
+                'collaboration_id' => $collaboration->id,
+                'amount' => (string) $payment->amount,
+                'reason' => $reason,
+            ]);
+
+            $this->notifyPaymentSettled($payment->fresh(), $reason, true);
+
+            return;
+        }
+
+        $payment->update([
+            'status' => PaymentStatus::Voided,
+            'voided_at' => now(),
+            'voided_reason' => 'Kolaborasi dibatalkan. '.$reason,
+            'voided_by' => $actor->id,
+        ]);
+
+        $logger->log($actor, 'payment.voided', $payment->fresh(), [
+            'collaboration_id' => $collaboration->id,
+            'amount' => (string) $payment->amount,
+            'reason' => $reason,
+        ]);
+
+        $this->notifyPaymentSettled($payment->fresh(), $reason, false);
+    }
+
+    /**
+     * Notifikasi void/refund dikirim setelah commit. Refund hanya terjadi pada
+     * admin force-close (non-admin ditolak sebelumnya); void untuk cancel biasa.
+     */
+    private function notifyPaymentSettled(CollaborationPayment $payment, string $reason, bool $isRefund): void
+    {
+        $notification = $isRefund
+            ? new PaymentRefundedNotification($payment, $reason)
+            : new PaymentVoidedNotification($payment, $reason);
+
+        $payment->loadMissing('collaboration.umkm', 'collaboration.creator');
+
+        DB::afterCommit(fn () => Notification::send(
+            [$payment->collaboration->umkm, $payment->collaboration->creator],
+            $notification,
+        ));
     }
 
     /**

@@ -25,10 +25,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $submitted_at
  * @property Carbon|null $confirmed_at
  * @property int|null $confirmed_by
+ * @property Carbon|null $voided_at
+ * @property string|null $voided_reason
+ * @property int|null $voided_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collaboration $collaboration
  * @property-read User|null $confirmedByUser
+ * @property-read User|null $voidedByUser
  */
 #[Fillable([
     'collaboration_id',
@@ -42,6 +46,9 @@ use Illuminate\Support\Carbon;
     'submitted_at',
     'confirmed_at',
     'confirmed_by',
+    'voided_at',
+    'voided_reason',
+    'voided_by',
 ])]
 class CollaborationPayment extends Model
 {
@@ -58,6 +65,7 @@ class CollaborationPayment extends Model
             'status' => PaymentStatus::class,
             'submitted_at' => 'datetime',
             'confirmed_at' => 'datetime',
+            'voided_at' => 'datetime',
         ];
     }
 
@@ -75,5 +83,13 @@ class CollaborationPayment extends Model
     public function confirmedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    /**
+     * @return BelongsTo<User, self>
+     */
+    public function voidedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'voided_by');
     }
 }

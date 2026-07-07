@@ -205,7 +205,8 @@ class CollaborationsController extends Controller
 
     public function acceptRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, AcceptRequestAction $action): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
+        abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
+        $this->authorize('respond', $requestModel);
         $action->execute($requestModel);
 
         return back()->with('status', 'Undangan diterima.');
@@ -213,7 +214,8 @@ class CollaborationsController extends Controller
 
     public function rejectRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, RejectRequestAction $action): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
+        abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
+        $this->authorize('respond', $requestModel);
         $action->execute($requestModel, $request->input('reason'));
 
         return back()->with('status', 'Undangan ditolak.');
@@ -289,6 +291,10 @@ class CollaborationsController extends Controller
 
     public function submitForReview(SubmitForReviewRequest $request, Collaboration $collaboration, ContentSubmission $submission, SubmitForReviewAction $action): RedirectResponse
     {
+        abort_unless($submission->collaboration->is($collaboration), 404);
+        $this->authorize('view', $collaboration);
+        abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422, 'Kolaborasi tidak aktif.');
+        $this->authorize('submitForReview', $submission);
         $action->execute($submission);
 
         return back()->with('status', 'Submission dikirim untuk review.');
@@ -296,7 +302,10 @@ class CollaborationsController extends Controller
 
     public function resubmit(ResubmitSubmissionRequest $request, Collaboration $collaboration, ContentSubmission $submission, ResubmitSubmissionAction $action): RedirectResponse
     {
+        abort_unless($submission->collaboration->is($collaboration), 404);
         $this->authorize('view', $collaboration);
+        abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422, 'Kolaborasi tidak aktif.');
+        $this->authorize('submitForReview', $submission);
         $new = $action->execute($submission, $request->validated());
 
         return back()->with('status', "Submission v{$new->version} dibuat.");

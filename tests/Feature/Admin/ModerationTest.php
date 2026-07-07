@@ -19,6 +19,7 @@ use App\Models\CreatorProfile;
 use App\Models\CreatorVerification;
 use App\Models\UmkmProfile;
 use App\Models\User;
+use App\Notifications\AccountStatusChangedNotification;
 use App\Notifications\CollaborationForceClosedNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -48,6 +49,7 @@ function makeActiveCollabForModeration(): array
 }
 
 test('admin can suspend a user account and an audit log entry is created', function (): void {
+    Notification::fake();
     $target = User::factory()->withRole(UserRole::Umkm)->create(['email_verified_at' => now()]);
     UmkmProfile::factory()->for($target, 'user')->create();
     $admin = User::factory()->withRole(UserRole::Admin)->create(['email_verified_at' => now()]);
@@ -57,14 +59,19 @@ test('admin can suspend a user account and an audit log entry is created', funct
     $this->actingAs($admin)
         ->patch(route('admin.users.status.update', $target), [
             'account_status' => 'suspended',
+            'reason' => 'Pelanggaran ketentuan.',
         ])
         ->assertRedirect();
 
     $target->refresh();
-    expect($target->isSuspended())->toBeTrue();
+    expect($target->isSuspended())->toBeTrue()
+        ->and(ActivityLog::where('action', 'account.suspended')->count())->toBe(1);
+
+    Notification::assertSentTo($target, AccountStatusChangedNotification::class);
 });
 
 test('admin can re-enable a suspended user', function (): void {
+    Notification::fake();
     $target = User::factory()->withStatus(AccountStatus::Suspended)->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
     CreatorProfile::factory()->for($target, 'user')->create();
     $admin = User::factory()->withRole(UserRole::Admin)->create(['email_verified_at' => now()]);
@@ -76,7 +83,24 @@ test('admin can re-enable a suspended user', function (): void {
         ->assertRedirect();
 
     $target->refresh();
-    expect($target->isActive())->toBeTrue();
+    expect($target->isActive())->toBeTrue()
+        ->and(ActivityLog::where('action', 'account.activated')->count())->toBe(1);
+
+    Notification::assertSentTo($target, AccountStatusChangedNotification::class);
+});
+
+test('admin cannot set an invalid account_status', function (): void {
+    $target = User::factory()->withRole(UserRole::Umkm)->create(['email_verified_at' => now()]);
+    $admin = User::factory()->withRole(UserRole::Admin)->create(['email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->from(route('admin.users.index'))
+        ->patch(route('admin.users.status.update', $target), [
+            'account_status' => 'banned',
+        ])
+        ->assertSessionHasErrors('account_status');
+
+    expect($target->fresh()->account_status)->toBe(AccountStatus::Active);
 });
 
 test('admin can approve a creator verification', function (): void {

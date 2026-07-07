@@ -6,6 +6,8 @@ namespace App\Actions\Campaign;
 
 use App\Enums\CampaignStatus;
 use App\Models\Campaign;
+use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\UmkmProfileCompletenessService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +19,7 @@ class PublishCampaignAction
 {
     public function __construct(private readonly UmkmProfileCompletenessService $profileCompleteness) {}
 
-    public function execute(Campaign $campaign): Campaign
+    public function execute(Campaign $campaign, ?User $actor = null): Campaign
     {
         if ($campaign->status !== CampaignStatus::Draft) {
             throw ValidationException::withMessages([
@@ -45,10 +47,16 @@ class PublishCampaignAction
             ]);
         }
 
-        return DB::transaction(function () use ($campaign): Campaign {
+        return DB::transaction(function () use ($campaign, $actor): Campaign {
+            $previousStatus = $campaign->status->value;
             $campaign->status = CampaignStatus::Open;
             $campaign->published_at = now();
             $campaign->save();
+
+            app(AuditLogger::class)->log($actor, 'campaign.published', $campaign->fresh(), [
+                'previous_status' => $previousStatus,
+                'new_status' => CampaignStatus::Open->value,
+            ]);
 
             return $campaign;
         });

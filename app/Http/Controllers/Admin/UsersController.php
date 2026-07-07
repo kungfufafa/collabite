@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AccountStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Models\User;
+use App\Notifications\AccountStatusChangedNotification;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -62,19 +67,34 @@ class UsersController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, User $user): RedirectResponse
+    public function updateStatus(UpdateUserStatusRequest $request, User $user): RedirectResponse
     {
         abort_unless($request->user()?->isAdmin(), 403);
         if ($user->is($request->user())) {
             return back()->withErrors(['user' => 'Admin tidak dapat mengubah status akun sendiri.']);
         }
 
-        $data = $request->validate([
-            'account_status' => ['required', 'string', 'in:active,suspended'],
-            'reason' => ['nullable', 'string', 'max:500'],
-        ]);
+        $data = $request->validated();
+        $previousStatus = $user->account_status->value;
+        $newStatus = AccountStatus::from($data['account_status']);
+        $reason = $data['reason'] ?? null;
 
-        $user->update(['account_status' => $data['account_status']]);
+        DB::transaction(function () use ($user, $request, $newStatus, $previousStatus, $reason): void {
+            $user->update(['account_status' => $newStatus]);
+
+            app(AuditLogger::class)->log(
+                $request->user(),
+                $newStatus === AccountStatus::Suspended ? 'account.suspended' : 'account.activated',
+                $user->fresh(),
+                [
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus->value,
+                    'reason' => $reason,
+                ],
+            );
+        });
+
+        $user->notify(new AccountStatusChangedNotification($newStatus, $reason));
 
         return back()->with('status', 'Status akun diperbarui.');
     }

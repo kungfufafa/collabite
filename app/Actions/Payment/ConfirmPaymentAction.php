@@ -9,9 +9,16 @@ use App\Models\CollaborationPayment;
 use App\Models\User;
 use App\Notifications\PaymentConfirmedNotification;
 use App\Services\AuditLogger;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * Creator mengonfirmasi penerimaan pembayaran (escrow release).
+ *
+ * Concurrency-safe: lockForUpdate pada baris payment + re-cek status di dalam
+ * transaksi mencegah double-confirm akibat double-click (race condition).
+ */
 class ConfirmPaymentAction
 {
     public function execute(CollaborationPayment $payment, User $creatorUser): CollaborationPayment
@@ -20,30 +27,38 @@ class ConfirmPaymentAction
             throw ValidationException::withMessages(['payment' => 'Hanya Creator yang dapat mengonfirmasi pembayaran.']);
         }
 
-        if ($payment->status !== PaymentStatus::AwaitingConfirmation) {
-            throw ValidationException::withMessages(['payment' => 'Pembayaran belum siap dikonfirmasi.']);
-        }
+        return DB::transaction(function () use ($payment, $creatorUser): CollaborationPayment {
+            $locked = CollaborationPayment::query()
+                ->whereKey($payment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $payment->update([
-            'status' => PaymentStatus::Confirmed,
-            'confirmed_at' => now(),
-            'confirmed_by' => $creatorUser->id,
-        ]);
+            if ($locked->status !== PaymentStatus::AwaitingConfirmation) {
+                throw ValidationException::withMessages(['payment' => 'Pembayaran belum siap dikonfirmasi.']);
+            }
 
-        $fresh = $payment->fresh(['collaboration.campaign', 'collaboration.umkm']);
+            $locked->update([
+                'status' => PaymentStatus::Confirmed,
+                'confirmed_at' => now(),
+                'confirmed_by' => $creatorUser->id,
+            ]);
 
-        app(AuditLogger::class)->log(
-            $creatorUser,
-            'payment.confirmed',
-            $fresh,
-            ['collaboration_id' => $fresh->collaboration_id, 'amount' => (string) $fresh->amount],
-        );
+            $fresh = $locked->fresh(['collaboration.campaign', 'collaboration.umkm']);
 
-        Notification::send(
-            $fresh->collaboration->umkm,
-            new PaymentConfirmedNotification($fresh),
-        );
+            app(AuditLogger::class)->log(
+                $creatorUser,
+                'payment.confirmed',
+                $fresh,
+                ['collaboration_id' => $fresh->collaboration_id, 'amount' => (string) $fresh->amount],
+            );
 
-        return $fresh;
+            // Notifikasi setelah commit agar tidak dikirim bila transaksi di-rollback.
+            DB::afterCommit(fn () => Notification::send(
+                $fresh->collaboration->umkm,
+                new PaymentConfirmedNotification($fresh),
+            ));
+
+            return $fresh;
+        });
     }
 }

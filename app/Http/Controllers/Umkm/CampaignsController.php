@@ -179,7 +179,7 @@ class CampaignsController extends Controller
     public function publish(Request $request, Campaign $campaign, PublishCampaignAction $action): RedirectResponse
     {
         $this->authorize('update', $campaign);
-        $action->execute($campaign);
+        $action->execute($campaign, $request->user());
 
         return back()->with('status', 'Campaign dipublikasikan.');
     }
@@ -187,7 +187,7 @@ class CampaignsController extends Controller
     public function cancel(Request $request, Campaign $campaign, CancelCampaignAction $action): RedirectResponse
     {
         $this->authorize('update', $campaign);
-        $action->execute($campaign);
+        $action->execute($campaign, $request->user());
 
         return back()->with('status', 'Campaign dibatalkan.');
     }

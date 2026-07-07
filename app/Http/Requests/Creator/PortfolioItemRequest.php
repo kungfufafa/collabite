@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Creator;
 
+use App\Rules\PortfolioMedia;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PortfolioItemRequest extends FormRequest
@@ -14,7 +15,7 @@ class PortfolioItemRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, string|PortfolioMedia>>
      */
     public function rules(): array
     {
@@ -22,7 +23,7 @@ class PortfolioItemRequest extends FormRequest
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:2000'],
             'external_url' => ['nullable', 'url', 'max:255'],
-            'media' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'media' => ['nullable', 'file', new PortfolioMedia],
             'display_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

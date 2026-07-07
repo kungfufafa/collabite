@@ -7,6 +7,7 @@ use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestType;
 use App\Enums\UserRole;
 use App\Enums\VerificationStatus;
+use App\Models\ActivityLog;
 use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\CollaborationRequest;
@@ -146,6 +147,8 @@ test('UMKM can publish their draft campaign', function (): void {
     $campaign->refresh();
     expect($campaign->status)->toBe(CampaignStatus::Open)
         ->and($campaign->published_at)->not->toBeNull();
+
+    expect(ActivityLog::where('action', 'campaign.published')->count())->toBe(1);
 });
 
 test('publishing requires at least one deliverable', function (): void {
@@ -166,7 +169,8 @@ test('UMKM can cancel their open campaign', function (): void {
         ->assertRedirect();
 
     $campaign->refresh();
-    expect($campaign->status)->toBe(CampaignStatus::Cancelled);
+    expect($campaign->status)->toBe(CampaignStatus::Cancelled)
+        ->and(ActivityLog::where('action', 'campaign.cancelled')->count())->toBe(1);
 });
 
 test('cancel rejects pending requests on the campaign', function (): void {

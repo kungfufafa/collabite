@@ -48,6 +48,11 @@ class CollaborationRequestPolicy
 
     public function respond(User $actor, CollaborationRequest $request): Response
     {
+        // Admin dapat merespons request apa pun (oversight/escalation).
+        if ($actor->isAdmin()) {
+            return Response::allow();
+        }
+
         // UMKM menerima/menolak application & Creator menerima/menolak invitation.
         if ($request->type->value === 'application') {
             return $request->campaign->umkmProfile?->user_id === $actor->id

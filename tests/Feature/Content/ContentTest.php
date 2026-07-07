@@ -6,6 +6,7 @@ use App\Enums\CampaignStatus;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
 use App\Enums\UserRole;
+use App\Models\ActivityLog;
 use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\Collaboration;
@@ -213,7 +214,8 @@ test('UMKM can approve a submission (InReview -> Approved)', function (): void {
 
     $sub->refresh();
     expect($sub->status)->toBe(ContentSubmissionStatus::Approved)
-        ->and($sub->approved_at)->not->toBeNull();
+        ->and($sub->approved_at)->not->toBeNull()
+        ->and(ActivityLog::where('action', 'content.approved')->count())->toBe(1);
 });
 
 test('approve is rejected if submission is not InReview', function (): void {

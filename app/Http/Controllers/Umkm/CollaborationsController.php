@@ -176,11 +176,8 @@ class CollaborationsController extends Controller
 
     public function acceptRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, AcceptRequestAction $action): RedirectResponse
     {
-        $user = $request->user();
-        abort_unless(
-            $user->is($collaboration->umkm) || $user->is($collaboration->creator),
-            403,
-        );
+        abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
+        $this->authorize('respond', $requestModel);
         $action->execute($requestModel);
 
         return back()->with('status', 'Pengajuan diterima.');
@@ -188,38 +185,25 @@ class CollaborationsController extends Controller
 
     public function rejectRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, RejectRequestAction $action): RedirectResponse
     {
-        $user = $request->user();
-        abort_unless(
-            $user->is($collaboration->umkm) || $user->is($collaboration->creator),
-            403,
-        );
+        abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
+        $this->authorize('respond', $requestModel);
         $action->execute($requestModel, $request->input('reason'));
 
         return back()->with('status', 'Pengajuan ditolak.');
     }
 
-    public function acceptByRequest(Request $request, CollaborationRequest $requestModel, AcceptRequestAction $action): RedirectResponse
+    public function acceptByRequest(Request $request, CollaborationRequest $collaborationRequest, AcceptRequestAction $action): RedirectResponse
     {
-        $user = $request->user();
-        $campaign = $requestModel->campaign()->with('umkmProfile')->first();
-        $allowed = $user->isAdmin()
-            || ($campaign && $campaign->umkmProfile?->user_id === $user->id)
-            || $user->is($requestModel->creator);
-        abort_unless($allowed, 403);
-        $action->execute($requestModel);
+        $this->authorize('respond', $collaborationRequest);
+        $action->execute($collaborationRequest);
 
         return back()->with('status', 'Pengajuan diterima.');
     }
 
-    public function rejectByRequest(Request $request, CollaborationRequest $requestModel, RejectRequestAction $action): RedirectResponse
+    public function rejectByRequest(Request $request, CollaborationRequest $collaborationRequest, RejectRequestAction $action): RedirectResponse
     {
-        $user = $request->user();
-        $campaign = $requestModel->campaign()->with('umkmProfile')->first();
-        $allowed = $user->isAdmin()
-            || ($campaign && $campaign->umkmProfile?->user_id === $user->id)
-            || $user->is($requestModel->creator);
-        abort_unless($allowed, 403);
-        $action->execute($requestModel, $request->input('reason'));
+        $this->authorize('respond', $collaborationRequest);
+        $action->execute($collaborationRequest, $request->input('reason'));
 
         return back()->with('status', 'Pengajuan ditolak.');
     }
@@ -255,7 +239,7 @@ class CollaborationsController extends Controller
         EnsureCollaborationPaymentAction $ensurePayment,
     ): RedirectResponse {
         $this->authorize('approve', $submission);
-        $action->execute($submission);
+        $action->execute($submission, $request->user());
 
         if (config('collabite.manual_payment_enabled')) {
             $ensurePayment->execute($collaboration);
@@ -268,11 +252,17 @@ class CollaborationsController extends Controller
         SubmitPaymentProofRequest $request,
         Collaboration $collaboration,
         SubmitPaymentProofAction $action,
-        EnsureCollaborationPaymentAction $ensurePayment,
     ): RedirectResponse {
         abort_unless(config('collabite.manual_payment_enabled'), 404);
         $this->authorize('view', $collaboration);
-        $payment = $ensurePayment->execute($collaboration);
+
+        // Record pembayaran hanya tercipta saat submission disetujui (escrow hold).
+        // Upload bukti sebelum approve ditolak untuk menjaga urutan state machine.
+        $payment = $collaboration->payment;
+        if ($payment === null) {
+            abort(422, 'Record pembayaran belum tersedia.');
+        }
+
         $this->authorize('submitProof', $payment);
         $action->execute($payment, $request->user(), $request->validated());
 

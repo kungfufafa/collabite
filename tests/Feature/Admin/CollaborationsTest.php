@@ -252,7 +252,7 @@ test('admin can list hidden reviews through admin moderation namespace', functio
     ]);
 
     $this->actingAs($admin)
-        ->get(route('admin.moderation.reviews'))
+        ->get(route('admin.moderation.reviews').'?status=hidden')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Admin/Reviews/Index')

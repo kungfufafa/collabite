@@ -71,6 +71,75 @@ test('portfolio image must be an image file', function (): void {
         ->assertSessionHasErrors('media');
 });
 
+test('creator can add a portfolio item with a video upload (PRD §21)', function (): void {
+    $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    $profile = CreatorProfile::factory()->for($user, 'user')->create();
+    $video = UploadedFile::fake()->create('clip.mp4', 100, 'video/mp4');
+
+    $this->actingAs($user)
+        ->post(route('creator.portfolio.store'), [
+            'title' => 'Video Reels',
+            'description' => 'Hasil syuting',
+            'media' => $video,
+        ])
+        ->assertRedirect();
+
+    $item = $profile->portfolioItems()->latest('id')->first();
+    expect($item)->not->toBeNull()
+        ->and($item->title)->toBe('Video Reels');
+    Storage::disk('public')->assertExists($item->media_path);
+});
+
+test('portfolio image over 5 MB is rejected (PRD §21)', function (): void {
+    $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    CreatorProfile::factory()->for($user, 'user')->create();
+    // 6000 KB ~ 6 MB, melebihi limit gambar 5 MB. Fake kecil dengan size dimodifikasi.
+    $tooBig = UploadedFile::fake()->create('big.jpg', 6000, 'image/jpeg');
+
+    $this->actingAs($user)
+        ->from(route('creator.portfolio.index'))
+        ->post(route('creator.portfolio.store'), [
+            'title' => 'Besar',
+            'media' => $tooBig,
+        ])
+        ->assertSessionHasErrors('media');
+
+    expect(PortfolioItem::count())->toBe(0);
+});
+
+test('portfolio video over 50 MB is rejected (PRD §21)', function (): void {
+    $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    CreatorProfile::factory()->for($user, 'user')->create();
+    // 60000 KB ~ 60 MB, melebihi limit video 50 MB.
+    $tooBig = UploadedFile::fake()->create('big.mp4', 60000, 'video/mp4');
+
+    $this->actingAs($user)
+        ->from(route('creator.portfolio.index'))
+        ->post(route('creator.portfolio.store'), [
+            'title' => 'Besar',
+            'media' => $tooBig,
+        ])
+        ->assertSessionHasErrors('media');
+
+    expect(PortfolioItem::count())->toBe(0);
+});
+
+test('portfolio media rejects unsupported mime types', function (): void {
+    $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    CreatorProfile::factory()->for($user, 'user')->create();
+    $audio = UploadedFile::fake()->create('track.mp3', 100, 'audio/mpeg');
+
+    $this->actingAs($user)
+        ->from(route('creator.portfolio.index'))
+        ->post(route('creator.portfolio.store'), [
+            'title' => 'Audio',
+            'media' => $audio,
+        ])
+        ->assertSessionHasErrors('media');
+
+    expect(PortfolioItem::count())->toBe(0);
+});
+
 test('creator can soft delete a portfolio item', function (): void {
     $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
     $profile = CreatorProfile::factory()->for($user, 'user')->create();

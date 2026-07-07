@@ -10,11 +10,17 @@ use App\Enums\ContentSubmissionStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Collaboration;
 use App\Models\User;
+use App\Notifications\CollaborationCompletedNotification;
+use App\Services\AuditLogger;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
  * UMKM menyelesaikan kolaborasi (UC-CONT-007).
- * Wajib ada submission approved.
+ * Wajib ada submission approved, dan (jika manual payment aktif) pembayaran
+ * sudah dikonfirmasi Creator (escrow release). Atomik: update Collaboration +
+ * Campaign dalam satu transaksi, dengan audit log dan notifikasi ke Creator.
  */
 class CompleteCollaborationAction
 {
@@ -42,13 +48,30 @@ class CompleteCollaborationAction
             }
         }
 
-        $collaboration->update([
-            'status' => CollaborationStatus::Completed,
-            'completed_at' => now(),
-        ]);
+        return DB::transaction(function () use ($collaboration, $actor): Collaboration {
+            $collaboration->update([
+                'status' => CollaborationStatus::Completed,
+                'completed_at' => now(),
+            ]);
 
-        $collaboration->campaign->update(['status' => CampaignStatus::Completed]);
+            $collaboration->campaign->update(['status' => CampaignStatus::Completed]);
 
-        return $collaboration->fresh();
+            $fresh = $collaboration->fresh(['campaign', 'creator']);
+
+            app(AuditLogger::class)->log(
+                $actor,
+                'collaboration.completed',
+                $fresh,
+                ['campaign_id' => $fresh->campaign_id, 'creator_id' => $fresh->creator_id],
+            );
+
+            // Notifikasi ke Creator setelah commit.
+            DB::afterCommit(fn () => Notification::send(
+                $fresh->creator,
+                new CollaborationCompletedNotification($fresh, $actor),
+            ));
+
+            return $fresh;
+        });
     }
 }

@@ -5,16 +5,20 @@ declare(strict_types=1);
 use App\Enums\UserRole;
 use App\Enums\VerificationDocumentType;
 use App\Enums\VerificationStatus;
+use App\Models\ActivityLog;
 use App\Models\CreatorProfile;
 use App\Models\CreatorVerification;
 use App\Models\PortfolioItem;
 use App\Models\User;
+use App\Notifications\VerificationReviewedNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     Storage::fake('local');
     Storage::fake('public');
+    Notification::fake();
 });
 
 function pendingVerification(): array
@@ -58,10 +62,13 @@ test('admin can approve a pending verification', function (): void {
 
     $profile->refresh();
     expect($profile->verification_status)->toBe(VerificationStatus::Verified);
+
+    expect(ActivityLog::where('action', 'verification.approved')->count())->toBe(1);
+    Notification::assertSentTo($owner, VerificationReviewedNotification::class);
 });
 
 test('admin can reject a pending verification with reason', function (): void {
-    [, $profile, $verification] = pendingVerification();
+    [$owner, $profile, $verification] = pendingVerification();
     $admin = User::factory()->withRole(UserRole::Admin)->create(['email_verified_at' => now()]);
 
     $this->actingAs($admin)
@@ -76,6 +83,9 @@ test('admin can reject a pending verification with reason', function (): void {
 
     $profile->refresh();
     expect($profile->verification_status)->toBe(VerificationStatus::Rejected);
+
+    expect(ActivityLog::where('action', 'verification.rejected')->count())->toBe(1);
+    Notification::assertSentTo($owner, VerificationReviewedNotification::class);
 });
 
 test('rejecting a verification requires a reason', function (): void {

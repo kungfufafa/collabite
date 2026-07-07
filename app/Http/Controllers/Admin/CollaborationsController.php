@@ -14,6 +14,7 @@ use App\Models\ContentSubmissionFile;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,8 +73,12 @@ class CollaborationsController extends Controller
             'reviews.reviewee',
         ]);
 
+        // AuditLogger menyimpan subject_type dalam format "Collaboration#<id>"
+        // (lihat App\Services\AuditLogger), bukan FQCN. Filter harus cocok format itu.
+        $subjectType = Str::of(Collaboration::class)->afterLast('\\')->toString().'#'.$collaboration->id;
+
         $auditLogs = ActivityLog::query()
-            ->where('subject_type', Collaboration::class)
+            ->where('subject_type', $subjectType)
             ->where('subject_id', $collaboration->id)
             ->latest()
             ->limit(50)

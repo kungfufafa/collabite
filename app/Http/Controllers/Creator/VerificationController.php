@@ -30,6 +30,11 @@ class VerificationController extends Controller
         $current = $profile->currentVerification();
         $portfolioCount = $profile->portfolioItems()->count();
 
+        // Eager-load documents untuk menghindari lazy-load N+1 (M-A02).
+        if ($current !== null) {
+            $current->load('documents');
+        }
+
         $documents = [];
         if ($current !== null) {
             $documents = $current->documents->map(fn (CreatorVerificationDocument $doc): array => [

@@ -17,6 +17,8 @@ use App\Models\CollaborationPayment;
  *     proof_original_name: string|null,
  *     submitted_at: string|null,
  *     confirmed_at: string|null,
+ *     voided_at: string|null,
+ *     voided_reason: string|null,
  * }
  */
 class CollaborationPaymentPresenter
@@ -44,6 +46,8 @@ class CollaborationPaymentPresenter
             'proof_original_name' => $payment->proof_original_name,
             'submitted_at' => $payment->submitted_at?->toIso8601String(),
             'confirmed_at' => $payment->confirmed_at?->toIso8601String(),
+            'voided_at' => $payment->voided_at?->toIso8601String(),
+            'voided_reason' => $payment->voided_reason,
         ];
     }
 }

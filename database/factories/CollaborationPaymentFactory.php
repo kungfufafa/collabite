@@ -52,4 +52,28 @@ class CollaborationPaymentFactory extends Factory
             'confirmed_at' => now(),
         ]);
     }
+
+    public function voided(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => PaymentStatus::Voided,
+            'voided_at' => now(),
+            'voided_reason' => 'Kolaborasi dibatalkan',
+        ]);
+    }
+
+    public function refunded(): static
+    {
+        return $this->state(fn (): array => [
+            'status' => PaymentStatus::Refunded,
+            'proof_path' => 'payment/1/'.fake()->uuid().'.jpg',
+            'proof_original_name' => 'bukti-transfer.jpg',
+            'proof_mime_type' => 'image/jpeg',
+            'proof_size' => 1024,
+            'submitted_at' => now()->subDay(),
+            'confirmed_at' => now()->subDay(),
+            'voided_at' => now(),
+            'voided_reason' => 'Force-close oleh admin: dana perlu direfund',
+        ]);
+    }
 }

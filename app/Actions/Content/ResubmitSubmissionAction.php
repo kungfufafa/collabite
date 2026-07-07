@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Content;
 
+use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
 use App\Models\ContentSubmission;
 use App\Services\FileUrlService;
@@ -20,6 +21,10 @@ class ResubmitSubmissionAction
      */
     public function execute(ContentSubmission $oldSubmission, array $data): ContentSubmission
     {
+        if ($oldSubmission->collaboration->status !== CollaborationStatus::Active) {
+            throw ValidationException::withMessages(['collaboration' => 'Kolaborasi tidak aktif.']);
+        }
+
         if ($oldSubmission->status !== ContentSubmissionStatus::RevisionRequested) {
             throw ValidationException::withMessages(['submission' => 'Submission tidak dalam status RevisionRequested.']);
         }
