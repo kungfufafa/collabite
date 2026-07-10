@@ -1,6 +1,6 @@
 # Cetak Biru UX/UI S2 - Collabite
 
-> Status: Draft operasional untuk serah desain.
+> Status: Draft operasional untuk serah desain, arah visual diperbarui 2026-07-10.
 > Lingkup: S2.1 Peta Situs Produk, S2.2 Alur Pengguna, S2.4 Sistem Desain UI.
 > Basis: PRD, USE_CASE, TDD, COMPONENT_DIAGRAM, TEST_PLAN, IMPLEMENTATION_ROADMAP, DECISIONS, daftar route, dan token desain aktual di `resources/css/app.css`.
 
@@ -419,6 +419,8 @@ Kebutuhan UI:
 
 # S2.4 Sistem Desain UI
 
+> **Keputusan visual terbaru:** ADR-034 mengganti neo-brutalism global dengan **Warm Humanist Marketplace Minimalism**. [UI_DESIGN_TRANSITION_PLAN.md](./UI_DESIGN_TRANSITION_PLAN.md) menjadi satu-satunya acuan normatif untuk target token, fase migrasi, dan acceptance gate. Bagian S2.4 merangkum target untuk kebutuhan serah desain. Implementasi aktual tetap menjadi baseline sampai slice terkait selesai.
+
 ## 1. Arah Desain
 
 Collabite menggabungkan marketplace dan ruang kerja untuk UMKM serta Creator. UI harus terasa:
@@ -427,7 +429,7 @@ Collabite menggabungkan marketplace dan ruang kerja untuk UMKM serta Creator. UI
 - Energik: marketplace lokal yang hidup, tidak dingin seperti admin enterprise generik.
 - Terstruktur: setiap campaign, request, submission, revisi, dan ulasan punya status yang mudah dipahami.
 
-Arah visual saat ini memakai gaya marketplace neo-brutal: border tebal, radius 0, shadow offset, warna brand biru-oranye, tipografi tebal, dan kontras tinggi. Jangan mengganti arah ini tanpa ADR atau keputusan desain baru.
+Arah target memakai Warm Humanist Marketplace Minimalism sesuai ADR-034. UI mempertahankan biru-oranye dan energi marketplace, lalu menggunakan sentence case, hierarchy yang lebih tenang, border tipis, radius moderat, shadow lembut, serta foto portofolio sebagai sumber karakter. Baseline neo-brutal tetap didokumentasikan untuk kebutuhan migrasi dan rollback.
 
 ## 2. Prinsip Desain
 
@@ -441,18 +443,19 @@ Arah visual saat ini memakai gaya marketplace neo-brutal: border tebal, radius 0
 
 ### 3.1 Tipografi
 
-| Token         | Nilai Aktual                              | Penggunaan                                                              |
+| Token         | Target                                    | Penggunaan                                                              |
 | ------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
 | `--font-sans` | `Plus Jakarta Sans`, fallback sans-serif  | Semua UI. Jangan menambah font baru tanpa persetujuan dependency/asset. |
-| Base size     | `16px`                                    | Body, form, tabel.                                                      |
-| Display       | 40-56px desktop, 32-40px mobile           | Landing dan state kosong utama saja.                                    |
-| Page title    | 28-36px                                   | Header halaman portal.                                                  |
+| Base size     | `16px / 24px`                             | Body, form, tabel.                                                      |
+| Display       | 48-64px desktop, 36-44px mobile           | Landing dan state kosong utama saja.                                    |
+| Page title    | 32px desktop, 28px mobile                 | Header halaman portal.                                                  |
 | Section title | 20-24px                                   | Panel/section.                                                          |
 | Body          | 16px                                      | Konten utama.                                                           |
-| Meta/label    | 12-14px                                   | Badge, table meta, helper text.                                         |
-| Label style   | uppercase, 700-800, letter spacing ringan | Sesuai `.neo-brutal [data-slot='label']`.                               |
+| Compact UI    | 14px                                      | Tabel, metadata, secondary action.                                      |
+| Caption/legal | 13px minimum                              | Caption dan legal copy dengan contrast AA.                              |
+| Label style   | sentence case, 600, line-height 20px      | Label selalu terlihat dan tidak memakai uppercase global.              |
 
-Catatan: proyek sudah menetapkan font stack. Untuk S2, gunakan font existing agar tidak menambah dependency.
+Catatan: proyek sudah menetapkan font stack. Transisi tahap pertama memakai font existing agar tidak menambah dependency. Perubahan font memerlukan approval dan ADR terpisah.
 
 ### 3.2 Token Warna
 
@@ -462,12 +465,12 @@ Catatan: proyek sudah menetapkan font stack. Untuk S2, gunakan font existing aga
 | `--brand-primary-hover`   | `#004a9e` | Hover CTA utama.                                 |
 | `--brand-primary-active`  | `#003d7a` | Active/pressed state dan link kuat.              |
 | `--brand-primary-soft`    | `#e8f4fd` | Background selected, highlight ringan.           |
-| `--brand-secondary`       | `#fa5a15` | CTA sekunder bernilai tinggi, aksen marketplace. |
+| `--brand-secondary`       | `#fa5a15` | Aksen kreatif dan CTA marketing yang jarang.     |
 | `--brand-secondary-hover` | `#e83c0c` | Hover CTA sekunder.                              |
 | `--neutral-0`             | `#ffffff` | Kartu/surface.                                   |
 | `--neutral-50`            | `#f8fafc` | Background aplikasi.                             |
 | `--neutral-100`           | `#f1f5f9` | Section muted.                                   |
-| `--neutral-900`           | `#0f172a` | Teks utama dan stroke brutal.                    |
+| `--neutral-900`           | `#0f172a` | Teks utama.                                      |
 | `--neutral-950`           | `#020617` | Background gelap saat dark mode aktif.           |
 | `--success`               | `#15803d` | Completed, approved, active success.             |
 | `--warning`               | `#d97706` | Pending, revisi, perhatian.                      |
@@ -505,14 +508,15 @@ Catatan: proyek sudah menetapkan font stack. Untuk S2, gunakan font existing aga
 
 ### 3.4 Radius, Border, Shadow
 
-| Token/Pattern        | Nilai Aktual                       | Penggunaan                                                           |
+| Token/Pattern        | Target                             | Penggunaan                                                           |
 | -------------------- | ---------------------------------- | -------------------------------------------------------------------- |
-| Radius global        | `0`                                | Neo-brutal UI; jangan rounded card kecuali komponen eksternal perlu. |
-| Card border          | `2px-3px solid var(--neutral-900)` | Card, dialog, sheet, input, badge.                                   |
-| `--shadow-xs`        | soft default                       | Elemen non-brutal ringan bila diperlukan.                            |
-| `--brutal-shadow-sm` | `3px 3px 0 var(--neutral-900)`     | Button, input, badge.                                                |
-| `--brutal-shadow`    | `4px 4px 0 var(--neutral-900)`     | Kartu default.                                                       |
-| `--brutal-shadow-lg` | `6px 6px 0 var(--neutral-900)`     | Hover/focus surface penting.                                         |
+| Radius control       | `8px`                              | Button, input, select, checkbox container.                           |
+| Radius card          | `12px`                             | Objek diskret seperti Creator, campaign, dan submission.             |
+| Radius overlay       | `16px`                             | Dialog dan sheet pada sudut yang terlihat.                           |
+| Border default       | `1px` neutral                      | Card, dialog, sheet, input, badge.                                   |
+| `--shadow-xs`        | soft default                       | Card atau control yang membutuhkan pemisahan dari background.        |
+| `--shadow-sm/md`     | soft elevation                     | Dropdown, floating panel, dialog.                                    |
+| Hard offset shadow   | Tidak dipakai pada product UI      | Pengecualian motif marketing memerlukan approval screenshot.         |
 
 ### 3.5 Spasi
 
@@ -540,7 +544,7 @@ Gunakan skala 4pt yang konsisten:
 
 ### 4.2 AuthLayout
 
-- Form berada di tengah dengan border brutal dan pilihan role yang jelas.
+- Form berada di tengah dengan surface tenang, border 1px, dan pilihan role yang jelas.
 - Layar daftar menampilkan field khusus UMKM/Creator tanpa halaman role terpisah.
 - Pesan error memakai Bahasa Indonesia, spesifik per field, dan muncul di bawah input.
 
@@ -574,7 +578,7 @@ Gunakan skala 4pt yang konsisten:
 | Komponen              | Varian/State                                                       | Aturan Pakai                                                                              |
 | --------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 | Button                | primary, secondary, outline, ghost, destructive, loading, disabled | Satu primary per panel. Destructive meminta konfirmasi/alasan saat domain mewajibkan.     |
-| Card/Surface          | brutal-card, brutal-surface, table container                       | Pakai untuk objek diskret: campaign, Creator, request, submission. Jangan menumpuk kartu. |
+| Card/Surface          | card, interactive card, flat section, table container              | Pakai card untuk objek diskret: campaign, Creator, request, submission. Jangan menumpuk kartu. |
 | Badge                 | status, verification, category, skill                              | Selalu tampilkan teks; warna tidak boleh menjadi satu-satunya penanda.                    |
 | Input/Textarea/Select | default, invalid, disabled, loading                                | Label selalu terlihat. Helper/error text berada di bawah field.                           |
 | File Upload           | empty, selected, uploading, invalid, uploaded                      | Tampilkan batas ukuran dan format di dekat input. Jangan tampilkan storage path.          |
@@ -737,7 +741,7 @@ Penamaan komponen Figma:
 | S2.1 Peta Situs Creator | PRD 10.2, routes                           | FR-PROFILE-003..008, FR-CAMPAIGN-006..007, FR-COLLAB-001/005/009                        | UC-PROF-003..006, UC-VERIF-001, UC-CAMP-006..007, UC-COLLAB-001/005/009     | TC-PROF, TC-VERIF, TC-CAMP, TC-COLLAB |
 | S2.1 Peta Situs Admin   | PRD 10.3, routes, ADR-030                  | FR-ADMIN-001..009, FR-AUDIT-001..004                                                    | UC-ADMIN-001..010, UC-AUDIT-001..002                                        | TC-ADMIN, TC-AUDIT                    |
 | S2.2 Alur Kolaborasi    | PRD 10, TDD 15                             | FR-COLLAB-001..011, FR-CONTENT-001..008, FR-REVIEW-001..003                             | UC-COLLAB, UC-CONT, UC-REV                                                  | TC-COLLAB, TC-CONT, TC-REV, TC-E2E    |
-| S2.4 Sistem Desain UI   | TDD 4, COMPONENT_DIAGRAM, ADR-031, app.css | NFR-ACCESSIBILITY-001, NFR-INT-001                                                      | Use case UI lintas role                                                     | Referensi Vitest/component/E2E        |
+| S2.4 Sistem Desain UI   | TDD 4, COMPONENT_DIAGRAM, ADR-031, ADR-034, UI_DESIGN_TRANSITION_PLAN, app.css | NFR-ACCESSIBILITY-001, NFR-INT-001                                      | Use case UI lintas role                                                     | Referensi Vitest/component/E2E        |
 
 ## 12. Asumsi dan Pertanyaan Terbuka
 
@@ -750,7 +754,6 @@ Asumsi:
 
 Pertanyaan terbuka:
 
-- Apakah brand Collabite ingin mempertahankan neo-brutalism sebagai arah jangka panjang, atau hanya untuk RC/MVP?
 - Apakah page `settings/appearance` masuk MVP UX final atau hanya bawaan scaffold yang perlu disederhanakan?
 
 ---
@@ -762,5 +765,13 @@ Sebelum membuat desain visual detail di Figma, siapkan:
 1. Logo final Collabite dan aturan penggunaan.
 2. Contoh data realistis untuk UMKM, Creator, campaign, request, submission, dan ulasan.
 3. Daftar layar prioritas untuk dibuat high-fidelity.
-4. Keputusan apakah gaya neo-brutal saat ini dipertahankan penuh atau dibuat lebih tenang.
+4. Calibration screens Warm Humanist Marketplace Minimalism yang telah melewati `HUMAN-GATE-01`.
 5. Target viewport minimum: mobile 390px, tablet 768px, desktop 1440px.
+
+---
+
+## 14. Catatan Versi
+
+| Versi | Tanggal | Perubahan | Penulis |
+| --- | --- | --- | --- |
+| S2 transition 1.0 | 2026-07-10 | Selaraskan S2.4 dengan ADR-034 dan UI Design Transition Plan; baseline neo-brutal menjadi referensi migrasi. | Product Engineer + Codex |

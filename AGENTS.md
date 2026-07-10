@@ -23,7 +23,12 @@ Sebelum mengerjakan tugas apa pun, agent **wajib** membaca (atau memverifikasi v
 5. `docs/TEST_PLAN.md` — test case, traceability, UAT.
 6. `docs/IMPLEMENTATION_ROADMAP.md` — milestone saat ini dan small-PR breakdown.
 7. `docs/DECISIONS.md` — ADR dan rationale.
-8. `AGENTS.md` (dokumen ini) — aturan kerja.
+8. `AGENTS.md` (dokumen ini) — aturan kerja khusus Collabite.
+9. `CLAUDE.md` — Laravel Boost, framework, test, dan tool guidance.
+10. Untuk task transisi UI: `docs/UI_DESIGN_TRANSITION_PLAN.md` — kontrak desain dan acceptance gate.
+11. Untuk task transisi UI: `docs/UI_DESIGN_TRANSITION_STATE.md` — slice aktif, evidence, blocker, dan handoff.
+
+ADR-034 dan `UI_DESIGN_TRANSITION_PLAN.md` mengatur target visual Warm Humanist Marketplace Minimalism. Source of truth pada §2 tetap menang jika muncul konflik requirement atau business rule.
 
 ---
 

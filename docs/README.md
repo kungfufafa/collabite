@@ -26,7 +26,10 @@ Stack: Laravel 13 monolith, Inertia.js v3, React 19 + TypeScript, MySQL, Tailwin
 | [TEST_PLAN.md](./TEST_PLAN.md) | Test plan, test case, traceability matrix, dan UAT scenario. | QA, Engineer |
 | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) | Roadmap 8 milestone dengan small-PR breakdown dan Definition of Done. | Engineering Lead, Product Owner |
 | [DECISIONS.md](./DECISIONS.md) | Architecture Decision Record untuk keputusan teknis dan produk. | Engineer, Arsitek |
+| [UI_DESIGN_TRANSITION_PLAN.md](./UI_DESIGN_TRANSITION_PLAN.md) | Kontrak desain dan runbook transisi ke Warm Humanist Marketplace Minimalism. | Product Owner, Designer, Coding Agent, QA |
+| [UI_DESIGN_TRANSITION_STATE.md](./UI_DESIGN_TRANSITION_STATE.md) | Checkpoint mutable, slice register, evidence, blocker, dan handoff lintas-model. | Coding Agent, QA, Engineering Lead |
 | [../AGENTS.md](../AGENTS.md) | Aturan wajib untuk coding agent (source of truth, scope, konvensi). | Coding Agent |
+| [../CLAUDE.md](../CLAUDE.md) | Panduan Laravel Boost, framework, testing, dan tools untuk coding agent. | Coding Agent |
 
 ---
 
@@ -41,7 +44,10 @@ Disarankan membaca dalam urutan berikut:
 5. **TEST_PLAN.md** → pahami cara memvalidasi setiap requirement.
 6. **IMPLEMENTATION_ROADMAP.md** → pahami urutan eksekusi.
 7. **DECISIONS.md** → pahami rationale di balik pilihan teknis.
-8. **AGENTS.md** → pahami aturan kerja saat mengimplementasikan.
+8. **AGENTS.md** → pahami aturan kerja khusus Collabite.
+9. **CLAUDE.md** → pahami panduan Laravel Boost, framework, test, dan tools.
+10. **UI_DESIGN_TRANSITION_PLAN.md** → pahami kontrak dan fase migrasi UI jika task menyentuh transisi desain.
+11. **UI_DESIGN_TRANSITION_STATE.md** → lanjutkan slice aktif tanpa bergantung pada riwayat chat.
 
 ---
 
@@ -53,7 +59,7 @@ Disarankan membaca dalam urutan berikut:
 | **Approved** | Dokumen telah disetujui sebagai acuan kerja implementasi. |
 | **Superseded** | Dokumen telah digantikan oleh versi lain. Lihat catatan di dalam dokumen. |
 
-**Status saat ini:** Seluruh dokumen berstatus **Approved v1.0** (2026-06-18). Dokumentasi siap menjadi acuan implementasi M0–M7.
+**Status saat ini:** Dokumen inti M0–M7 berstatus Approved sejak 2026-06-18. Arah transisi UI pada ADR-034 dan `UI_DESIGN_TRANSITION_PLAN.md` berstatus Approved sejak 2026-07-10; implementasinya belum dimulai.
 
 ---
 

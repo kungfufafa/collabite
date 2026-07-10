@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADR) — Collabite
 
-> **Versi:** 1.0 (Approved)
-> **Tanggal:** 2026-06-18
+> **Versi:** 1.4 (Approved)
+> **Tanggal:** 2026-07-10
 > **Status:** Disetujui sebagai acuan implementasi M0–M7.
 
 Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pola ADR ringkas: **ID, Status, Context, Decision, Consequences, Alternatives Considered**.
@@ -41,7 +41,11 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 | ADR-027 | `read_at` per pesan (tanpa tabel `message_reads`) | Accepted |
 | ADR-028 | Single-kategori per campaign | Accepted |
 | ADR-029 | SQLite sebagai database validasi RC; MySQL compatibility ditunda | Accepted |
+| ADR-030 | Admin collaboration namespace separation | Accepted |
+| ADR-031 | Role-specific layout shells | Accepted |
+| ADR-032 | Login form action binding (POST /login) | Accepted |
 | ADR-033 | Konfirmasi pembayaran manual off-platform (MVP+) | Accepted |
+| ADR-034 | Transisi UI ke Warm Humanist Marketplace Minimalism | Accepted |
 
 ---
 
@@ -428,6 +432,9 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 | 0.1 (Draft) | 2026-06-18 | Initial draft: 15 keputusan MVP. | Product Engineer |
 | 1.0 (Approved) | 2026-06-18 | Tambah ADR-016..ADR-028: single-role, AGENTS/CLAUDE split, single-Creator campaign, direct-hire out, review opsional, cancel-collab, admin force-close, message immutable, file size policy, storage abstraction, suspend-only, read_at, single-kategori. | Product Engineer |
 | 1.1 (RC.1 reflection) | 2026-06-18 | Tambah ADR-029 (SQLite sebagai DB validasi RC; MySQL compatibility ditunda) & ADR-030 (Admin collaboration namespace separation). | Product Engineer |
+| 1.2 (Refactor) | 2026-06-18 | Tambah ADR-031: role-specific layout shells untuk marketplace dan Admin. | Product Engineer |
+| 1.3 (RC.2) | 2026-06-18 | Tambah ADR-032: login form action binding melalui Wayfinder action helper. | Product Engineer |
+| 1.4 (Design transition) | 2026-07-10 | Tambah ADR-034: transisi visual ke Warm Humanist Marketplace Minimalism. | Product Engineer + Codex |
 
 ## ADR-031 — Role-Specific Layout Shells (Admin Dashboard vs Marketplace)
 
@@ -449,7 +456,6 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 - **Alternatives Considered:**
   - **Satu layout universal dengan flag peran** → ditolak: sulit mempertahankan konsistensi visual, dan risiko kebocoran navigasi Admin ke UMKM/Creator masih ada.
   - **Pakai template dashboard eksternal** → ditolak: menambah dependency UI besar di luar shadcn/ui dan kontradiksi dengan AGENTS.md §4.
-| 1.2 (Refactor) | 2026-06-18 | Tambah ADR-031: role-specific layout shells (MarketplaceLayout untuk UMKM/Creator, AdminDashboardLayout untuk Admin). | Product Engineer |
 ## ADR-032 — Login Form Action Binding (POST /login)
 
 - **Status:** Accepted
@@ -468,8 +474,6 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
   - **Gunakan `<form method="post">` native + Blade** → ditolak: Inertia adalah satu-satunya pipeline rendering.
 
 
-| 1.3 (RC.2) | 2026-06-18 | Tambah ADR-032: login form action binding via Wayfinder action helper + `usePage().props.errors` untuk error display. | Product Engineer |
-
 ## ADR-033 — Konfirmasi Pembayaran Manual Off-Platform (MVP+)
 
 - **Status:** Accepted
@@ -482,3 +486,26 @@ Dokumen ini mencatat keputusan teknis dan produk untuk MVP. Format mengikuti pol
 - **Alternatives Considered:**
   - **Payment gateway (Midtrans/Xendit)** → ditolak: tetap di luar scope MVP.
   - **Complete tanpa konfirmasi pembayaran** → ditolak: Creator tidak punya jejak transfer.
+
+## ADR-034 — Transisi UI ke Warm Humanist Marketplace Minimalism
+
+- **Status:** Accepted
+- **Context:** Audit visual dan umpan balik pengguna menunjukkan implementasi neo-brutalism global menyulitkan pemindaian dan pembacaan. Border 2 sampai 3 piksel, hard offset shadow, radius nol, uppercase, dan weight tinggi diterapkan pada card, button, input, badge, dialog, heading, dan label. Seluruh elemen memperoleh bobot visual serupa, sedangkan Collabite membutuhkan hierarki yang kuat untuk discovery, campaign, collaboration, revision, payment, dan moderation.
+- **Decision:** Arah visual Collabite berpindah ke **Warm Humanist Marketplace Minimalism** dengan prinsip produk: "Collabite harus terasa ramah seperti marketplace, terstruktur seperti project workspace, dan tepercaya seperti layanan finansial tanpa terasa dingin."
+  - Biru tetap menjadi warna aksi dan kepercayaan; oranye menjadi aksen kreatif yang dipakai hemat.
+  - Product UI memakai sentence case, weight 400 sampai 700, border 1 piksel, radius moderat, dan shadow lembut yang selektif.
+  - Konten, foto portofolio, rating, verification, status, budget, deadline, dan next step membentuk hierarki utama.
+  - Public/Auth, Marketplace, Collaboration Workspace, dan Admin mempertahankan karakter shell masing-masing sesuai ADR-031.
+  - Migrasi memakai fase dan acceptance gate pada [UI_DESIGN_TRANSITION_PLAN.md](./UI_DESIGN_TRANSITION_PLAN.md) serta checkpoint pada [UI_DESIGN_TRANSITION_STATE.md](./UI_DESIGN_TRANSITION_STATE.md).
+  - Migrasi tidak mengubah route, business rule, authorization, state transition, schema, atau dependency.
+- **Consequences:**
+  - `resources/css/app.css`, root theme, shared primitives, composite components, layout shells, dan 49 routed pages perlu dimigrasikan bertahap.
+  - Implementasi harus menangani selector neo-brutal bernama dan utility hard-coded.
+  - Cutover target theme dan penghapusan legacy dilakukan pada slice terpisah agar rollback tetap tersedia.
+  - Calibration screens dan UAT membutuhkan persetujuan Product Owner.
+  - Dokumentasi S2.4 harus membedakan baseline legacy dari target visual baru.
+- **Alternatives Considered:**
+  - **Mempertahankan neo-brutalism global dan hanya memperbesar text** → ditolak: hierarki tetap terganggu oleh border, shadow, dan weight yang merata.
+  - **Mengganti dengan glassmorphism atau neumorphism** → ditolak: contrast, affordance, dan keterbacaan lebih sulit dijaga.
+  - **Menggunakan dashboard SaaS generik** → ditolak: tidak memberi ruang bagi karakter marketplace dan karya Creator.
+  - **Cutover global dalam satu perubahan** → ditolak: risiko regression lintas 49 routed pages terlalu besar dan rollback sulit dibatasi.
