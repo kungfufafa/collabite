@@ -16,6 +16,7 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "test:e2e": "playwright test",
+        "test:e2e:smoke": "playwright test tests/E2E/08-portal-smoke-supporting.spec.ts tests/E2E/runtime/full_browser_audit.spec.ts",
         "test:e2e:demo": "playwright test --config=playwright.demo.config.ts",
         "test:e2e:demo:short": "DEMO_SKIP_INVITE=1 playwright test --config=playwright.demo.config.ts"
     },

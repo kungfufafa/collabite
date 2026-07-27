@@ -37,7 +37,7 @@ export default function Edit({ profile }: Props): ReactNode {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        form.post('/creator/profile', { forceFormData: true });
+        form.patch('/creator/profile', { forceFormData: true });
     };
 
     return (

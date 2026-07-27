@@ -420,3 +420,44 @@ export async function uploadCreatorSubmissionDraft(
     await expect(page.getByText(/Submission v\d+ berhasil dibuat/i)).toBeVisible();
     await page.getByRole('tab', { name: /Konten/ }).click();
 }
+
+/** Assert halaman Inertia tidak blank / error kosong. */
+export async function expectPageAlive(page: Page, minChars = 40): Promise<void> {
+    await expect(page.locator('body')).toBeVisible();
+    const text = (await page.locator('body').innerText()).trim();
+    expect(text.length).toBeGreaterThanOrEqual(minChars);
+}
+
+/** Goto path dan pastikan status < 400 + konten hidup. */
+export async function visitOk(page: Page, path: string): Promise<void> {
+    const res = await page.goto(path, { waitUntil: 'domcontentloaded' });
+    expect(res?.status() ?? 0).toBeLessThan(400);
+    await expectPageAlive(page);
+}
+
+/** ID CreatorProfile pertama dari seed (untuk halaman publik). */
+export function seededPublicCreatorProfileId(): number {
+    const id = execSync(
+        `php artisan tinker --execute='echo (string) \\App\\Models\\CreatorProfile::query()->value("id");'`,
+        { encoding: 'utf-8' },
+    ).trim();
+    const parsed = Number(id);
+    if (!parsed) {
+        throw new Error('No CreatorProfile in database for public smoke.');
+    }
+    return parsed;
+}
+
+/** ID UmkmProfile pertama dari seed (untuk halaman publik). */
+export function seededPublicUmkmProfileId(): number {
+    const id = execSync(
+        `php artisan tinker --execute='echo (string) \\App\\Models\\UmkmProfile::query()->value("id");'`,
+        { encoding: 'utf-8' },
+    ).trim();
+    const parsed = Number(id);
+    if (!parsed) {
+        throw new Error('No UmkmProfile in database for public smoke.');
+    }
+    return parsed;
+}
+

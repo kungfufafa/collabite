@@ -1097,6 +1097,19 @@ Test Plan ini menjadi acuan QA & engineer dalam menulis, mengeksekusi, dan menge
 | **Priority** | High |
 | **Test Type** | E2E |
 
+### TC-E2E-004 — Portal smoke + supporting actions (di luar deal bisnis penuh)
+| Field | Isi |
+| --- | --- |
+| **Test ID** | TC-E2E-004 |
+| **Requirement ID** | FR-AUTH-*, FR-PROFILE-*, FR-ADMIN-* (navigasi & pendukung) |
+| **Judul** | Landing, shell role, settings/notifikasi, aksi ringan pendukung |
+| **Precondition** | Seed akun `umkm1` / `creator1` / `admin` |
+| **Steps** | 1. Buka landing, directory, legal, auth guest.<br>2. Login tiap role; kunjungi nav shell utama.<br>3. Aksi ringan: filter Discover, simpan profil UMKM/Creator/settings, tambah produk, skills.<br>4. Admin buka detail & halaman reports (kontrol ekspor terlihat).<br>5. Guard: guest → login; Creator tidak akses admin dashboard. |
+| **Expected Result** | Tidak ada blank/500; aksi ringan tersimpan/terlihat. |
+| **Priority** | High |
+| **Test Type** | E2E |
+| **Automasi** | `tests/E2E/08-portal-smoke-supporting.spec.ts` + `tests/E2E/runtime/full_browser_audit.spec.ts` (`npm run test:e2e:smoke`) |
+
 ---
 
 # 12. Requirement Traceability Matrix
