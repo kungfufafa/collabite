@@ -1,26 +1,31 @@
 [Unit]
-Description=Collabite Laravel queue worker
-After=network.target mysql.service mariadb.service
-# Sesuaikan After= bila DB pakai unit lain di 1Panel
+Description=Collabite Laravel queue worker (1Panel / Docker PHP)
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+# /usr/local/bin/php di 1Panel = wrapper "docker exec … php84"
+# Harus root (atau user di group docker) agar bisa akses /var/run/docker.sock
+User=root
+Group=root
+
+# Path di HOST (document root 1Panel)
 WorkingDirectory=/opt/1panel/www/sites/collabite.rizqis.com/index
-# Ganti path php bila beda (which php / php -v)
-ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --backoff=60 --max-time=3600 --timeout=90
+
+# Cara A (disarankan): panggil wrapper php 1Panel
+ExecStart=/usr/local/bin/php artisan queue:work --sleep=3 --tries=3 --backoff=60 --max-time=3600 --timeout=90
+
+# Cara B (eksplisit docker) — uncomment & comment Cara A jika wrapper bermasalah:
+# ExecStart=/usr/bin/docker exec -i -w /www/sites/collabite.rizqis.com/index php84 php artisan queue:work --sleep=3 --tries=3 --backoff=60 --max-time=3600 --timeout=90
+
 Restart=always
 RestartSec=5
 Nice=10
 
-# Log ke journald (lihat: sudo collabite-ctl logs queue)
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=collabite-queue
-
-# Batasi environment ke .env Laravel
-Environment=APP_ENV=production
 
 [Install]
 WantedBy=multi-user.target
