@@ -94,4 +94,25 @@ describe('WorkspaceTable', () => {
             '[overflow-wrap:anywhere]',
         );
     });
+
+    it('renders emptyAction on empty state', () => {
+        render(
+            <WorkspaceTable
+                columns={[
+                    {
+                        header: 'Nama',
+                        cell: (row: { id: number; name: string }) => row.name,
+                    },
+                ]}
+                emptyAction={<button type="button">Buat Campaign</button>}
+                emptyDescription="Mulai dengan membuat campaign."
+                emptyTitle="Belum ada data"
+                getRowKey={(row) => row.id}
+                rows={[]}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: 'Buat Campaign' })).toBeInTheDocument();
+        expect(screen.getByText('Belum ada data')).toBeInTheDocument();
+    });
 });

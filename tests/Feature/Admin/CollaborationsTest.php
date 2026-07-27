@@ -314,3 +314,69 @@ test('force-close preserves messages, submissions, progress, and reviews', funct
     $this->assertDatabaseHas('collaboration_progress_updates', ['message' => 'Sedang mengerjakan']);
     $this->assertDatabaseHas('content_submissions', ['id' => $submission->id, 'status' => 'in_review']);
 });
+
+test('admin collaboration show aggregates audit logs from collaboration, submissions, payment, and metadata', function (): void {
+    [$umkm, $creator, , $collaboration] = makeActiveCollabForAdmin();
+    $admin = User::factory()->withRole(UserRole::Admin)->create(['email_verified_at' => now()]);
+
+    // Log menempel langsung pada Collaboration.
+    ActivityLog::create([
+        'actor_id' => $admin->id,
+        'actor_role' => 'admin',
+        'action' => 'collaboration.force_closed',
+        'subject_type' => 'Collaboration',
+        'subject_id' => $collaboration->id,
+        'metadata' => null,
+        'created_at' => now(),
+    ]);
+
+    // Log content.* — subject adalah ContentSubmission, collaboration_id di metadata.
+    $submission = $collaboration->submissions()->create([
+        'version' => 1,
+        'title' => 'Draft 1',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+    ActivityLog::create([
+        'actor_id' => $creator->id,
+        'actor_role' => 'creator',
+        'action' => 'content.submitted_for_review',
+        'subject_type' => 'ContentSubmission',
+        'subject_id' => $submission->id,
+        'metadata' => ['collaboration_id' => $collaboration->id, 'version' => 1],
+        'created_at' => now(),
+    ]);
+
+    // Log payment.* — subject CollaborationPayment, collaboration_id di metadata.
+    ActivityLog::create([
+        'actor_id' => $umkm->id,
+        'actor_role' => 'umkm',
+        'action' => 'payment.proof_submitted',
+        'subject_type' => 'CollaborationPayment',
+        'subject_id' => 999,
+        'metadata' => ['collaboration_id' => $collaboration->id],
+        'created_at' => now(),
+    ]);
+
+    // Log TIDAK terkait — harus dikecualikan.
+    ActivityLog::create([
+        'actor_id' => $admin->id,
+        'actor_role' => 'admin',
+        'action' => 'account.suspended',
+        'subject_type' => 'User',
+        'subject_id' => $admin->id,
+        'metadata' => ['collaboration_id' => $collaboration->id + 9999],
+        'created_at' => now(),
+    ]);
+
+    $props = $this->actingAs($admin)
+        ->get(route('admin.collaborations.show', $collaboration))
+        ->assertOk()
+        ->inertiaProps();
+
+    $actions = collect($props['audit_logs'])->pluck('action')->all();
+    expect($actions)->toContain('collaboration.force_closed')
+        ->and($actions)->toContain('content.submitted_for_review')
+        ->and($actions)->toContain('payment.proof_submitted')
+        ->and($actions)->not->toContain('account.suspended');
+});

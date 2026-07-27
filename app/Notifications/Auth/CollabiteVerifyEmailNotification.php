@@ -6,10 +6,14 @@ namespace App\Notifications\Auth;
 
 use App\Mail\CollabiteMailMessage;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class CollabiteVerifyEmailNotification extends VerifyEmail
+class CollabiteVerifyEmailNotification extends VerifyEmail implements ShouldQueue
 {
+    use Queueable;
+
     protected function buildMailMessage($url): MailMessage
     {
         return CollabiteMailMessage::make()

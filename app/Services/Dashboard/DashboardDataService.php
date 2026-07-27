@@ -6,6 +6,7 @@ namespace App\Services\Dashboard;
 
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestStatus;
+use App\Enums\CollaborationRequestType;
 use App\Enums\CollaborationStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\VerificationStatus;
@@ -48,6 +49,7 @@ class DashboardDataService
             : CollaborationRequest::query()
                 ->whereIn('campaign_id', $campaignIds)
                 ->where('status', CollaborationRequestStatus::Pending)
+                ->where('type', CollaborationRequestType::Application)
                 ->count();
 
         $requestQuery = CollaborationRequest::query()
@@ -124,6 +126,8 @@ class DashboardDataService
                 'message' => $pendingRequests === 0
                     ? 'Tidak ada lamaran yang menunggu tinjauan.'
                     : "{$pendingRequests} lamaran menunggu keputusanmu.",
+                'cta_href' => route('umkm.campaigns.index', ['pending' => 1]),
+                'cta_label' => 'Tinjau sekarang',
             ],
         ];
     }
@@ -142,6 +146,10 @@ class DashboardDataService
             ->count();
         $pendingRequests = $requestQuery->clone()
             ->where('status', CollaborationRequestStatus::Pending)
+            ->count();
+        $pendingInvitations = $requestQuery->clone()
+            ->where('status', CollaborationRequestStatus::Pending)
+            ->where('type', CollaborationRequestType::Invitation)
             ->count();
 
         $portfolioCompletion = $this->portfolioCompletion($profile);
@@ -176,7 +184,7 @@ class DashboardDataService
                 'delta' => 0.0,
             ],
             [
-                'label' => 'Undangan menunggu',
+                'label' => 'Permintaan menunggu',
                 'value' => (string) $pendingRequests,
                 'delta' => $this->percentChange(
                     $this->countSince($requestQuery->clone()->where('status', CollaborationRequestStatus::Pending), now()->subDays(7)),
@@ -215,6 +223,29 @@ class DashboardDataService
             ];
         }
 
+        $healthCta = match (true) {
+            $pendingInvitations > 0 => [
+                'cta_href' => route('creator.requests.index', absolute: false),
+                'cta_label' => 'Tinjau undangan',
+                'message' => "{$pendingInvitations} undangan menunggu konfirmasimu.",
+            ],
+            $pendingRequests > 0 => [
+                'cta_href' => route('creator.requests.index', absolute: false),
+                'cta_label' => 'Tinjau permintaan',
+                'message' => "{$pendingRequests} permintaan menunggu tindakanmu.",
+            ],
+            $profile?->verification_status !== VerificationStatus::Verified => [
+                'cta_href' => route('creator.verification.show', absolute: false),
+                'cta_label' => 'Lengkapi verifikasi',
+                'message' => 'Lengkapi verifikasi Creator untuk meningkatkan peluang kolaborasi.',
+            ],
+            default => [
+                'cta_href' => route('creator.portfolio.index', absolute: false),
+                'cta_label' => 'Lengkapi portofolio',
+                'message' => 'Portofolio '.$portfolioCompletion['percent'].'% lengkap. Target minimal 80%.',
+            ],
+        };
+
         return [
             'stats' => $stats,
             'onboarding_steps' => $onboardingSteps,
@@ -243,11 +274,13 @@ class DashboardDataService
                     ->get(),
             ),
             'health' => [
-                'caught_up' => $profile?->verification_status === VerificationStatus::Verified && $portfolioCompletion['percent'] >= 80,
-                'message' => $profile?->verification_status === VerificationStatus::Verified
-                    ? 'Profil terverifikasi. Portofolio '.$portfolioCompletion['percent'].'% lengkap.'
-                    : 'Lengkapi verifikasi dan portofolio untuk meningkatkan peluang kolaborasi.',
+                'caught_up' => $profile?->verification_status === VerificationStatus::Verified
+                    && $portfolioCompletion['percent'] >= 80
+                    && $pendingRequests === 0,
+                'message' => $healthCta['message'],
                 'percent' => $portfolioCompletion['percent'],
+                'cta_href' => $healthCta['cta_href'],
+                'cta_label' => $healthCta['cta_label'],
             ],
         ];
     }

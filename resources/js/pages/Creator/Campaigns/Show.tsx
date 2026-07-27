@@ -66,7 +66,16 @@ export default function Show({
         <>
             <Head title={`Campaign - ${campaign.title}`} />
             <WorkspacePage
-                actions={<PageBackButton href={creatorCampaignsIndex().url} label="Daftar campaign" />}
+                actions={
+                    <div className="flex flex-wrap items-center gap-2">
+                        <PageBackButton href={creatorCampaignsIndex().url} label="Daftar campaign" />
+                        {!already_applied &&
+                        (!campaign.status || campaign.status === 'open') &&
+                        !showForm ? (
+                            <Button onClick={() => setShowForm(true)}>Lamar Campaign Ini</Button>
+                        ) : null}
+                    </div>
+                }
                 description={`${campaign.umkm.name ?? 'UMKM'} · ${campaign.umkm.city ?? '-'} · ${campaign.umkm.business_type ?? ''}`}
                 meta={
                     <StatusBadge
@@ -146,7 +155,7 @@ export default function Show({
                                                 <InputError className="mt-1" message={errors.message} />
                                             </div>
                                             <div className="mt-4 flex gap-2">
-                                                <Button disabled={processing} type="submit" variant="success">
+                                                <Button disabled={processing} type="submit">
                                                     {processing ? 'Mengirim...' : 'Kirim Lamaran'}
                                                 </Button>
                                                 <Button
@@ -162,7 +171,10 @@ export default function Show({
                                 </Form>
                             </SectionPanel>
                         ) : (
-                            <Button onClick={() => setShowForm(true)}>Lamar Campaign Ini</Button>
+                            <p className="text-sm text-muted-foreground">
+                                Siap melamar? Gunakan tombol <strong>Lamar Campaign Ini</strong> di
+                                kanan atas.
+                            </p>
                         )}
                     </div>
 

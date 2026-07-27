@@ -1,9 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import { index as auditLogsIndex } from '@/routes/admin/audit-logs';
 
 type Log = {
     id: number;
@@ -40,20 +41,40 @@ function formatTimestamp(value: string | null): string {
     });
 }
 
+/**
+ * Ringkas metadata audit menjadi satu baris konteks yang dibaca manusia.
+ * Ambil field-field yang paling sering diisi oleh AuditLogger (actor_name,
+ * subject_label, collaboration_id, version, previous_status) supaya admin
+ * cepat memahami konteks tanpa membuka raw JSON.
+ */
 function metadataSummary(metadata: Record<string, unknown> | null): string | null {
     if (!metadata) {
         return null;
     }
 
-    const actorName = metadata.actor_name;
-    const subjectLabel = metadata.subject_label;
+    const pick = (key: string): string | null => {
+        const value = metadata[key];
+
+        return typeof value === 'string' || typeof value === 'number' ? String(value) : null;
+    };
 
     const parts = [
-        typeof actorName === 'string' ? actorName : null,
-        typeof subjectLabel === 'string' ? subjectLabel : null,
+        pick('actor_name'),
+        pick('subject_label'),
+        pick('collaboration_id') !== null ? `collab #${metadata.collaboration_id}` : null,
+        pick('version') !== null ? `v${metadata.version}` : null,
+        pick('previous_status') !== null ? `${metadata.previous_status}` : null,
     ].filter(Boolean);
 
     return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function subjectLabel(log: Log): string {
+    if (!log.subject_type) {
+        return '—';
+    }
+
+    return log.subject_id !== null ? `${log.subject_type}#${log.subject_id}` : log.subject_type;
 }
 
 export default function AdminAuditLogsIndex({ logs, filters }: Props): ReactNode {
@@ -63,7 +84,7 @@ export default function AdminAuditLogsIndex({ logs, filters }: Props): ReactNode
         event.preventDefault();
 
         router.get(
-            '/admin/audit-logs',
+            auditLogsIndex.url(),
             {
                 q: query || undefined,
                 action: filters?.action || undefined,
@@ -72,6 +93,16 @@ export default function AdminAuditLogsIndex({ logs, filters }: Props): ReactNode
             { preserveState: true, preserveScroll: true },
         );
     };
+
+    const summaryByLog = useMemo(() => {
+        const map: Record<number, string | null> = {};
+
+        for (const log of logs.data) {
+            map[log.id] = metadataSummary(log.metadata);
+        }
+
+        return map;
+    }, [logs.data]);
 
     return (
         <>
@@ -106,9 +137,9 @@ export default function AdminAuditLogsIndex({ logs, filters }: Props): ReactNode
                                         #{log.actor_id ?? '—'}
                                         {log.actor_role ? ` (${log.actor_role})` : ''}
                                     </p>
-                                    {metadataSummary(log.metadata) ? (
+                                    {summaryByLog[log.id] ? (
                                         <p className="text-xs text-muted-foreground">
-                                            {metadataSummary(log.metadata)}
+                                            {summaryByLog[log.id]}
                                         </p>
                                     ) : null}
                                 </div>
@@ -116,10 +147,7 @@ export default function AdminAuditLogsIndex({ logs, filters }: Props): ReactNode
                         },
                         {
                             header: 'Subject',
-                            cell: (log) =>
-                                log.subject_type
-                                    ? `${log.subject_type}#${log.subject_id}`
-                                    : '—',
+                            cell: (log) => subjectLabel(log),
                         },
                     ]}
                     emptyDescription={

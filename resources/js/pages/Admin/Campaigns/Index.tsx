@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
@@ -8,6 +8,8 @@ import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { hide as hideCampaign } from '@/routes/admin/moderation/campaigns';
+import { campaigns as campaignsIndex } from '@/routes/admin/moderation';
 
 type Campaign = {
     id: number;
@@ -22,12 +24,18 @@ type Props = {
         data: Campaign[];
         links?: { url: string | null; label: string; active: boolean }[];
     };
+    filter?: string;
 };
 
-export default function AdminCampaignsIndex({ campaigns }: Props): ReactNode {
+const FILTERS: { value: string; label: string }[] = [
+    { value: 'visible', label: 'Tampil' },
+    { value: 'hidden', label: 'Tersembunyi' },
+    { value: 'all', label: 'Semua' },
+];
+
+export default function AdminCampaignsIndex({ campaigns, filter = 'visible' }: Props): ReactNode {
     const getSearchText = useCallback(
-        (campaign: Campaign) =>
-            [campaign.title, campaign.umkm ?? '', campaign.status].join(' '),
+        (campaign: Campaign) => [campaign.title, campaign.umkm ?? '', campaign.status].join(' '),
         [],
     );
     const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
@@ -39,28 +47,27 @@ export default function AdminCampaignsIndex({ campaigns }: Props): ReactNode {
         <>
             <Head title="Moderasi Campaign" />
             <WorkspacePage
-                description="Campaign yang disembunyikan dapat dipulihkan."
+                description="Sembunyikan atau pulihkan campaign dari pencarian publik."
                 title="Moderasi Campaign"
             >
                 <WorkspaceTable
                     columns={[
                         {
                             header: 'Judul',
-                            cell: (c) => (
-                                <p className="min-w-[12rem] font-medium">{c.title}</p>
-                            ),
+                            cell: (c) => <p className="min-w-[12rem] font-medium">{c.title}</p>,
                         },
                         { header: 'UMKM', cell: (c) => c.umkm ?? '—' },
                         {
                             header: 'Status',
-                            cell: (c) => (
-                                <StatusBadge label={c.status} tone="neutral" />
-                            ),
+                            cell: (c) => <StatusBadge label={c.status} tone="neutral" />,
                         },
                         {
                             header: 'Visibilitas',
-                            cell: () => (
-                                <StatusBadge label="Tersembunyi" tone="danger" />
+                            cell: (c) => (
+                                <StatusBadge
+                                    label={c.is_hidden ? 'Tersembunyi' : 'Tampil'}
+                                    tone={c.is_hidden ? 'danger' : 'success'}
+                                />
                             ),
                         },
                         {
@@ -69,20 +76,39 @@ export default function AdminCampaignsIndex({ campaigns }: Props): ReactNode {
                             cell: (c) => (
                                 <TableRowActions>
                                     <Form
-                                        action={`/admin/moderation/campaigns/${c.id}/hide`}
+                                        action={hideCampaign.url(c.id)}
                                         className="inline-flex"
                                         method="patch"
                                     >
                                         <Button size="sm" type="submit" variant="outline">
-                                            Pulihkan
+                                            {c.is_hidden ? 'Pulihkan' : 'Sembunyikan'}
                                         </Button>
                                     </Form>
                                 </TableRowActions>
                             ),
                         },
                     ]}
-                    emptyDescription="Semua campaign saat ini terlihat normal."
-                    emptyTitle="Tidak ada campaign tersembunyi"
+                    emptyDescription="Tidak ada campaign pada filter ini."
+                    emptyTitle="Tidak ada campaign"
+                    filtersSlot={
+                        <div className="flex flex-wrap gap-2">
+                            {FILTERS.map((f) => (
+                                <Button
+                                    asChild
+                                    key={f.value}
+                                    size="sm"
+                                    variant={filter === f.value ? 'default' : 'outline'}
+                                >
+                                    <Link
+                                        href={campaignsIndex.url({ query: { status: f.value } })}
+                                        preserveScroll
+                                    >
+                                        {f.label}
+                                    </Link>
+                                </Button>
+                            ))}
+                        </div>
+                    }
                     getRowKey={(c) => c.id}
                     paginationLinks={campaigns.links}
                     rows={filteredRows}

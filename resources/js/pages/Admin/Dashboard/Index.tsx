@@ -87,10 +87,10 @@ export default function Index({
                         value={statValue(stats, 'Verifikasi pending')}
                     />
                     <MetricTile
-                        hint="Sedang menerima creator"
+                        hint="Antrean hide/unhide campaign"
                         href="/admin/moderation/campaigns"
                         icon={Briefcase}
-                        label="Campaign terbuka"
+                        label="Moderasi campaign"
                         value={statValue(stats, 'Campaign terbuka')}
                     />
                     <MetricTile

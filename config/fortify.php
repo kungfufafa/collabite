@@ -161,7 +161,10 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registration ditangani controller custom (RegisteredUserController +
+        // RegisterUmkm/Creator actions) yang membentuk profil sesuai peran.
+        // Fortify::registration() dinonaktifkan supaya POST /register tidak
+        // membypass pemilihan peran dan menghasilkan akun tanpa profil.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

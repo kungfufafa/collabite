@@ -11,7 +11,9 @@ use App\Models\Campaign;
 use App\Models\CollaborationRequest;
 use App\Models\UmkmProfile;
 use App\Models\User;
+use App\Notifications\InvitationReceivedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -42,7 +44,7 @@ class InviteCreatorAction
         }
 
         return DB::transaction(function () use ($campaign, $creator, $umkm, $data): CollaborationRequest {
-            return CollaborationRequest::create([
+            $request = CollaborationRequest::create([
                 'campaign_id' => $campaign->id,
                 'creator_id' => $creator->id,
                 'sender_id' => $umkm->user->id,
@@ -50,6 +52,14 @@ class InviteCreatorAction
                 'status' => CollaborationRequestStatus::Pending,
                 'message' => $data['message'] ?? null,
             ]);
+
+            $request->load('campaign.umkmProfile.user');
+            $recipient = $request->creator;
+            $notification = new InvitationReceivedNotification($request);
+
+            DB::afterCommit(fn () => Notification::send($recipient, $notification));
+
+            return $request;
         });
     }
 }

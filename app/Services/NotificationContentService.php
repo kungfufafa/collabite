@@ -17,6 +17,14 @@ class NotificationContentService
             'collaboration.completed' => 'Kolaborasi selesai',
             'collaboration_request.cancelled_by_creator' => 'Lamaran dibatalkan Creator',
             'collaboration_request.cancelled_by_umkm' => 'Undangan dibatalkan UMKM',
+            'collaboration_request.invitation_received' => 'Anda diundang berkolaborasi',
+            'collaboration_request.application_received' => 'Lamaran baru diterima',
+            'collaboration_request.accepted' => 'Pengajuan diterima',
+            'collaboration_request.rejected' => 'Pengajuan ditolak',
+            'content.submitted_for_review' => 'Submission dikirim untuk review',
+            'content.revision_requested' => 'Revisi diminta',
+            'content.approved' => 'Submission disetujui',
+            'message.received' => 'Pesan baru',
             'payment.proof_submitted' => 'Bukti pembayaran diunggah',
             'payment.confirmed' => 'Pembayaran dikonfirmasi',
             'payment.refunded' => 'Pembayaran direfund',
@@ -66,6 +74,49 @@ class NotificationContentService
             ),
             'collaboration_request.cancelled_by_umkm' => sprintf(
                 'UMKM membatalkan undangan kolaborasi untuk campaign "%s".',
+                $campaignTitle,
+            ),
+            'collaboration_request.invitation_received' => sprintf(
+                'UMKM %s mengundang Anda untuk berkolaborasi pada campaign "%s".',
+                is_string($data['umkm_name'] ?? null) ? $data['umkm_name'] : 'UMKM',
+                $campaignTitle,
+            ),
+            'collaboration_request.application_received' => sprintf(
+                'Creator %s mengirim lamaran untuk campaign "%s" Anda.',
+                is_string($data['creator_name'] ?? null) ? $data['creator_name'] : 'Creator',
+                $campaignTitle,
+            ),
+            'collaboration_request.accepted' => sprintf(
+                'Pengajuan untuk campaign "%s" diterima oleh %s. Kolaborasi dimulai.',
+                $campaignTitle,
+                is_string($data['accepted_by_name'] ?? null) ? $data['accepted_by_name'] : 'pihak lain',
+            ),
+            'collaboration_request.rejected' => sprintf(
+                'Pengajuan untuk campaign "%s" ditolak oleh %s.%s',
+                $campaignTitle,
+                is_string($data['rejected_by_name'] ?? null) ? $data['rejected_by_name'] : 'pihak lain',
+                isset($data['reason']) && is_string($data['reason'])
+                    ? ' Alasan: '.$data['reason']
+                    : '',
+            ),
+            'content.submitted_for_review' => sprintf(
+                'Creator mengirim submission v%s pada kolaborasi "%s" untuk ditinjau.',
+                isset($data['version']) ? (string) $data['version'] : '1',
+                $campaignTitle,
+            ),
+            'content.revision_requested' => sprintf(
+                'UMKM meminta revisi pada submission v%s kolaborasi "%s". Lihat catatan revisi.',
+                isset($data['version']) ? (string) $data['version'] : '1',
+                $campaignTitle,
+            ),
+            'content.approved' => sprintf(
+                'Submission v%s pada kolaborasi "%s" disetujui oleh UMKM.',
+                isset($data['version']) ? (string) $data['version'] : '1',
+                $campaignTitle,
+            ),
+            'message.received' => sprintf(
+                '%s mengirim pesan baru pada kolaborasi "%s".',
+                is_string($data['sender_name'] ?? null) ? $data['sender_name'] : 'Pihak lain',
                 $campaignTitle,
             ),
             'payment.proof_submitted' => sprintf(
@@ -146,6 +197,29 @@ class NotificationContentService
             },
             'collaboration_request.cancelled_by_umkm' => match ($user->role) {
                 UserRole::Creator => route('creator.requests.index', absolute: false),
+                default => null,
+            },
+            'collaboration_request.invitation_received' => match ($user->role) {
+                UserRole::Creator => route('creator.requests.index', absolute: false),
+                default => null,
+            },
+            'collaboration_request.application_received' => match ($user->role) {
+                UserRole::Umkm => route('umkm.campaigns.show', (int) ($data['campaign_id'] ?? 0), absolute: false),
+                default => null,
+            },
+            'collaboration_request.accepted' => match ($user->role) {
+                UserRole::Umkm => route('umkm.collaborations.show', $collaborationId, absolute: false),
+                UserRole::Creator => route('creator.collaborations.show', $collaborationId, absolute: false),
+                default => null,
+            },
+            'collaboration_request.rejected' => match ($user->role) {
+                UserRole::Creator => route('creator.requests.index', absolute: false),
+                UserRole::Umkm => route('umkm.campaigns.show', (int) ($data['campaign_id'] ?? 0), absolute: false),
+                default => null,
+            },
+            'content.submitted_for_review', 'content.revision_requested', 'content.approved', 'message.received' => match ($user->role) {
+                UserRole::Umkm => route('umkm.collaborations.show', $collaborationId, absolute: false),
+                UserRole::Creator => route('creator.collaborations.show', $collaborationId, absolute: false),
                 default => null,
             },
             'payment.proof_submitted', 'payment.confirmed', 'payment.refunded', 'payment.voided' => match ($user->role) {

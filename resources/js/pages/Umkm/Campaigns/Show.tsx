@@ -1,16 +1,27 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { cancelInvitation } from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
+import {
+    acceptByRequest,
+    cancelInvitation,
+    rejectByRequest,
+} from '@/actions/App/Http/Controllers/Umkm/CollaborationsController';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { FlashBanner } from '@/components/app/flash-banner';
+import { PageActionGroup } from '@/components/app/page-action-group';
 import { PageHeader } from '@/components/app/page-header';
 import { ProfileIncompleteBanner } from '@/components/app/profile-incomplete-banner';
 import { ResourceCard } from '@/components/app/resource-card';
 import { SectionPanel } from '@/components/app/section-panel';
 import { StatusBadge } from '@/components/app/status-badge';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { edit, publish, cancel } from '@/routes/umkm/campaigns';
+import { index as umkmDiscoverIndex } from '@/routes/umkm/discover';
+import { terms } from '@/routes/public';
 
 type Request = {
     id: number;
@@ -70,6 +81,9 @@ export default function Show({
 }): ReactNode {
     const flash = usePage().props.status as string | undefined;
     const canPublish = profileStatus?.isComplete ?? true;
+    const [rejectingId, setRejectingId] = useState<number | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState<Record<number, boolean>>({});
 
     return (
         <>
@@ -77,18 +91,25 @@ export default function Show({
             <div>
                 <PageHeader
                     actions={
-                        <div className="flex flex-wrap gap-2">
-                            <Button asChild>
-                                <Link href={edit(campaign.id).url}>Edit Campaign</Link>
-                            </Button>
+                        <PageActionGroup>
                             {campaign.status === 'draft' ? (
                                 <Form {...publish.form(campaign.id)}>
                                     {({ processing }) => (
-                                        <Button disabled={processing || !canPublish} type="submit" variant="success">
+                                        <Button disabled={processing || !canPublish} type="submit">
                                             Publikasikan
                                         </Button>
                                     )}
                                 </Form>
+                            ) : null}
+                            <Button asChild variant={campaign.status === 'draft' ? 'outline' : 'default'}>
+                                <Link href={edit(campaign.id).url}>Edit Campaign</Link>
+                            </Button>
+                            {campaign.collaboration_id ? (
+                                <Button asChild variant="outline">
+                                    <Link href={`/umkm/collaborations/${campaign.collaboration_id}`}>
+                                        Lihat Kolaborasi
+                                    </Link>
+                                </Button>
                             ) : null}
                             {!['cancelled', 'completed'].includes(campaign.status) ? (
                                 <Form {...cancel.form(campaign.id)}>
@@ -108,14 +129,7 @@ export default function Show({
                                     )}
                                 </Form>
                             ) : null}
-                            {campaign.collaboration_id ? (
-                                <Button asChild variant="outline">
-                                    <Link href={`/umkm/collaborations/${campaign.collaboration_id}`}>
-                                        Lihat Kolaborasi
-                                    </Link>
-                                </Button>
-                            ) : null}
-                        </div>
+                        </PageActionGroup>
                     }
                     description={
                         `${campaign.category ? `Kategori: ${campaign.category}` : 'Tanpa kategori'}${
@@ -153,45 +167,168 @@ export default function Show({
                             </p>
                         </SectionPanel>
 
-                        <DashboardSection title={`Pengajuan (${campaign.requests.length})`}>
+                        <DashboardSection title={`Lamaran & Undangan (${campaign.requests.length})`}>
                             {campaign.requests.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Belum ada pengajuan dari Creator.
-                                </p>
+                                <div className="flex flex-col items-start gap-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada lamaran dari Creator. Anda juga bisa mengirim undangan
+                                        dari Cari Creator.
+                                    </p>
+                                    <Button asChild size="sm">
+                                        <Link href={umkmDiscoverIndex().url}>Cari Creator</Link>
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className="flex flex-col gap-3">
                                     {campaign.requests.map((r) => (
                                         <ResourceCard key={r.id}>
-                                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                                <div>
-                                                    <p className="font-medium text-foreground">
-                                                        {r.creator_name}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-muted-foreground">
-                                                        {r.type === 'application' ? 'Lamaran' : 'Undangan'} · {r.status}
-                                                    </p>
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                                    <div>
+                                                        <p className="font-medium text-foreground">
+                                                            {r.creator_name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-muted-foreground">
+                                                            {r.type === 'application' ? 'Lamaran' : 'Undangan'} ·{' '}
+                                                            {r.status}
+                                                        </p>
+                                                        {r.message ? (
+                                                            <p className="mt-2 text-sm text-foreground">
+                                                                {r.message}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                    {r.type === 'invitation' && r.status === 'pending' ? (
+                                                        <Form {...cancelInvitation.form(r.id)}>
+                                                            {({ processing }) => (
+                                                                <Button
+                                                                    disabled={processing}
+                                                                    onClick={(e) => {
+                                                                        if (
+                                                                            !confirm(
+                                                                                'Batalkan undangan ke Creator ini?',
+                                                                            )
+                                                                        ) {
+                                                                            e.preventDefault();
+                                                                        }
+                                                                    }}
+                                                                    type="submit"
+                                                                    variant="outline"
+                                                                >
+                                                                    Batalkan Undangan
+                                                                </Button>
+                                                            )}
+                                                        </Form>
+                                                    ) : null}
                                                 </div>
-                                                {r.type === 'invitation' && r.status === 'pending' ? (
-                                                    <Form {...cancelInvitation.form(r.id)}>
-                                                        {({ processing }) => (
-                                                            <Button
-                                                                disabled={processing}
-                                                                onClick={(e) => {
-                                                                    if (
-                                                                        !confirm(
-                                                                            'Batalkan undangan ke Creator ini?',
-                                                                        )
-                                                                    ) {
-                                                                        e.preventDefault();
-                                                                    }
+
+                                                {r.type === 'application' && r.status === 'pending' ? (
+                                                    <div className="flex flex-col gap-3 border-t-2 border-[var(--neutral-900)] pt-3">
+                                                        <Form {...acceptByRequest.form(r.id)} className="flex flex-col gap-3">
+                                                            {({ processing, errors }) => (
+                                                                <>
+                                                                    <input
+                                                                        name="terms_accepted"
+                                                                        type="hidden"
+                                                                        value={termsAccepted[r.id] ? '1' : '0'}
+                                                                    />
+                                                                    <label
+                                                                        className="flex items-start gap-2 text-sm text-muted-foreground"
+                                                                        htmlFor={`terms-accept-${r.id}`}
+                                                                    >
+                                                                        <Checkbox
+                                                                            checked={termsAccepted[r.id] === true}
+                                                                            className="mt-0.5"
+                                                                            id={`terms-accept-${r.id}`}
+                                                                            onCheckedChange={(checked) =>
+                                                                                setTermsAccepted((prev) => ({
+                                                                                    ...prev,
+                                                                                    [r.id]: checked === true,
+                                                                                }))
+                                                                            }
+                                                                        />
+                                                                        <span>
+                                                                            Saya telah membaca dan menyetujui{' '}
+                                                                            <Link
+                                                                                className="font-bold text-foreground underline underline-offset-4"
+                                                                                href={terms()}
+                                                                                target="_blank"
+                                                                            >
+                                                                                Syarat dan Ketentuan
+                                                                            </Link>{' '}
+                                                                            Collabite.
+                                                                        </span>
+                                                                    </label>
+                                                                    <InputError message={errors.terms_accepted} />
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <Button
+                                                                            disabled={
+                                                                                processing ||
+                                                                                termsAccepted[r.id] !== true
+                                                                            }
+                                                                            size="sm"
+                                                                            type="submit"
+                                                                        >
+                                                                            Terima Lamaran
+                                                                        </Button>
+                                                                        {rejectingId === r.id ? null : (
+                                                                            <Button
+                                                                                size="sm"
+                                                                                type="button"
+                                                                                variant="outline"
+                                                                                onClick={() => setRejectingId(r.id)}
+                                                                            >
+                                                                                Tolak
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </Form>
+                                                        {rejectingId === r.id ? (
+                                                            <Form
+                                                                {...rejectByRequest.form(r.id)}
+                                                                className="flex flex-col gap-2"
+                                                                onSuccess={() => {
+                                                                    setRejectingId(null);
+                                                                    setRejectReason('');
                                                                 }}
-                                                                type="submit"
-                                                                variant="outline"
                                                             >
-                                                                Batalkan Undangan
-                                                            </Button>
-                                                        )}
-                                                    </Form>
+                                                                {({ processing, errors }) => (
+                                                                    <>
+                                                                        <Textarea
+                                                                            name="reason"
+                                                                            placeholder="Alasan penolakan (opsional)"
+                                                                            rows={2}
+                                                                            value={rejectReason}
+                                                                            onChange={(e) =>
+                                                                                setRejectReason(e.target.value)
+                                                                            }
+                                                                        />
+                                                                        <InputError message={errors.reason} />
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <Button
+                                                                                disabled={processing}
+                                                                                size="sm"
+                                                                                type="submit"
+                                                                                variant="destructive"
+                                                                            >
+                                                                                Konfirmasi Tolak
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                type="button"
+                                                                                variant="outline"
+                                                                                onClick={() => setRejectingId(null)}
+                                                                            >
+                                                                                Batal
+                                                                            </Button>
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </Form>
+                                                        ) : null}
+                                                    </div>
                                                 ) : null}
                                             </div>
                                         </ResourceCard>

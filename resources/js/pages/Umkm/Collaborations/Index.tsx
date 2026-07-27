@@ -1,12 +1,16 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
+import { PageActionGroup } from '@/components/app/page-action-group';
 import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import { TableDetailLink, TableRowActions } from '@/components/app/table-row-actions';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import { Button } from '@/components/ui/button';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { index as umkmCampaignsIndex } from '@/routes/umkm/campaigns';
+import { index as umkmDiscoverIndex } from '@/routes/umkm/discover';
 
 type Collaboration = {
     id: number;
@@ -61,8 +65,18 @@ export default function Index({
             <Head title="Kolaborasi" />
             <div>
                 <PageHeader
+                    actions={
+                        <PageActionGroup>
+                            <Button asChild variant="outline">
+                                <Link href={umkmCampaignsIndex().url}>Lihat Campaign</Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={umkmDiscoverIndex().url}>Cari Creator</Link>
+                            </Button>
+                        </PageActionGroup>
+                    }
+                    description="Daftar kolaborasi aktif dan riwayat setelah lamaran atau undangan disetujui."
                     title="Kolaborasi"
-                    description="Daftar kolaborasi aktif dan riwayat kolaborasi Anda."
                 />
 
                 <div className="mt-8">
@@ -105,6 +119,11 @@ export default function Index({
                                 ),
                             },
                         ]}
+                        emptyAction={
+                            <Button asChild>
+                                <Link href={umkmDiscoverIndex().url}>Cari Creator</Link>
+                            </Button>
+                        }
                         emptyDescription="Kolaborasi muncul setelah lamaran diterima atau undangan disetujui."
                         emptyTitle="Belum ada kolaborasi"
                         getRowKey={(c) => c.id}

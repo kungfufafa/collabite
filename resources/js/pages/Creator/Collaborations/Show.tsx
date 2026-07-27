@@ -12,6 +12,7 @@ import { submitForReview } from '@/actions/App/Http/Controllers/Creator/Collabor
 import { submitReview } from '@/actions/App/Http/Controllers/Creator/CollaborationsController';
 import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
 import { FlashBanner } from '@/components/app/flash-banner';
+import { NextStepCallout } from '@/components/app/next-step-callout';
 import { SectionPanel } from '@/components/app/section-panel';
 import {
     brutalDashedPanel,
@@ -24,7 +25,10 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import CollaborationWorkspaceLayout from '@/layouts/collaboration-workspace-layout';
-import type {CollaborationTab} from '@/layouts/collaboration-workspace-layout';
+import type { CollaborationTab } from '@/layouts/collaboration-workspace-layout';
+import { resolveCreatorCollaborationNextStep } from '@/lib/collaboration-next-step';
+
+type MessageAttachment = { id: number; original_name: string; mime_type: string; size: number; url: string };
 
 type Message = {
     id: number;
@@ -33,11 +37,19 @@ type Message = {
     body: string;
     created_at: string;
     read_at: string | null;
+    attachments: MessageAttachment[];
 };
 
 type Progress = { id: number; message: string; created_at: string };
 
 type SubmissionFile = { id: number; original_name: string; mime_type: string; size: number; url: string };
+
+type SubmissionRevision = {
+    id: number;
+    umkm_name: string | null;
+    note: string;
+    created_at: string | null;
+};
 
 type Submission = {
     id: number;
@@ -48,6 +60,7 @@ type Submission = {
     status_label: string;
     submitted_at: string | null;
     files: SubmissionFile[];
+    revisions: SubmissionRevision[];
 };
 
 type Review = {
@@ -125,20 +138,42 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
     })();
 
     const workspaceTabs = [
-        { value: 'messages' as const, label: 'Pesan', count: collaboration.messages.length },
-        { value: 'progress' as const, label: 'Progres', count: collaboration.progress.length },
-        { value: 'content' as const, label: 'Submission', count: collaboration.submissions.length },
+        {
+            value: 'messages' as const,
+            label: 'Pesan',
+            count: collaboration.messages.length > 0 ? collaboration.messages.length : undefined,
+        },
+        {
+            value: 'progress' as const,
+            label: 'Progres',
+            count: collaboration.progress.length > 0 ? collaboration.progress.length : undefined,
+        },
+        {
+            value: 'content' as const,
+            label: 'Konten',
+            count: collaboration.submissions.length > 0 ? collaboration.submissions.length : undefined,
+        },
         ...(manualPaymentEnabled
             ? [
                   {
                       value: 'payment' as const,
                       label: 'Pembayaran',
-                      count: collaboration.payment ? 1 : 0,
+                      count: collaboration.payment ? 1 : undefined,
                   },
               ]
             : []),
-        { value: 'review' as const, label: 'Review', count: collaboration.reviews.length },
+        {
+            value: 'review' as const,
+            label: 'Review',
+            count: collaboration.reviews.length > 0 ? collaboration.reviews.length : undefined,
+        },
     ];
+
+    const nextStep = resolveCreatorCollaborationNextStep(
+        collaboration,
+        manualPaymentEnabled,
+    );
+    const nextStepOnOtherTab = nextStep !== null && nextStep.tab !== tab;
 
     return (
         <>
@@ -155,6 +190,25 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                     backHref: '/creator/collaborations',
                     backLabel: 'Kolaborasi',
                 }}
+                nextStep={
+                    nextStep ? (
+                        <NextStepCallout
+                            action={
+                                nextStepOnOtherTab ? (
+                                    <Button
+                                        size="sm"
+                                        type="button"
+                                        onClick={() => setTab(nextStep.tab)}
+                                    >
+                                        {nextStep.actionLabel}
+                                    </Button>
+                                ) : undefined
+                            }
+                            compact
+                            description={nextStep.description}
+                        />
+                    ) : undefined
+                }
                 tabs={workspaceTabs}
                 activeTab={tab}
                 onTabChange={setTab}
@@ -184,12 +238,26 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                             {m.read_at ? ' ✓' : ''}
                                         </div>
                                         <div className="mt-1 text-sm">{m.body}</div>
+                                        {m.attachments.length > 0 ? (
+                                            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                                                {m.attachments.map((a) => (
+                                                    <li key={a.id}>
+                                                        <a
+                                                            className="text-[var(--brand-primary-hover)] underline"
+                                                            href={a.url}
+                                                        >
+                                                            {a.original_name}
+                                                        </a>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : null}
                                     </div>
                                 ))
                             )}
 
                             {collaboration.status === 'active' ? (
-                                <InertiaForm {...sendMessage.form(collaboration.id)} resetOnSuccess>
+                                <InertiaForm {...sendMessage.form(collaboration.id)} encType="multipart/form-data" resetOnSuccess>
                                     {({ errors, processing }) => (
                                         <>
                                             <Textarea
@@ -200,6 +268,14 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                 placeholder="Tulis pesan..."
                                             />
                                             <InputError message={errors.body} className="mt-1" />
+                                            <input
+                                                type="file"
+                                                name="attachments[]"
+                                                multiple
+                                                accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf"
+                                                className="mt-2 text-sm"
+                                            />
+                                            <InputError message={errors['attachments.0']} className="mt-1" />
                                             <div className="mt-2">
                                                 <Button
                                                     type="submit"
@@ -258,7 +334,7 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                 ) : null}
 
                 {tab === 'content' ? (
-                    <SectionPanel title="Submission" description="Versi konten yang Anda kirimkan.">
+                    <SectionPanel title="Konten" description="Versi konten yang Anda kirimkan.">
                         <div className="space-y-3">
                             {collaboration.submissions.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">Belum ada submission.</p>
@@ -319,6 +395,21 @@ export default function Show({ collaboration }: { collaboration: Collaboration }
                                                     </li>
                                                 ))}
                                             </ul>
+                                        ) : null}
+                                        {s.revisions.length > 0 ? (
+                                            <div className="mt-3 space-y-2 border-t border-dashed pt-2">
+                                                <div className="text-xs font-semibold uppercase text-muted-foreground">
+                                                    Catatan Revisi dari UMKM
+                                                </div>
+                                                {s.revisions.map((r) => (
+                                                    <div key={r.id} className="text-sm">
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {r.umkm_name ?? 'UMKM'} • {r.created_at ?? ''}
+                                                        </div>
+                                                        <div className="mt-0.5">{r.note}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         ) : null}
                                     </div>
                                 ))

@@ -129,6 +129,34 @@ test('verification documents accept image and pdf', function (): void {
     expect($profile->verifications()->first()->documents()->count())->toBe(2);
 });
 
+test('creator cannot submit verification while a pending verification exists', function (): void {
+    StorageFake();
+
+    $user = User::factory()->withRole(UserRole::Creator)->create(['email_verified_at' => now()]);
+    $profile = CreatorProfile::factory()->for($user, 'user')->create([
+        'headline' => 'Hello',
+        'bio' => 'Saya kreator.',
+        'verification_status' => VerificationStatus::Pending,
+    ]);
+    PortfolioItem::factory()->for($profile, 'creatorProfile')->create();
+    $profile->verifications()->create([
+        'status' => VerificationStatus::Pending,
+        'submitted_at' => now(),
+    ]);
+
+    $file = UploadedFile::fake()->image('ktp.jpg');
+
+    $this->actingAs($user)
+        ->post(route('creator.verification.submit'), [
+            'documents' => [
+                ['type' => VerificationDocumentType::IdentityCard->value, 'file' => $file],
+            ],
+        ])
+        ->assertStatus(422);
+
+    expect($profile->verifications()->count())->toBe(1);
+});
+
 function StorageFake(): void
 {
     Storage::fake('local');

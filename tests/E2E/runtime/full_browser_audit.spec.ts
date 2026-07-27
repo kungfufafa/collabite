@@ -7,14 +7,9 @@
  *   npx playwright test tests/E2E/runtime/full_browser_audit.spec.ts
  */
 import { test } from '@playwright/test';
+import { clearLoginRateLimit, loginSeededUser } from '../_helpers';
 
 const baseURL = 'http://collabite.test';
-
-const creds: Record<string, { email: string; password: string }> = {
-    admin: { email: 'admin@collabite.test', password: 'password' },
-    umkm: { email: 'umkm1@collabite.test', password: 'password' },
-    creator: { email: 'creator1@collabite.test', password: 'password' },
-};
 
 const pages: Array<{ actor: string; label: string; path: string; loginAs?: 'umkm' | 'creator' | 'admin' }> = [
     { actor: 'public', label: 'Welcome', path: '/' },
@@ -48,17 +43,19 @@ const pages: Array<{ actor: string; label: string; path: string; loginAs?: 'umkm
     { actor: 'creator', loginAs: 'creator', label: 'Creator collaborations', path: '/creator/collaborations' },
 ];
 
+const seededEmail: Record<'admin' | 'umkm' | 'creator', string> = {
+    admin: 'admin@collabite.test',
+    umkm: 'umkm1@collabite.test',
+    creator: 'creator1@collabite.test',
+};
+
 const MIN_TEXT = 50;
 
 for (const t of pages) {
     test(`Audit ${t.actor}/${t.label}`, async ({ page }) => {
         if (t.loginAs) {
-            const c = creds[t.loginAs];
-            await page.goto(baseURL + '/login');
-            await page.getByRole('textbox', { name: 'Email' }).fill(c.email);
-            await page.getByRole('textbox', { name: 'Kata Sandi' }).fill(c.password);
-            await page.getByRole('button', { name: 'Masuk' }).click();
-            await page.waitForURL(new RegExp('/' + t.loginAs + '/dashboard'), { timeout: 10_000 });
+            clearLoginRateLimit(seededEmail[t.loginAs]);
+            await loginSeededUser(page, seededEmail[t.loginAs]);
         }
         const url = baseURL + t.path;
         const response = await page.goto(url, { waitUntil: 'networkidle' });

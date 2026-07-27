@@ -89,7 +89,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await expect(page.getByText('Mulai拍摄 konten hari ini.')).toBeVisible();
 
         // Upload draft + submit for review.
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByLabel('Judul', { exact: true }).fill('Draft konten pertama');
         await page.locator('input[name="files[]"]').setInputFiles({
             name: 'tiny.png',
@@ -105,7 +105,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         await page.getByLabel('Deskripsi', { exact: true }).fill('Draft awal, mohon review.');
         await page.getByRole('button', { name: 'Upload Submission' }).click();
         await expect(page.getByText(/Submission v\d+ berhasil dibuat/i)).toBeVisible();
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
         await expect(page.getByText('Dalam Review')).toBeVisible();
 
@@ -114,8 +114,12 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         // ====== UMKM: minta revisi ======
         await loginPage(page, umkmEmail);
         await page.goto(`/umkm/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByRole('button', { name: 'Minta Revisi' }).click();
+        await page
+            .getByPlaceholder('Tulis apa yang harus diperbaiki creator...')
+            .fill('Perbaiki warna dan tambahkan CTA di akhir video.');
+        await page.getByRole('button', { name: 'Kirim Permintaan Revisi' }).click();
         await expect(page.getByText('Revisi Diminta')).toBeVisible();
 
         await context.clearCookies();
@@ -123,7 +127,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         // ====== Creator: kirim ulang submission ======
         await loginPage(page, creatorEmail);
         await page.goto(`/creator/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByLabel('Judul', { exact: true }).fill('Revisi konten v2');
         await page.locator('input[name="files[]"]').setInputFiles({
             name: 'tiny.png',
@@ -146,7 +150,7 @@ test.describe.serial('E2E-01: Lamaran Creator hingga kolaborasi selesai & review
         // ====== UMKM: setujui submission, unggah bukti bayar, selesaikan kolaborasi ======
         await loginPage(page, umkmEmail);
         await page.goto(`/umkm/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByRole('button', { name: 'Setujui' }).click();
         await expect(page.getByText(/^Disetujui/)).toBeVisible();
 

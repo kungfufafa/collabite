@@ -203,7 +203,7 @@ test.describe('E2E-05: Transisi & aksi invalid', () => {
         await logoutSession(page);
         await loginPage(page, creator);
         await page.goto(`/creator/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await uploadCreatorSubmissionDraft(page, 'Draft A');
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
 
@@ -261,14 +261,14 @@ test.describe('E2E-05: Transisi & aksi invalid', () => {
         await logoutSession(page);
         await loginPage(page, creator);
         await page.goto(`/creator/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await uploadCreatorSubmissionDraft(page, 'Final A');
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
 
         await logoutSession(page);
         await loginPage(page, umkm);
         await page.goto(`/umkm/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByRole('button', { name: 'Setujui' }).click();
         page.once('dialog', (d) => d.accept());
         await page.getByRole('tab', { name: /Review/ }).click();

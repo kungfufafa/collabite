@@ -9,6 +9,7 @@ use App\Actions\Collaboration\CancelApplicationAction;
 use App\Actions\Collaboration\RejectRequestAction;
 use App\Enums\CollaborationRequestStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Collaboration\AcceptCollaborationTermsRequest;
 use App\Models\CollaborationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,10 +52,13 @@ class RequestsController extends Controller
         ]);
     }
 
-    public function accept(Request $httpRequest, CollaborationRequest $collaborationRequest, AcceptRequestAction $action): RedirectResponse
+    public function accept(AcceptCollaborationTermsRequest $httpRequest, CollaborationRequest $collaborationRequest, AcceptRequestAction $action): RedirectResponse
     {
-        $this->authorize('respond', $collaborationRequest);
-        $action->execute($collaborationRequest);
+        $action->execute($collaborationRequest, $httpRequest->user(), [
+            'terms_accepted' => true,
+            'terms_version' => (string) config('collabite.terms_version'),
+            'terms_accepted_at' => now()->toIso8601String(),
+        ]);
 
         return redirect()
             ->route('creator.collaborations.index')
@@ -64,7 +68,7 @@ class RequestsController extends Controller
     public function reject(Request $httpRequest, CollaborationRequest $collaborationRequest, RejectRequestAction $action): RedirectResponse
     {
         $this->authorize('respond', $collaborationRequest);
-        $action->execute($collaborationRequest, $httpRequest->input('reason'));
+        $action->execute($collaborationRequest, $httpRequest->input('reason'), $httpRequest->user());
 
         return back()->with('status', 'Permintaan ditolak.');
     }

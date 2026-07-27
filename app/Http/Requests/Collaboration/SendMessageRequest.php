@@ -17,6 +17,8 @@ class SendMessageRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'max:5000'],
+            'attachments' => ['sometimes', 'array', 'max: 5'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,gif,mp4,quicktime,webm,pdf', 'max:15360'],
         ];
     }
 }

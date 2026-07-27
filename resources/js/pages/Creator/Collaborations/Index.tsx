@@ -1,12 +1,15 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
+import { FlashBanner } from '@/components/app/flash-banner';
 import { StatusBadge } from '@/components/app/status-badge';
 import { TableDetailLink, TableRowActions } from '@/components/app/table-row-actions';
 import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
+import { Button } from '@/components/ui/button';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
 
 type Collaboration = {
     id: number;
@@ -40,6 +43,7 @@ export default function Index({
 }: {
     collaborations: { data: Collaboration[] } | Collaboration[];
 }): ReactNode {
+    const flash = usePage().props.status as string | undefined;
     const list = Array.isArray(collaborations) ? collaborations : collaborations.data;
     const getSearchText = useCallback(
         (collaboration: Collaboration) =>
@@ -57,9 +61,16 @@ export default function Index({
         <>
             <Head title="Kolaborasi" />
             <WorkspacePage
+                actions={
+                    <Button asChild>
+                        <Link href={creatorCampaignsIndex().url}>Cari Campaign</Link>
+                    </Button>
+                }
                 description="Campaign yang sedang atau pernah Anda kerjakan."
                 title="Kolaborasi"
             >
+                {flash ? <FlashBanner message={flash} /> : null}
+
                 <WorkspaceTable
                         columns={[
                             {
@@ -106,6 +117,11 @@ export default function Index({
                                 ),
                             },
                         ]}
+                        emptyAction={
+                            <Button asChild>
+                                <Link href={creatorCampaignsIndex().url}>Cari Campaign</Link>
+                            </Button>
+                        }
                         emptyDescription="Mulai dengan melamar campaign atau menerima undangan UMKM."
                         emptyTitle="Belum ada kolaborasi"
                         getRowKey={(c) => c.id}

@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
@@ -8,6 +8,8 @@ import { WorkspacePage } from '@/components/app/workspace-page';
 import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
+import { hide as hideReview } from '@/routes/admin/moderation/reviews';
+import { reviews as reviewsIndex } from '@/routes/admin/moderation';
 
 type Review = {
     id: number;
@@ -23,9 +25,16 @@ type Props = {
         data: Review[];
         links?: { url: string | null; label: string; active: boolean }[];
     };
+    filter?: string;
 };
 
-export default function AdminReviewsIndex({ reviews }: Props): ReactNode {
+const FILTERS: { value: string; label: string }[] = [
+    { value: 'visible', label: 'Tampil' },
+    { value: 'hidden', label: 'Tersembunyi' },
+    { value: 'all', label: 'Semua' },
+];
+
+export default function AdminReviewsIndex({ reviews, filter = 'visible' }: Props): ReactNode {
     const getSearchText = useCallback(
         (review: Review) =>
             [
@@ -45,23 +54,17 @@ export default function AdminReviewsIndex({ reviews }: Props): ReactNode {
         <>
             <Head title="Moderasi Review" />
             <WorkspacePage
-                description="Review tersembunyi dapat dipulihkan agar tampil kembali di profil publik."
+                description="Sembunyikan atau pulihkan review agar tampil kembali di profil publik."
                 title="Moderasi Review"
             >
                 <WorkspaceTable
                     columns={[
-                        {
-                            header: 'Reviewer',
-                            cell: (r) => r.reviewer.name,
-                        },
+                        { header: 'Reviewer', cell: (r) => r.reviewer.name },
                         { header: 'Reviewee', cell: (r) => r.reviewee.name },
                         {
                             header: 'Rating',
                             cell: (r) => (
-                                <StatusBadge
-                                    label={`★ ${r.rating}/5`}
-                                    tone="warning"
-                                />
+                                <StatusBadge label={`★ ${r.rating}/5`} tone="warning" />
                             ),
                         },
                         {
@@ -74,8 +77,11 @@ export default function AdminReviewsIndex({ reviews }: Props): ReactNode {
                         },
                         {
                             header: 'Visibilitas',
-                            cell: () => (
-                                <StatusBadge label="Tersembunyi" tone="danger" />
+                            cell: (r) => (
+                                <StatusBadge
+                                    label={r.is_hidden ? 'Tersembunyi' : 'Tampil'}
+                                    tone={r.is_hidden ? 'danger' : 'success'}
+                                />
                             ),
                         },
                         {
@@ -84,20 +90,39 @@ export default function AdminReviewsIndex({ reviews }: Props): ReactNode {
                             cell: (r) => (
                                 <TableRowActions>
                                     <Form
-                                        action={`/admin/moderation/reviews/${r.id}/hide`}
+                                        action={hideReview.url(r.id)}
                                         className="inline-flex"
                                         method="patch"
                                     >
                                         <Button size="sm" type="submit" variant="outline">
-                                            Pulihkan
+                                            {r.is_hidden ? 'Pulihkan' : 'Sembunyikan'}
                                         </Button>
                                     </Form>
                                 </TableRowActions>
                             ),
                         },
                     ]}
-                    emptyDescription="Semua review saat ini terlihat normal."
-                    emptyTitle="Tidak ada review tersembunyi"
+                    emptyDescription="Tidak ada review pada filter ini."
+                    emptyTitle="Tidak ada review"
+                    filtersSlot={
+                        <div className="flex flex-wrap gap-2">
+                            {FILTERS.map((f) => (
+                                <Button
+                                    asChild
+                                    key={f.value}
+                                    size="sm"
+                                    variant={filter === f.value ? 'default' : 'outline'}
+                                >
+                                    <Link
+                                        href={reviewsIndex.url({ query: { status: f.value } })}
+                                        preserveScroll
+                                    >
+                                        {f.label}
+                                    </Link>
+                                </Button>
+                            ))}
+                        </div>
+                    }
                     getRowKey={(r) => r.id}
                     paginationLinks={reviews.links}
                     rows={filteredRows}

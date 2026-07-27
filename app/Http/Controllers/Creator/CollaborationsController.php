@@ -17,6 +17,7 @@ use App\Enums\CollaborationRequestType;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Collaboration\AcceptCollaborationTermsRequest;
 use App\Http\Requests\Collaboration\CancelCollaborationRequest;
 use App\Http\Requests\Collaboration\ReviewRequest;
 use App\Http\Requests\Collaboration\SendMessageRequest;
@@ -30,12 +31,19 @@ use App\Models\Collaboration;
 use App\Models\CollaborationRequest;
 use App\Models\ContentSubmission;
 use App\Models\ContentSubmissionFile;
+use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\Review;
+use App\Notifications\ApplicationReceivedNotification;
+use App\Notifications\MessageReceivedNotification;
 use App\Services\CollaborationPaymentPresenter;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,9 +88,9 @@ class CollaborationsController extends Controller
             'umkm',
             'conversation.messages.sender',
             'progressUpdates',
-            'submissions' => fn ($q) => $q->orderByDesc('version'),
+            'submissions' => fn ($q) => $q->where('is_hidden', false)->orderByDesc('version'),
             'submissions.files',
-            'submissions.revisions',
+            'submissions.revisions.umkm',
             'reviews',
             'payment',
         ]);
@@ -144,6 +152,12 @@ class CollaborationsController extends Controller
                         'size' => $f->size,
                         'url' => $this->files->privateUrl($f->file_path),
                     ])->all(),
+                    'revisions' => $s->revisions->map(fn ($r): array => [
+                        'id' => $r->id,
+                        'umkm_name' => $r->umkm?->name,
+                        'note' => $r->note,
+                        'created_at' => $r->created_at?->toIso8601String(),
+                    ])->all(),
                 ])->all(),
                 'reviews' => $collaboration->reviews->map(fn ($r): array => [
                     'id' => $r->id,
@@ -191,7 +205,7 @@ class CollaborationsController extends Controller
             return back()->withErrors(['campaign' => 'Anda sudah memiliki pengajuan untuk campaign ini.']);
         }
 
-        CollaborationRequest::create([
+        $application = CollaborationRequest::create([
             'campaign_id' => $campaign->id,
             'creator_id' => $request->user()->id,
             'sender_id' => $request->user()->id,
@@ -200,23 +214,30 @@ class CollaborationsController extends Controller
             'message' => $request->validated('message'),
         ]);
 
+        $application->load('campaign.umkm', 'creator');
+        $umkmUser = $campaign->umkm;
+        DB::afterCommit(fn () => Notification::send($umkmUser, new ApplicationReceivedNotification($application)));
+
         return back()->with('status', 'Lamaran terkirim.');
     }
 
-    public function acceptRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, AcceptRequestAction $action): RedirectResponse
+    public function acceptRequest(AcceptCollaborationTermsRequest $request, Collaboration $collaboration, CollaborationRequest $requestModel, AcceptRequestAction $action): RedirectResponse
     {
         abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
-        $this->authorize('respond', $requestModel);
-        $action->execute($requestModel);
+        $action->execute($requestModel, $request->user(), [
+            'terms_accepted' => true,
+            'terms_version' => (string) config('collabite.terms_version'),
+            'terms_accepted_at' => now()->toIso8601String(),
+        ]);
 
-        return back()->with('status', 'Undangan diterima.');
+        return back()->with('status', 'Undangan diterima. Kolaborasi dimulai.');
     }
 
     public function rejectRequest(Request $request, Collaboration $collaboration, CollaborationRequest $requestModel, RejectRequestAction $action): RedirectResponse
     {
         abort_unless($requestModel->campaign_id === $collaboration->campaign_id, 404);
         $this->authorize('respond', $requestModel);
-        $action->execute($requestModel, $request->input('reason'));
+        $action->execute($requestModel, $request->input('reason'), $request->user());
 
         return back()->with('status', 'Undangan ditolak.');
     }
@@ -238,13 +259,34 @@ class CollaborationsController extends Controller
         abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422, 'Kolaborasi tidak aktif.');
 
         $conversation = $collaboration->conversation()->firstOrCreate([]);
-        $conversation->messages()->create([
+        $message = $conversation->messages()->create([
             'sender_id' => $request->user()->id,
             'body' => $request->validated('body'),
         ]);
+        $this->storeMessageAttachments($request, $message);
         $conversation->update(['last_message_at' => now()]);
 
+        $message->load('conversation.collaboration.campaign', 'sender', 'attachments');
+        $recipient = $collaboration->umkm;
+        DB::afterCommit(fn () => Notification::send($recipient, new MessageReceivedNotification($message)));
+
         return back()->with('status', 'Pesan terkirim.');
+    }
+
+    /**
+     * Simpan lampiran pesan (maks 5 file) ke disk private.
+     */
+    private function storeMessageAttachments(Request $request, Message $message): void
+    {
+        foreach ($request->file('attachments', []) as $file) {
+            $path = $this->files->storePrivate($file, 'message', $message->id);
+            $message->attachments()->create([
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+                'size' => $file->getSize() ?? 0,
+            ]);
+        }
     }
 
     public function storeProgress(StoreProgressRequest $request, Collaboration $collaboration): RedirectResponse
@@ -264,6 +306,15 @@ class CollaborationsController extends Controller
     {
         $this->authorize('create', [ContentSubmission::class, $collaboration]);
         abort_if($collaboration->status === CollaborationStatus::Completed || $collaboration->status === CollaborationStatus::Cancelled, 422);
+
+        // Approved terminal (BR-014): tidak boleh membuat submission baru setelah
+        // salah satu disetujui. Revisi setelah approved harus lewat admin.
+        $hasApproved = $collaboration->submissions()
+            ->where('status', ContentSubmissionStatus::Approved)
+            ->exists();
+        if ($hasApproved) {
+            return back()->withErrors(['submission' => 'Submission sudah disetujui. Hubungi admin untuk perubahan.']);
+        }
 
         $version = ($collaboration->submissions()->max('version') ?? 0) + 1;
 
@@ -313,7 +364,11 @@ class CollaborationsController extends Controller
 
     public function submitReview(ReviewRequest $request, Collaboration $collaboration, StoreReviewAction $action): RedirectResponse
     {
-        $this->authorize('view', $collaboration);
+        // Enforce ReviewPolicy::create (status completed + pihak kolaborasi).
+        $gate = Gate::inspect('create', [Review::class, $collaboration]);
+        if (! $gate->allowed()) {
+            throw ValidationException::withMessages(['collaboration' => $gate->message() ?? 'Tidak dapat memberi review.']);
+        }
         $action->execute($collaboration, $request->user(), $collaboration->umkm, $request->validated());
 
         return back()->with('status', 'Review terkirim.');

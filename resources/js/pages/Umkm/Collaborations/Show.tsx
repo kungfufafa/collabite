@@ -9,6 +9,7 @@ import { submitPaymentProof } from '@/actions/App/Http/Controllers/Umkm/Collabor
 import { storeForUmkm as submitReview } from '@/actions/App/Http/Controllers/Umkm/ReviewsController';
 import { CollaborationPaymentPanel } from '@/components/app/collaboration-payment-panel';
 import { FlashBanner } from '@/components/app/flash-banner';
+import { NextStepCallout } from '@/components/app/next-step-callout';
 import { SectionPanel } from '@/components/app/section-panel';
 import {
     brutalDivider,
@@ -20,7 +21,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useCollaborationMessagePolling } from '@/hooks/use-collaboration-message-polling';
 import CollaborationWorkspaceLayout from '@/layouts/collaboration-workspace-layout';
-import type {CollaborationTab} from '@/layouts/collaboration-workspace-layout';
+import type { CollaborationTab } from '@/layouts/collaboration-workspace-layout';
+import { resolveUmkmCollaborationNextStep } from '@/lib/collaboration-next-step';
+
+type MessageAttachment = { id: number; original_name: string; mime_type: string; size: number; url: string };
 
 type Message = {
     id: number;
@@ -29,11 +33,19 @@ type Message = {
     body: string;
     created_at: string;
     read_at: string | null;
+    attachments: MessageAttachment[];
 };
 
 type Progress = { id: number; message: string; created_at: string };
 
 type SubmissionFile = { id: number; original_name: string; mime_type: string; size: number; url: string };
+
+type SubmissionRevision = {
+    id: number;
+    umkm_name: string | null;
+    note: string;
+    created_at: string | null;
+};
 
 type Submission = {
     id: number;
@@ -44,6 +56,7 @@ type Submission = {
     status_label: string;
     submitted_at: string | null;
     files: SubmissionFile[];
+    revisions: SubmissionRevision[];
 };
 
 type Review = {
@@ -92,6 +105,8 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
     const [reviewBody, setReviewBody] = useState('');
     const [showCancelForm, setShowCancelForm] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
+    const [revisionSubmissionId, setRevisionSubmissionId] = useState<number | null>(null);
+    const [revisionNote, setRevisionNote] = useState('');
 
     useCollaborationMessagePolling(tab);
 
@@ -105,36 +120,42 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
         {
             value: 'messages' as const,
             label: 'Pesan',
-            count: collaboration.messages.length,
+            count: collaboration.messages.length > 0 ? collaboration.messages.length : undefined,
         },
         {
             value: 'progress' as const,
             label: 'Progres',
-            count: collaboration.progress.length,
+            count: collaboration.progress.length > 0 ? collaboration.progress.length : undefined,
         },
         {
             value: 'content' as const,
-            label: 'Submission',
-            count: collaboration.submissions.length,
+            label: 'Konten',
+            count: collaboration.submissions.length > 0 ? collaboration.submissions.length : undefined,
         },
         ...(manualPaymentEnabled
             ? [
                   {
                       value: 'payment' as const,
                       label: 'Pembayaran',
-                      count: collaboration.payment ? 1 : 0,
+                      count: collaboration.payment ? 1 : undefined,
                   },
               ]
             : []),
         {
             value: 'review' as const,
             label: 'Review',
-            count: collaboration.reviews.length,
+            count: collaboration.reviews.length > 0 ? collaboration.reviews.length : undefined,
         },
     ];
 
     const canComplete =
         hasApprovedSubmission && (!manualPaymentEnabled || paymentConfirmed);
+
+    const nextStep = resolveUmkmCollaborationNextStep(
+        collaboration,
+        manualPaymentEnabled,
+    );
+    const nextStepOnOtherTab = nextStep !== null && nextStep.tab !== tab;
 
     return (
         <>
@@ -151,6 +172,25 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                     backHref: isUmkm ? '/umkm/collaborations' : '/creator/collaborations',
                     backLabel: 'Kolaborasi',
                 }}
+                nextStep={
+                    nextStep ? (
+                        <NextStepCallout
+                            action={
+                                nextStepOnOtherTab ? (
+                                    <Button
+                                        size="sm"
+                                        type="button"
+                                        onClick={() => setTab(nextStep.tab)}
+                                    >
+                                        {nextStep.actionLabel}
+                                    </Button>
+                                ) : undefined
+                            }
+                            compact
+                            description={nextStep.description}
+                        />
+                    ) : undefined
+                }
                 tabs={workspaceTabs}
                 activeTab={tab}
                 onTabChange={setTab}
@@ -174,11 +214,25 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                 {m.read_at ? ' ✓' : ''}
                                             </div>
                                             <div className="mt-1 text-sm">{m.body}</div>
+                                            {m.attachments.length > 0 ? (
+                                                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                                                    {m.attachments.map((a) => (
+                                                        <li key={a.id}>
+                                                            <a
+                                                                className="text-[var(--brand-primary-hover)] underline"
+                                                                href={a.url}
+                                                            >
+                                                                {a.original_name}
+                                                            </a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : null}
                                         </div>
                                     ))
                                 )}
 
-                                <InertiaForm {...sendMessage.form(collaboration.id)} resetOnSuccess>
+                                <InertiaForm {...sendMessage.form(collaboration.id)} encType="multipart/form-data" resetOnSuccess>
                                     {({ errors, processing }) => (
                                         <>
                                             <Textarea
@@ -189,6 +243,14 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                 placeholder="Tulis pesan..."
                                             />
                                             <InputError message={errors.body} className="mt-1" />
+                                            <input
+                                                type="file"
+                                                name="attachments[]"
+                                                multiple
+                                                accept="image/*,video/mp4,video/quicktime,video/webm,application/pdf"
+                                                className="mt-2 text-sm"
+                                            />
+                                            <InputError message={errors['attachments.0']} className="mt-1" />
                                             <div className="mt-2">
                                                 <Button type="submit" disabled={processing || message.trim() === ''}>
                                                     Kirim
@@ -223,7 +285,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
 
                 {tab === 'content' ? (
                         <SectionPanel
-                            title="Submission"
+                            title="Konten"
                             description="Versi konten yang dikirimkan Creator."
                         >
                             <div className="space-y-3">
@@ -240,7 +302,7 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                     </div>
                                                 </div>
                                                 {isUmkm && s.status === 'in_review' ? (
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         <InertiaForm
                                                             {...approveSubmission.form({
                                                                 collaboration: collaboration.id,
@@ -258,23 +320,68 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                                 </Button>
                                                             )}
                                                         </InertiaForm>
-                                                        <InertiaForm
-                                                            {...requestRevision.form({
-                                                                collaboration: collaboration.id,
-                                                                submission: s.id,
-                                                            })}
-                                                        >
-                                                            {({ processing }) => (
-                                                                <Button
-                                                                    disabled={processing}
-                                                                    size="sm"
-                                                                    type="submit"
-                                                                    variant="warning"
-                                                                >
-                                                                    Minta Revisi
-                                                                </Button>
-                                                            )}
-                                                        </InertiaForm>
+                                                        {revisionSubmissionId === s.id ? (
+                                                            <InertiaForm
+                                                                {...requestRevision.form({
+                                                                    collaboration: collaboration.id,
+                                                                    submission: s.id,
+                                                                })}
+                                                                onSuccess={() => {
+                                                                    setRevisionSubmissionId(null);
+                                                                    setRevisionNote('');
+                                                                }}
+                                                            >
+                                                                {({ processing, errors }) => (
+                                                                    <div className="w-full space-y-2">
+                                                                        <label className="text-sm font-medium">
+                                                                            Catatan revisi (wajib)
+                                                                        </label>
+                                                                        <Textarea
+                                                                            name="note"
+                                                                            required
+                                                                            rows={3}
+                                                                            value={revisionNote}
+                                                                            onChange={(e) => setRevisionNote(e.target.value)}
+                                                                            placeholder="Tulis apa yang harus diperbaiki creator..."
+                                                                        />
+                                                                        <InputError message={errors.note} />
+                                                                        <div className="flex gap-2">
+                                                                            <Button
+                                                                                disabled={processing || revisionNote.trim() === ''}
+                                                                                size="sm"
+                                                                                type="submit"
+                                                                                variant="warning"
+                                                                            >
+                                                                                Kirim Permintaan Revisi
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="sm"
+                                                                                type="button"
+                                                                                variant="outline"
+                                                                                onClick={() => {
+                                                                                    setRevisionSubmissionId(null);
+                                                                                    setRevisionNote('');
+                                                                                }}
+                                                                            >
+                                                                                Batal
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </InertiaForm>
+                                                        ) : (
+                                                            <Button
+                                                                size="sm"
+                                                                type="button"
+                                                                variant="warning"
+                                                                onClick={() => {
+                                                                    setRevisionSubmissionId(s.id);
+                                                                    setRevisionNote('');
+                                                                }}
+                                                            >
+                                                                Minta Revisi
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 ) : null}
                                             </div>
@@ -292,6 +399,21 @@ export default function Show({ collaboration, isUmkm = true }: Props): ReactNode
                                                         </li>
                                                     ))}
                                                 </ul>
+                                            ) : null}
+                                            {s.revisions.length > 0 ? (
+                                                <div className="mt-3 space-y-2 border-t border-dashed pt-2">
+                                                    <div className="text-xs font-semibold uppercase text-muted-foreground">
+                                                        Catatan Revisi
+                                                    </div>
+                                                    {s.revisions.map((r) => (
+                                                        <div key={r.id} className="text-sm">
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {r.umkm_name ?? 'UMKM'} • {r.created_at ?? ''}
+                                                            </div>
+                                                            <div className="mt-0.5">{r.note}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             ) : null}
                                         </div>
                                     ))

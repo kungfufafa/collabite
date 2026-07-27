@@ -82,3 +82,14 @@ it('registers a creator with profile', function (): void {
     expect($user->creatorProfile->skills()->pluck('skills.id')->all())->toBe([$skill->id]);
     expect($user->creatorProfile->categories()->pluck('categories.id')->all())->toBe([$category->id]);
 });
+
+test('Fortify default POST /register is disabled so role selection cannot be bypassed', function (): void {
+    $this->post('/register', [
+        'name' => 'Hacker',
+        'email' => 'hack@test.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ])->assertStatus(405);
+
+    expect(User::where('email', 'hack@test.test')->exists())->toBeFalse();
+});

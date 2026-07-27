@@ -320,3 +320,246 @@ test('content submission file is private and requires a signed URL', function ()
     $this->get($signed)
         ->assertOk();
 });
+
+test('RevisionRequested submission cannot be submitted for review directly (must resubmit)', function (): void {
+    [, $creator, , $collab] = makeCollabForContent();
+    $sub = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::RevisionRequested,
+    ]);
+
+    $this->actingAs($creator)
+        ->post(route('creator.collaborations.submissions.submitForReview', [$collab, $sub]))
+        ->assertSessionHasErrors('submission');
+
+    $sub->refresh();
+    expect($sub->status)->toBe(ContentSubmissionStatus::RevisionRequested);
+});
+
+test('request revision requires a non-empty note', function (): void {
+    [$umkm, , , $collab] = makeCollabForContent();
+    $sub = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.requestRevision', [$collab, $sub]), [
+            'note' => '   ',
+        ])
+        ->assertSessionHasErrors('note');
+
+    $sub->refresh();
+    expect($sub->status)->toBe(ContentSubmissionStatus::InReview)
+        ->and($sub->revisions)->toHaveCount(0);
+});
+
+test('request revision rejected when collaboration is cancelled', function (): void {
+    [$umkm, , , $collab] = makeCollabForContent();
+    $collab->update([
+        'status' => CollaborationStatus::Cancelled,
+        'cancelled_at' => now(),
+    ]);
+    $sub = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.requestRevision', [$collab, $sub]), [
+            'note' => ' revisi ',
+        ])
+        ->assertStatus(422);
+
+    $sub->refresh();
+    expect($sub->status)->toBe(ContentSubmissionStatus::InReview);
+});
+
+test('approve supersedes other InReview submissions on the collaboration', function (): void {
+    [$umkm, , , $collab] = makeCollabForContent();
+    $inReviewA = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+    $inReviewB = $collab->submissions()->create([
+        'version' => 2,
+        'title' => 'v2',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.approve', [$collab, $inReviewA]))
+        ->assertRedirect();
+
+    $inReviewA->refresh();
+    $inReviewB->refresh();
+    expect($inReviewA->status)->toBe(ContentSubmissionStatus::Approved)
+        ->and($inReviewB->status)->toBe(ContentSubmissionStatus::Superseded);
+});
+
+test('approve rejected when another submission is already approved', function (): void {
+    [$umkm, , , $collab] = makeCollabForContent();
+    $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::Approved,
+        'submitted_at' => now(),
+        'approved_at' => now(),
+    ]);
+    $second = $collab->submissions()->create([
+        'version' => 2,
+        'title' => 'v2',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.approve', [$collab, $second]))
+        ->assertSessionHasErrors('submission');
+
+    $second->refresh();
+    expect($second->status)->toBe(ContentSubmissionStatus::InReview);
+});
+
+test('creator cannot create a new submission after one is approved', function (): void {
+    [$umkm, $creator, , $collab] = makeCollabForContent();
+    $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::Approved,
+        'submitted_at' => now(),
+        'approved_at' => now(),
+    ]);
+    $file = UploadedFile::fake()->image('v2.png');
+
+    $this->actingAs($creator)
+        ->post(route('creator.collaborations.submissions.store', $collab), [
+            'title' => 'v2 paksa',
+            'files' => [$file],
+        ])
+        ->assertSessionHasErrors('submission');
+
+    expect($collab->submissions()->count())->toBe(1);
+});
+
+test('approve and requestRevision reject submission from a different collaboration', function (): void {
+    [$umkm, $creator, , $collabA] = makeCollabForContent();
+    [$umkmB, $creatorB, , $collabB] = makeCollabForContent();
+
+    $subB = $collabB->submissions()->create([
+        'version' => 1,
+        'title' => 'milik B',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    // UMKM A tries to approve submission milik kolaborasi B via route collab A.
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.approve', [$collabA, $subB]))
+        ->assertNotFound();
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.requestRevision', [$collabA, $subB]), [
+            'note' => 'revisi',
+        ])
+        ->assertNotFound();
+
+    $subB->refresh();
+    expect($subB->status)->toBe(ContentSubmissionStatus::InReview);
+});
+
+test('revision note is serialized and visible on the collaboration show page', function (): void {
+    [$umkm, $creator, , $collab] = makeCollabForContent();
+    $sub = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'v1',
+        'status' => ContentSubmissionStatus::InReview,
+        'submitted_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.collaborations.submissions.requestRevision', [$collab, $sub]), [
+            'note' => 'Perbaikan intro.',
+        ])
+        ->assertRedirect();
+
+    $props = $this->actingAs($creator)
+        ->get(route('creator.collaborations.show', $collab))
+        ->assertOk()
+        ->inertiaProps();
+
+    $revisions = collect($props['collaboration']['submissions'])->pluck('revisions')->flatten(1);
+    expect($revisions)->toHaveCount(1)
+        ->and($revisions->first()['note'])->toBe('Perbaikan intro.')
+        ->and($revisions->first()['umkm_name'])->toBe($umkm->name);
+});
+
+test('message with attachment creates a MessageAttachment record and surfaces it on the collaboration show page', function (): void {
+    [$umkm, $creator, , $collab] = makeCollabForContent();
+    $file = UploadedFile::fake()->create('brief.pdf', 50, 'application/pdf');
+
+    $this->actingAs($creator)
+        ->post(route('creator.collaborations.messages.store', $collab), [
+            'body' => 'Ini brief-nya.',
+            'attachments' => [$file],
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('messages', [
+        'conversation_id' => $collab->conversation->id,
+        'sender_id' => $creator->id,
+        'body' => 'Ini brief-nya.',
+    ]);
+    $this->assertDatabaseHas('message_attachments', [
+        'original_name' => 'brief.pdf',
+        'mime_type' => 'application/pdf',
+    ]);
+
+    $props = $this->actingAs($umkm)
+        ->get(route('umkm.collaborations.show', $collab))
+        ->assertOk()
+        ->inertiaProps();
+
+    $messages = collect($props['collaboration']['messages']);
+    expect($messages)->toHaveCount(1);
+    $attachments = $messages->first()['attachments'];
+    expect($attachments)->toHaveCount(1)
+        ->and($attachments[0]['original_name'])->toBe('brief.pdf')
+        ->and($attachments[0]['mime_type'])->toBe('application/pdf');
+});
+
+test('hidden submission is excluded from the collaboration show payload', function (): void {
+    [$umkm, $creator, , $collab] = makeCollabForContent();
+
+    $visible = $collab->submissions()->create([
+        'version' => 1,
+        'title' => 'visible',
+        'status' => ContentSubmissionStatus::Draft,
+    ]);
+    $hidden = $collab->submissions()->create([
+        'version' => 2,
+        'title' => 'hidden',
+        'status' => ContentSubmissionStatus::Draft,
+        'is_hidden' => true,
+    ]);
+
+    $props = $this->actingAs($creator)
+        ->get(route('creator.collaborations.show', $collab))
+        ->assertOk()
+        ->inertiaProps();
+
+    $titles = collect($props['collaboration']['submissions'])->pluck('title');
+    expect($titles)->toContain('visible')
+        ->and($titles)->not->toContain('hidden');
+    expect(ContentSubmission::where('is_hidden', true)->count())->toBe(1);
+    expect($hidden->fresh()->is_hidden)->toBeTrue();
+    expect($visible->fresh()->is_hidden)->toBeFalse();
+});

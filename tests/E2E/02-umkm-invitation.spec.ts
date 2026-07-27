@@ -61,7 +61,7 @@ test.describe.serial('E2E-02: Invitation UMKM → Creator → kolaborasi selesai
         await page.getByRole('button', { name: 'Kirim' }).click();
         await expect(page.getByText('Halo, saya akan mulai dengan konsep X.')).toBeVisible();
 
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await uploadCreatorSubmissionDraft(page, 'Konten invitation v1', 'Hasil kerja pertama.');
         await page.getByRole('button', { name: 'Kirim untuk Review' }).first().click();
         await expect(page.getByText('Dalam Review')).toBeVisible();
@@ -70,7 +70,7 @@ test.describe.serial('E2E-02: Invitation UMKM → Creator → kolaborasi selesai
 
         await loginPage(page, umkmEmail);
         await page.goto(`/umkm/collaborations/${collabId}`);
-        await page.getByRole('tab', { name: /Submission/ }).click();
+        await page.getByRole('tab', { name: /Konten/ }).click();
         await page.getByRole('button', { name: 'Setujui' }).click();
         await expect(page.getByText(/^Disetujui/)).toBeVisible();
 

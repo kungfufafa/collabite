@@ -78,6 +78,23 @@ describe('CollaborationWorkspaceLayout', () => {
         );
     });
 
+    it('renders nextStep callout when provided', () => {
+        renderWithProviders(
+            <CollaborationWorkspaceLayout
+                context={{
+                    id: 1,
+                    title: 'Workspace',
+                    backHref: '/umkm/collaborations',
+                }}
+                nextStep={<div>Langkah berikutnya: tinjau konten</div>}
+            >
+                <span>body</span>
+            </CollaborationWorkspaceLayout>,
+        );
+
+        expect(screen.getByText(/Langkah berikutnya: tinjau konten/)).toBeInTheDocument();
+    });
+
     it('invokes onTabChange when tabs are rendered as buttons', async () => {
         const user = userEvent.setup();
         const onChange = vi.fn();

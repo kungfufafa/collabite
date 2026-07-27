@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Umkm;
 use App\Actions\Campaign\CancelCampaignAction;
 use App\Actions\Campaign\CreateCampaignAction;
 use App\Actions\Campaign\PublishCampaignAction;
+use App\Enums\CollaborationRequestStatus;
+use App\Enums\CollaborationRequestType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Umkm\StoreCampaignRequest;
 use App\Http\Requests\Umkm\UpdateCampaignRequest;
@@ -46,7 +48,14 @@ class CampaignsController extends Controller
     {
         $umkm = $request->user()->umkmProfile()->firstOrFail();
         $campaigns = $umkm->campaigns()
-            ->withCount(['collaborationRequests', 'collaboration'])
+            ->withCount([
+                'collaborationRequests as pending_application_count' => function ($query): void {
+                    $query
+                        ->where('status', CollaborationRequestStatus::Pending)
+                        ->where('type', CollaborationRequestType::Application);
+                },
+                'collaboration',
+            ])
             ->latest()
             ->paginate(15);
         $campaigns->setCollection(
@@ -58,7 +67,7 @@ class CampaignsController extends Controller
                 'budget' => $c->budget,
                 'deadline' => $c->deadline?->toDateString(),
                 'is_hidden' => $c->is_hidden,
-                'pending_requests' => $c->collaboration_requests_count,
+                'pending_requests' => $c->pending_application_count,
                 'has_collaboration' => $c->collaboration_count > 0,
                 'created_at' => $c->created_at->toDateTimeString(),
             ]),

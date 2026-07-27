@@ -13,6 +13,7 @@ import type { ReactNode } from 'react';
 import { ActivityTimeline } from '@/components/app/activity-timeline';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { MetricTile } from '@/components/app/metric-tile';
+import { NextStepCallout } from '@/components/app/next-step-callout';
 import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
 import { WorkspacePage } from '@/components/app/workspace-page';
@@ -152,12 +153,12 @@ export default function CreatorDashboard({
                         value={statValue(stats, 'Menunggu pembayaran')}
                     />
                     <MetricTile
-                        emphasis={Number(statValue(stats, 'Undangan menunggu')) > 0}
+                        emphasis={Number(statValue(stats, 'Permintaan menunggu')) > 0}
                         hint="Lamaran & undangan"
                         href={creatorRequestsIndex().url}
                         icon={Images}
-                        label="Undangan menunggu"
-                        value={statValue(stats, 'Undangan menunggu')}
+                        label="Permintaan menunggu"
+                        value={statValue(stats, 'Permintaan menunggu')}
                     />
                 </div>
 
@@ -183,20 +184,23 @@ export default function CreatorDashboard({
 
                 {!health.caught_up ? (
                     <DashboardSection title="Butuh tindakanmu">
-                            <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <StatusBadge label="Perlu perhatian" tone="warning" />
-                                    <p className="mt-2 text-sm text-foreground">
-                                        {health.message}
-                                    </p>
-                                </div>
-                                <Button asChild className="shrink-0" variant="outline">
-                                    <Link href={creatorPortfolioIndex().url}>
-                                        Lengkapi profil
-                                        <ArrowRight className="size-4" />
-                                    </Link>
-                                </Button>
-                            </ResourceCard>
+                            <NextStepCallout
+                                action={
+                                    <Button asChild className="shrink-0">
+                                        <Link
+                                            href={
+                                                health.cta_href ??
+                                                creatorPortfolioIndex().url
+                                            }
+                                        >
+                                            {health.cta_label ?? 'Lengkapi profil'}
+                                            <ArrowRight className="size-4" />
+                                        </Link>
+                                    </Button>
+                                }
+                                description={health.message}
+                                label="Perlu perhatian"
+                            />
                         </DashboardSection>
                 ) : null}
 
@@ -210,9 +214,14 @@ export default function CreatorDashboard({
                             title="Kolaborasi terbaru"
                         >
                             {recent_collaborations.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Belum ada kolaborasi. Mulai dengan mencari campaign.
-                                </p>
+                                <div className="flex flex-col items-start gap-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada kolaborasi. Mulai dengan mencari campaign.
+                                    </p>
+                                    <Button asChild size="sm">
+                                        <Link href={creatorCampaignsIndex().url}>Cari Campaign</Link>
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className="flex flex-col gap-3">
                                     {recent_collaborations.map((row) => (

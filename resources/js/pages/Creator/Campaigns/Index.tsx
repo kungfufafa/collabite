@@ -10,6 +10,7 @@ import { brutalSelectField } from '@/components/collabite/landing/brutal-styles'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { index as creatorCampaignsIndex, show as creatorCampaignShow } from '@/routes/creator/campaigns';
 
 type Campaign = {
     id: number;
@@ -50,7 +51,7 @@ export default function Index({
             >
                 <FilterPanel title="Filter & Pencarian">
                         <form
-                            action="/creator/campaigns"
+                            action={creatorCampaignsIndex.url()}
                             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
                             method="GET"
                         >
@@ -162,7 +163,7 @@ export default function Index({
                                 className: 'text-right',
                                 cell: (c) => (
                                     <TableRowActions>
-                                        <TableDetailLink href={`/creator/campaigns/${c.id}`} />
+                                        <TableDetailLink href={creatorCampaignShow.url({ campaign: c.id })} />
                                     </TableRowActions>
                                 ),
                             },

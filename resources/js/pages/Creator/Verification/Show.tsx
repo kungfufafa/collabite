@@ -72,7 +72,10 @@ export default function Show({ profile, current_verification, document_types }: 
         });
     };
 
-    const canSubmit = profile.has_profile && profile.portfolio_count > 0;
+    const canSubmit =
+        profile.has_profile &&
+        profile.portfolio_count > 0 &&
+        current_verification?.status !== 'pending';
 
     return (
         <>

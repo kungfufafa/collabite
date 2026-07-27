@@ -6,10 +6,14 @@ namespace App\Notifications\Auth;
 
 use App\Mail\CollabiteMailMessage;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class CollabiteResetPasswordNotification extends ResetPassword
+class CollabiteResetPasswordNotification extends ResetPassword implements ShouldQueue
 {
+    use Queueable;
+
     protected function buildMailMessage($url): MailMessage
     {
         $expireMinutes = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);

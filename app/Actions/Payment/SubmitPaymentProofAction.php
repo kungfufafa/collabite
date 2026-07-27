@@ -33,14 +33,25 @@ class SubmitPaymentProofAction
         }
 
         return DB::transaction(function () use ($payment, $data, $umkmUser): CollaborationPayment {
-            if ($payment->proof_path) {
-                $this->files->delete($payment->proof_path, 'local');
+            // Lock baris payment agar dua upload bukti konkuren tidak saling
+            // menimpa (race condition pada status + file proof).
+            $locked = CollaborationPayment::query()
+                ->whereKey($payment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status !== PaymentStatus::PendingProof) {
+                throw ValidationException::withMessages(['payment' => 'Bukti pembayaran sudah dikirim atau dikonfirmasi.']);
+            }
+
+            if ($locked->proof_path) {
+                $this->files->delete($locked->proof_path, 'local');
             }
 
             $file = $data['proof'];
-            $path = $this->files->storePrivate($file, 'payment', $payment->collaboration_id);
+            $path = $this->files->storePrivate($file, 'payment', $locked->collaboration_id);
 
-            $payment->update([
+            $locked->update([
                 'proof_path' => $path,
                 'proof_original_name' => $file->getClientOriginalName(),
                 'proof_mime_type' => $file->getMimeType() ?? 'application/octet-stream',
@@ -50,7 +61,7 @@ class SubmitPaymentProofAction
                 'submitted_at' => now(),
             ]);
 
-            $fresh = $payment->fresh(['collaboration.campaign', 'collaboration.creator']);
+            $fresh = $locked->fresh(['collaboration.campaign', 'collaboration.creator']);
 
             app(AuditLogger::class)->log(
                 $umkmUser,
@@ -59,10 +70,10 @@ class SubmitPaymentProofAction
                 ['collaboration_id' => $fresh->collaboration_id, 'amount' => (string) $fresh->amount],
             );
 
-            Notification::send(
-                $fresh->collaboration->creator,
-                new PaymentProofSubmittedNotification($fresh),
-            );
+            // Notifikasi setelah commit agar tidak terkirim jika transaksi di-rollback.
+            $creator = $fresh->collaboration->creator;
+            $notification = new PaymentProofSubmittedNotification($fresh);
+            DB::afterCommit(fn () => Notification::send($creator, $notification));
 
             return $fresh;
         });

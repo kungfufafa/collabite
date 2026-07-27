@@ -179,6 +179,9 @@ export async function loginPage(
     email: string,
     loginPassword: string = password,
 ): Promise<void> {
+    // E2E sering ganti peran berkali-kali; bersihkan throttle login agar tidak kena 429.
+    clearLoginRateLimit(email);
+
     await page.context().clearCookies();
     await page.goto('about:blank');
     await page.goto('/login');
@@ -188,6 +191,17 @@ export async function loginPage(
         page.waitForURL(/\/(admin|creator|umkm)\/dashboard/, { timeout: 30_000 }),
         page.getByRole('button', { name: 'Masuk' }).click(),
     ]);
+}
+
+/**
+ * Hapus throttle login Fortify agar suite E2E panjang tidak kena HTTP 429.
+ * `throttle:login` menghitung SEMUA percobaan login (sukses maupun gagal).
+ */
+export function clearLoginRateLimit(_email?: string): void {
+    execSync('php artisan cache:clear', {
+        cwd: process.cwd(),
+        stdio: 'ignore',
+    });
 }
 
 export async function loginSeededUser(page: Page, email: string): Promise<void> {
@@ -404,5 +418,5 @@ export async function uploadCreatorSubmissionDraft(
     await page.getByLabel('Deskripsi', { exact: true }).fill(description);
     await page.getByRole('button', { name: 'Upload Submission' }).click();
     await expect(page.getByText(/Submission v\d+ berhasil dibuat/i)).toBeVisible();
-    await page.getByRole('tab', { name: /Submission/ }).click();
+    await page.getByRole('tab', { name: /Konten/ }).click();
 }

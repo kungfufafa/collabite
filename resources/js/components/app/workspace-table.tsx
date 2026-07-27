@@ -41,6 +41,7 @@ type WorkspaceTableProps<T> = {
     rows: T[];
     emptyTitle: string;
     emptyDescription?: string;
+    emptyAction?: ReactNode;
     getRowKey: (row: T) => string | number;
     className?: string;
     search?: WorkspaceTableSearchProps;
@@ -53,6 +54,7 @@ export function WorkspaceTable<T>({
     rows,
     emptyTitle,
     emptyDescription,
+    emptyAction,
     getRowKey,
     className,
     search,
@@ -64,6 +66,7 @@ export function WorkspaceTable<T>({
     if (rows.length === 0 && !hasToolbar) {
         return (
             <ListEmptyState
+                action={emptyAction}
                 description={emptyDescription}
                 title={emptyTitle}
             />
@@ -97,6 +100,7 @@ export function WorkspaceTable<T>({
                 {rows.length === 0 ? (
                     <div className="px-4 py-10">
                         <ListEmptyState
+                            action={emptyAction}
                             description={emptyDescription}
                             title={emptyTitle}
                         />

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\CampaignStatus;
+use App\Enums\CollaborationStatus;
 use Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -101,10 +102,18 @@ class Campaign extends Model
     }
 
     /**
+     * Kolaborasi aktif (status = active) untuk campaign ini.
+     *
+     * Di-scope ke status active agar campaign yang dibatalkan lalu dibuka
+     * kembali (reopen) dapat membentuk kolaborasi baru — kolaborasi lama
+     * yang berstatus cancelled/completed tidak memblokir penerimaan request
+     * berikutnya.
+     *
      * @return HasOne<Collaboration>
      */
     public function collaboration(): HasOne
     {
-        return $this->hasOne(Collaboration::class);
+        return $this->hasOne(Collaboration::class)
+            ->where('status', CollaborationStatus::Active->value);
     }
 }

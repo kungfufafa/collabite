@@ -13,6 +13,8 @@ import { ActivityTimeline } from '@/components/app/activity-timeline';
 import { DashboardSection } from '@/components/app/dashboard-section';
 import { InitialsAvatar } from '@/components/app/initials-avatar';
 import { MetricTile } from '@/components/app/metric-tile';
+import { NextStepCallout } from '@/components/app/next-step-callout';
+import { PageActionGroup } from '@/components/app/page-action-group';
 import { PageHeader } from '@/components/app/page-header';
 import { ResourceCard } from '@/components/app/resource-card';
 import { StatusBadge } from '@/components/app/status-badge';
@@ -47,6 +49,12 @@ export default function UmkmDashboard({
     health,
 }: Props): ReactNode {
     const businessName = profile?.business_name ?? 'UMKM';
+    const pendingApplicationsHref =
+        health.cta_href ??
+        umkmCampaignsIndex.url({
+            query: { pending: 1 },
+        });
+    const pendingApplicationsCta = health.cta_label ?? 'Tinjau sekarang';
 
     return (
         <>
@@ -67,20 +75,28 @@ export default function UmkmDashboard({
                         </span>
                     }
                     actions={
-                        <Button asChild>
-                            <Link href={umkmCampaignsCreate().url}>
-                                <Plus className="size-4" />
-                                Buat Campaign
-                            </Link>
-                        </Button>
+                        <PageActionGroup>
+                            <Button asChild variant="outline">
+                                <Link href={umkmDiscoverIndex().url}>
+                                    <Search className="size-4" />
+                                    Cari Creator
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={umkmCampaignsCreate().url}>
+                                    <Plus className="size-4" />
+                                    Buat Campaign
+                                </Link>
+                            </Button>
+                        </PageActionGroup>
                     }
                 />
 
-                <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <MetricTile
                         emphasis
                         hint="Perlu ditinjau"
-                        href={umkmCollaborationsIndex().url}
+                        href={pendingApplicationsHref}
                         icon={ClipboardList}
                         label="Lamaran menunggu"
                         value={statValue(stats, 'Lamaran menunggu')}
@@ -99,38 +115,26 @@ export default function UmkmDashboard({
                         label="Campaign terbuka"
                         value={statValue(stats, 'Campaign terbuka')}
                     />
-                    <MetricTile
-                        hint="Cari mitra konten"
-                        href={umkmDiscoverIndex().url}
-                        icon={Search}
-                        label="Cari creator"
-                        value="→"
-                    />
                 </div>
 
                 {!health.caught_up ? (
                     <div className="mt-8">
                         <DashboardSection
-                            description="Lamaran dan konten yang perlu keputusanmu."
+                            description="Lamaran yang perlu keputusanmu."
                             title="Perlu keputusanmu"
                         >
-                            <ResourceCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <StatusBadge
-                                        label="Menunggu tindakan"
-                                        tone="warning"
-                                    />
-                                    <p className="mt-2 text-sm text-foreground">
-                                        {health.message}
-                                    </p>
-                                </div>
-                                <Button asChild className="shrink-0" variant="outline">
-                                    <Link href={umkmCollaborationsIndex().url}>
-                                        Tinjau sekarang
-                                        <ArrowRight className="size-4" />
-                                    </Link>
-                                </Button>
-                            </ResourceCard>
+                            <NextStepCallout
+                                action={
+                                    <Button asChild className="shrink-0">
+                                        <Link href={pendingApplicationsHref}>
+                                            {pendingApplicationsCta}
+                                            <ArrowRight className="size-4" />
+                                        </Link>
+                                    </Button>
+                                }
+                                description={health.message}
+                                label="Menunggu tindakan"
+                            />
                         </DashboardSection>
                     </div>
                 ) : null}
@@ -145,9 +149,15 @@ export default function UmkmDashboard({
                             title="Kolaborasi terbaru"
                         >
                             {recent_collaborations.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Belum ada kolaborasi aktif.
-                                </p>
+                                <div className="flex flex-col items-start gap-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada kolaborasi aktif. Kolaborasi muncul setelah
+                                        lamaran diterima atau undangan disetujui.
+                                    </p>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={umkmDiscoverIndex().url}>Cari Creator</Link>
+                                    </Button>
+                                </div>
                             ) : (
                                 <div className="flex flex-col gap-3">
                                     {recent_collaborations.map((row) => (

@@ -54,11 +54,17 @@ Route::get('syarat-dan-ketentuan', [PublicLegalController::class, 'terms'])->nam
 */
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:login')
+        ->name('login.store');
 
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('register/umkm', [RegisteredUserController::class, 'storeUmkm'])->name('register.umkm.store');
-    Route::post('register/creator', [RegisteredUserController::class, 'storeCreator'])->name('register.creator.store');
+    Route::post('register/umkm', [RegisteredUserController::class, 'storeUmkm'])
+        ->middleware('throttle:login')
+        ->name('register.umkm.store');
+    Route::post('register/creator', [RegisteredUserController::class, 'storeCreator'])
+        ->middleware('throttle:login')
+        ->name('register.creator.store');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');

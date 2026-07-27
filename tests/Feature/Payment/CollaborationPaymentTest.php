@@ -333,7 +333,7 @@ test('full MVP escrow flow from application to completion', function (): void {
 
     // 2. UMKM menerima lamaran → kolaborasi aktif.
     $this->actingAs($umkm)
-        ->post(route('umkm.requests.accept', $request))
+        ->post(route('umkm.requests.accept', $request), ['terms_accepted' => '1'])
         ->assertRedirect();
 
     $collaboration = Collaboration::where('campaign_id', $campaign->id)->firstOrFail();

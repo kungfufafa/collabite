@@ -30,7 +30,7 @@ class AuditLogger
             'actor_id' => $actorId,
             'actor_role' => $actorRole,
             'action' => $action,
-            'subject_type' => $subject ? Str::of(get_class($subject))->afterLast('\\')->toString().'#'.$subject->getKey() : null,
+            'subject_type' => $subject ? Str::of(get_class($subject))->afterLast('\\')->toString() : null,
             'subject_id' => $subject?->getKey(),
             'metadata' => $metadata ?: null,
             'created_at' => now(),

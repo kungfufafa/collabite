@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Actions\Collaboration\AcceptRequestAction;
 use App\Actions\Collaboration\CancelApplicationAction;
+use App\Actions\Collaboration\CancelCollaborationAction;
 use App\Actions\Collaboration\RejectRequestAction;
 use App\Enums\CampaignStatus;
 use App\Enums\CollaborationRequestType;
 use App\Enums\CollaborationStatus;
 use App\Enums\UserRole;
+use App\Models\ActivityLog;
 use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\Collaboration;
@@ -406,7 +408,7 @@ test('creator can accept an invitation', function (): void {
     ]);
 
     $this->actingAs($creator)
-        ->post(route('creator.requests.accept', $request->id))
+        ->post(route('creator.requests.accept', $request->id), ['terms_accepted' => '1'])
         ->assertRedirect(route('creator.collaborations.index'));
 
     $request->refresh();
@@ -473,4 +475,200 @@ test('re-accepting an already-responded request throws validation', function ():
 
     expect(fn () => app(AcceptRequestAction::class)->execute($request))
         ->toThrow(ValidationException::class);
+});
+
+test('creator can re-apply after a previous application was rejected', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'rejected',
+        'responded_at' => now(),
+    ]);
+
+    $this->actingAs($creator)
+        ->from(route('creator.campaigns.show', $campaign))
+        ->post(route('creator.campaigns.apply', $campaign), ['message' => 'Lamaran ulang'])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('collaboration_requests', [
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'type' => CollaborationRequestType::Application->value,
+        'status' => 'pending',
+    ]);
+});
+
+test('UMKM can re-invite a creator who previously rejected an invitation', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $umkm->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => 'rejected',
+        'responded_at' => now(),
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.campaigns.invitations.store', $campaign), [
+            'campaign_id' => $campaign->id,
+            'creator_id' => $creator->id,
+            'message' => 'Undangan ulang',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('collaboration_requests', [
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'type' => CollaborationRequestType::Invitation->value,
+        'status' => 'pending',
+    ]);
+});
+
+test('a reopened campaign can form a new collaboration after the previous one was cancelled', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+    ]);
+
+    app(AcceptRequestAction::class)->execute($request);
+    $collaboration = Collaboration::where('campaign_id', $campaign->id)->firstOrFail();
+    app(CancelCollaborationAction::class)->execute($collaboration, $umkm, 'Tidak cocok lagi.');
+
+    // Campaign reopen -> creator melamar ulang -> UMKM menerima -> kolaborasi baru.
+    $newRequest = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+    ]);
+
+    app(AcceptRequestAction::class)->execute($newRequest);
+
+    $collaborations = Collaboration::where('campaign_id', $campaign->id)->get();
+    expect($collaborations)->toHaveCount(2)
+        ->and($collaborations->where('status', CollaborationStatus::Active))->toHaveCount(1);
+});
+
+test('UMKM cannot accept application without terms consent', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($umkm)
+        ->from(route('umkm.campaigns.show', $campaign))
+        ->post(route('umkm.requests.accept', $request->id))
+        ->assertRedirect(route('umkm.campaigns.show', $campaign))
+        ->assertSessionHasErrors(['terms_accepted']);
+
+    expect($request->fresh()->status->value)->toBe('pending')
+        ->and(Collaboration::where('campaign_id', $campaign->id)->exists())->toBeFalse();
+});
+
+test('UMKM accepting application with terms consent records audit metadata', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($umkm)
+        ->post(route('umkm.requests.accept', $request->id), ['terms_accepted' => '1'])
+        ->assertRedirect();
+
+    $collaboration = Collaboration::where('campaign_id', $campaign->id)->firstOrFail();
+    $log = ActivityLog::where('action', 'collaboration.accepted')
+        ->where('subject_id', $collaboration->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($request->fresh()->status->value)->toBe('accepted')
+        ->and($log->actor_id)->toBe($umkm->id)
+        ->and($log->metadata['terms_accepted'])->toBeTrue()
+        ->and($log->metadata['terms_version'])->toBe((string) config('collabite.terms_version'))
+        ->and($log->metadata)->toHaveKey('terms_accepted_at');
+});
+
+test('creator cannot accept invitation without terms consent', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $umkm->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($creator)
+        ->from(route('creator.requests.index'))
+        ->post(route('creator.requests.accept', $request->id))
+        ->assertRedirect(route('creator.requests.index'))
+        ->assertSessionHasErrors(['terms_accepted']);
+
+    expect($request->fresh()->status->value)->toBe('pending')
+        ->and(Collaboration::where('campaign_id', $campaign->id)->exists())->toBeFalse();
+});
+
+test('creator accepting invitation with terms consent records audit metadata', function (): void {
+    [$umkm, $profile, $campaign] = makeUmkmCampaign();
+    $campaign->update(['status' => CampaignStatus::Open, 'published_at' => now()]);
+    [$creator] = makeCreator();
+
+    $request = CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $umkm->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($creator)
+        ->post(route('creator.requests.accept', $request->id), ['terms_accepted' => '1'])
+        ->assertRedirect(route('creator.collaborations.index'));
+
+    $collaboration = Collaboration::where('campaign_id', $campaign->id)->firstOrFail();
+    $log = ActivityLog::where('action', 'collaboration.accepted')
+        ->where('subject_id', $collaboration->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($request->fresh()->status->value)->toBe('accepted')
+        ->and($log->actor_id)->toBe($creator->id)
+        ->and($log->metadata['terms_accepted'])->toBeTrue()
+        ->and($log->metadata['terms_version'])->toBe((string) config('collabite.terms_version'))
+        ->and($log->metadata)->toHaveKey('terms_accepted_at');
 });

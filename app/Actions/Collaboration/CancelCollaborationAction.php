@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Actions\Collaboration;
 
 use App\Enums\CampaignStatus;
+use App\Enums\CollaborationRequestStatus;
 use App\Enums\CollaborationStatus;
 use App\Enums\ContentSubmissionStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Collaboration;
 use App\Models\CollaborationPayment;
+use App\Models\CollaborationRequest;
 use App\Models\User;
 use App\Notifications\CollaborationCancelledNotification;
 use App\Notifications\PaymentRefundedNotification;
@@ -60,6 +62,10 @@ class CancelCollaborationAction
 
             // Kembalikan campaign ke open (request lain tidak dipulihkan, BR-005).
             $collaboration->campaign->update(['status' => CampaignStatus::Open]);
+
+            // Tutup request accepted asalnya agar creator dapat melamar ulang
+            // (dan UMKM mengundang ulang) setelah kolaborasi dibatalkan.
+            $this->closeOriginatingRequest($collaboration, $actor);
 
             // Lindungi integritas escrow (defense-in-depth). Record payment hanya
             // tercipta setelah submission disetujui, yang sudah diblokir di atas
@@ -187,6 +193,9 @@ class CancelCollaborationAction
 
             $collaboration->campaign->update(['status' => CampaignStatus::Open]);
 
+            // Tutup request accepted asalnya (sama seperti cancel biasa).
+            $this->closeOriginatingRequest($collaboration, $admin);
+
             app(AuditLogger::class)->log(
                 $admin,
                 'collaboration.force_closed',
@@ -196,5 +205,25 @@ class CancelCollaborationAction
 
             return $collaboration->fresh();
         });
+    }
+
+    /**
+     * Tandai request accepted yang membentuk kolaborasi ini sebagai
+     * cancelled, agar creator dapat melamar ulang / UMKM mengundang ulang.
+     */
+    private function closeOriginatingRequest(Collaboration $collaboration, User $actor): void
+    {
+        $status = $actor->is($collaboration->creator)
+            ? CollaborationRequestStatus::CancelledByCreator
+            : CollaborationRequestStatus::CancelledByUmkm;
+
+        CollaborationRequest::query()
+            ->where('campaign_id', $collaboration->campaign_id)
+            ->where('creator_id', $collaboration->creator_id)
+            ->where('status', CollaborationRequestStatus::Accepted)
+            ->update([
+                'status' => $status,
+                'responded_at' => now(),
+            ]);
     }
 }

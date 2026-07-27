@@ -40,6 +40,8 @@ export type DashboardHealth = {
     caught_up: boolean;
     message: string;
     percent?: number;
+    cta_href?: string;
+    cta_label?: string;
 };
 
 export type DashboardCharts = {

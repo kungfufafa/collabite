@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Collaboration\AcceptRequestAction;
 use App\Enums\CampaignStatus;
+use App\Enums\CollaborationRequestStatus;
 use App\Enums\CollaborationRequestType;
 use App\Enums\UserRole;
 use App\Enums\VerificationStatus;
@@ -391,4 +392,78 @@ test('unverified creators are labeled as "Belum terverifikasi" in discover resul
         ->assertInertia(fn ($page) => $page
             ->where('creators.data.0.verification_status', VerificationStatus::Unverified->value),
         );
+});
+
+test('UMKM discover exposes creator user_id and open campaigns for the invite form', function (): void {
+    [$owner, $profile] = makeUmkm();
+    $category = Category::factory()->create();
+    $open = Campaign::factory()->for($profile, 'umkmProfile')->create([
+        'status' => CampaignStatus::Open,
+        'published_at' => now(),
+        'category_id' => $category->id,
+        'title' => 'Open Campaign',
+    ]);
+    Campaign::factory()->for($profile, 'umkmProfile')->create([
+        'status' => CampaignStatus::Draft,
+        'category_id' => $category->id,
+        'title' => 'Draft Campaign',
+    ]);
+
+    $creator = User::factory()->withRole(UserRole::Creator)->create();
+    CreatorProfile::factory()->for($creator, 'user')->create();
+
+    CollaborationRequest::factory()->create([
+        'campaign_id' => $open->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $owner->id,
+        'type' => CollaborationRequestType::Invitation,
+        'status' => CollaborationRequestStatus::Pending,
+    ]);
+
+    $this->actingAs($owner)
+        ->get(route('umkm.discover.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Umkm/Discover/Index')
+            ->where('creators.data.0.user_id', $creator->id)
+            ->where('creators.data.0.blocked_campaign_ids', [$open->id])
+            ->where('openCampaigns', fn ($campaigns) => collect($campaigns)
+                ->pluck('id')
+                ->contains($open->id)
+                && ! collect($campaigns)->pluck('id')->contains(
+                    Campaign::query()->where('title', 'Draft Campaign')->value('id'),
+                )));
+});
+
+test('UMKM campaign show lists a pending application so it can be accepted or rejected', function (): void {
+    [$owner, $profile] = makeUmkm();
+    $category = Category::factory()->create();
+    $campaign = Campaign::factory()->for($profile, 'umkmProfile')->create([
+        'status' => CampaignStatus::Open,
+        'published_at' => now(),
+        'category_id' => $category->id,
+    ]);
+
+    $creator = User::factory()->withRole(UserRole::Creator)->create();
+    CreatorProfile::factory()->for($creator, 'user')->create();
+
+    CollaborationRequest::create([
+        'campaign_id' => $campaign->id,
+        'creator_id' => $creator->id,
+        'sender_id' => $creator->id,
+        'type' => CollaborationRequestType::Application,
+        'status' => 'pending',
+        'message' => 'Saya tertarik dengan campaign ini.',
+    ]);
+
+    $this->withoutVite()
+        ->actingAs($owner)
+        ->get(route('umkm.campaigns.show', $campaign))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Umkm/Campaigns/Show')
+            ->has('campaign.requests', 1)
+            ->where('campaign.requests.0.type', 'application')
+            ->where('campaign.requests.0.status', 'pending')
+            ->where('campaign.requests.0.creator_name', $creator->name));
 });

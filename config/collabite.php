@@ -17,4 +17,15 @@ return [
 
     'manual_payment_enabled' => (bool) env('COLLABITE_MANUAL_PAYMENT_ENABLED', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Versi Syarat dan Ketentuan
+    |--------------------------------------------------------------------------
+    |
+    | Dicantumkan pada audit log saat pengguna menerima lamaran/undangan.
+    | Selaraskan dengan lastUpdated dokumen legal di frontend.
+    |
+    */
+    'terms_version' => env('COLLABITE_TERMS_VERSION', '2026-07-05'),
+
 ];

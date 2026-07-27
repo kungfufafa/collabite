@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
+use App\Models\UmkmProfile;
 use App\Models\User;
 use App\Services\Dashboard\DashboardDataService;
 
@@ -15,7 +16,19 @@ test('umkm dashboard returns efferd-style payload shape', function (): void {
         ->toHaveKeys(['stats', 'profile', 'charts', 'recent_collaborations', 'activity', 'health'])
         ->and($payload['stats'])->toHaveCount(4)
         ->and($payload['charts'])->toHaveKeys(['requests_daily', 'collaborations_daily'])
-        ->and($payload['charts']['requests_daily'])->toHaveCount(7);
+        ->and($payload['charts']['requests_daily'])->toHaveCount(7)
+        ->and($payload['health']['cta_href'])->toBe(route('umkm.campaigns.index', ['pending' => 1]))
+        ->and($payload['health']['cta_label'])->toBe('Tinjau sekarang');
+});
+
+test('umkm pending applications review route lands on campaigns index', function (): void {
+    $user = User::factory()->withRole(UserRole::Umkm)->create(['email_verified_at' => now()]);
+    UmkmProfile::factory()->for($user, 'user')->create();
+
+    $this->actingAs($user)
+        ->get(route('umkm.campaigns.index', ['pending' => 1]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Umkm/Campaigns/Index'));
 });
 
 test('creator dashboard returns efferd-style payload shape', function (): void {

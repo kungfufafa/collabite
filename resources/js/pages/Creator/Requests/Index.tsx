@@ -9,8 +9,10 @@ import { WorkspacePage } from '@/components/app/workspace-page';
 import { brutalEmptyState, brutalPanel } from '@/components/collabite/landing/brutal-styles';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { index as creatorCampaignsIndex } from '@/routes/creator/campaigns';
+import { terms } from '@/routes/public';
 
 type RequestItem = {
     id: number;
@@ -38,6 +40,7 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
     const flash = usePage().props.status as string | undefined;
     const [rejectingId, setRejectingId] = useState<number | null>(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState<Record<number, boolean>>({});
 
     return (
         <>
@@ -53,7 +56,7 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
                         <p className="text-sm text-muted-foreground">
                             Tidak ada permintaan menunggu respons.
                         </p>
-                        <Button asChild className="mt-4" variant="outline">
+                        <Button asChild className="mt-4">
                             <Link href={creatorCampaignsIndex()}>Cari Campaign</Link>
                         </Button>
                     </div>
@@ -88,25 +91,77 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
                                     <p className="text-xs text-muted-foreground">{item.created_at}</p>
                                 </div>
 
-                                <div className="mt-4 flex flex-wrap gap-2">
+                                <div className="mt-4">
                                     {item.type === 'invitation' ? (
-                                        <>
-                                            <InertiaForm {...accept.form(item.id)}>
-                                                {({ processing }) => (
-                                                    <Button
-                                                        disabled={processing}
-                                                        size="sm"
-                                                        type="submit"
-                                                        variant="success"
-                                                    >
-                                                        Terima Undangan
-                                                    </Button>
+                                        <div className="flex flex-col gap-3 border-t-2 border-[var(--neutral-900)] pt-3">
+                                            <InertiaForm
+                                                {...accept.form(item.id)}
+                                                className="flex flex-col gap-3"
+                                            >
+                                                {({ processing, errors }) => (
+                                                    <>
+                                                        <input
+                                                            name="terms_accepted"
+                                                            type="hidden"
+                                                            value={termsAccepted[item.id] ? '1' : '0'}
+                                                        />
+                                                        <label
+                                                            className="flex items-start gap-2 text-sm text-muted-foreground"
+                                                            htmlFor={`terms-accept-${item.id}`}
+                                                        >
+                                                            <Checkbox
+                                                                checked={termsAccepted[item.id] === true}
+                                                                className="mt-0.5"
+                                                                id={`terms-accept-${item.id}`}
+                                                                onCheckedChange={(checked) =>
+                                                                    setTermsAccepted((prev) => ({
+                                                                        ...prev,
+                                                                        [item.id]: checked === true,
+                                                                    }))
+                                                                }
+                                                            />
+                                                            <span>
+                                                                Saya telah membaca dan menyetujui{' '}
+                                                                <Link
+                                                                    className="font-bold text-foreground underline underline-offset-4"
+                                                                    href={terms()}
+                                                                    target="_blank"
+                                                                >
+                                                                    Syarat dan Ketentuan
+                                                                </Link>{' '}
+                                                                Collabite.
+                                                            </span>
+                                                        </label>
+                                                        <InputError message={errors.terms_accepted} />
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <Button
+                                                                disabled={
+                                                                    processing ||
+                                                                    termsAccepted[item.id] !== true
+                                                                }
+                                                                size="sm"
+                                                                type="submit"
+                                                            >
+                                                                Terima Undangan
+                                                            </Button>
+                                                            {rejectingId === item.id ? null : (
+                                                                <Button
+                                                                    size="sm"
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    onClick={() => setRejectingId(item.id)}
+                                                                >
+                                                                    Tolak
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </>
                                                 )}
                                             </InertiaForm>
                                             {rejectingId === item.id ? (
                                                 <InertiaForm
                                                     {...reject.form(item.id)}
-                                                    className="flex w-full flex-col gap-2 sm:w-auto"
+                                                    className="flex flex-col gap-2"
                                                     onSuccess={() => {
                                                         setRejectingId(null);
                                                         setRejectReason('');
@@ -122,14 +177,14 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
                                                                 onChange={(e) => setRejectReason(e.target.value)}
                                                             />
                                                             <InputError message={errors.reason} />
-                                                            <div className="flex gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
                                                                 <Button
                                                                     disabled={processing}
                                                                     size="sm"
                                                                     type="submit"
                                                                     variant="destructive"
                                                                 >
-                                                                    Tolak
+                                                                    Konfirmasi Tolak
                                                                 </Button>
                                                                 <Button
                                                                     size="sm"
@@ -143,17 +198,8 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
                                                         </>
                                                     )}
                                                 </InertiaForm>
-                                            ) : (
-                                                <Button
-                                                    size="sm"
-                                                    type="button"
-                                                    variant="destructive"
-                                                    onClick={() => setRejectingId(item.id)}
-                                                >
-                                                    Tolak
-                                                </Button>
-                                            )}
-                                        </>
+                                            ) : null}
+                                        </div>
                                     ) : (
                                         <InertiaForm {...cancel.form(item.id)}>
                                             {({ processing }) => (
@@ -161,7 +207,7 @@ export default function Index({ requests }: { requests: RequestItem[] }): ReactN
                                                     disabled={processing}
                                                     size="sm"
                                                     type="submit"
-                                                    variant="destructive"
+                                                    variant="outline"
                                                 >
                                                     Batalkan Lamaran
                                                 </Button>

@@ -25,4 +25,12 @@ export default async function globalSetup(): Promise<void> {
         console.warn('[e2e] migrate:fresh failed; falling back to migrate --seed --force…');
         runArtisan('php artisan migrate --seed --force');
     }
+
+    // Bersihkan throttle login agar suite panjang tidak kena HTTP 429.
+    try {
+        runArtisan('php artisan cache:clear');
+    } catch {
+        // eslint-disable-next-line no-console
+        console.warn('[e2e] cache:clear failed; continuing…');
+    }
 }

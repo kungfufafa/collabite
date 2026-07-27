@@ -37,6 +37,7 @@ export type CollaborationWorkspaceLayoutProps = {
     activeTab?: CollaborationTab;
     onTabChange?: (value: CollaborationTab) => void;
     rightSlot?: ReactNode;
+    nextStep?: ReactNode;
 };
 
 function isActiveTab(
@@ -53,6 +54,7 @@ export default function CollaborationWorkspaceLayout({
     activeTab,
     onTabChange,
     rightSlot,
+    nextStep,
 }: CollaborationWorkspaceLayoutProps): ReactNode {
     const { isCurrentUrl } = useCurrentUrl();
 
@@ -122,6 +124,7 @@ export default function CollaborationWorkspaceLayout({
                             </Button>
                         </div>
                     ) : null}
+                    {nextStep ? <div className="mt-4">{nextStep}</div> : null}
                 </section>
                 {tabs.length > 0 ? (
                     <div className="mt-6 border-b-2 border-[var(--neutral-900)]" data-testid="collaboration-tabs">

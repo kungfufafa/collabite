@@ -72,6 +72,13 @@ class VerificationController extends Controller
     {
         $profile = $this->profileForUser($request->user());
 
+        // Cegah pengajuan ganda: jika masih ada verifikasi pending, tolak.
+        // Creator hanya dapat mengajukan ulang setelah pending ditolak admin.
+        $current = $profile->currentVerification();
+        if ($current !== null && $current->status === VerificationStatus::Pending) {
+            abort(422, 'Pengajuan verifikasi Anda masih dalam peninjauan.');
+        }
+
         abort_unless(
             ($profile->headline !== null && $profile->headline !== '') || ($profile->bio !== null && $profile->bio !== ''),
             422,

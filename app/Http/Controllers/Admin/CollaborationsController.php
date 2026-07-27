@@ -14,7 +14,6 @@ use App\Models\ContentSubmissionFile;
 use App\Services\FileUrlService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -73,16 +72,34 @@ class CollaborationsController extends Controller
             'reviews.reviewee',
         ]);
 
-        // AuditLogger menyimpan subject_type dalam format "Collaboration#<id>"
-        // (lihat App\Services\AuditLogger), bukan FQCN. Filter harus cocok format itu.
-        $subjectType = Str::of(Collaboration::class)->afterLast('\\')->toString().'#'.$collaboration->id;
+        // AuditLogger menyimpan subject_type sebagai class short-name (mis. "Collaboration",
+        // "ContentSubmission") dan subject_id terpisah. Audit log untuk sebuah kolaborasi
+        // berasal dari beberapa sumber: Collaboration itu sendiri, ContentSubmission anaknya,
+        // serta CollaborationPayment. Kami kumpulkan via union key lalu urutkan kronologis.
+        $submissionIds = $collaboration->submissions()->pluck('id')->all();
+        $paymentId = $collaboration->payment?->id;
 
         $auditLogs = ActivityLog::query()
-            ->where('subject_type', $subjectType)
-            ->where('subject_id', $collaboration->id)
+            ->where(function ($builder) use ($collaboration, $submissionIds, $paymentId): void {
+                $builder->where(fn ($q) => $q->where('subject_type', 'Collaboration')
+                    ->where('subject_id', $collaboration->id));
+
+                // Log content.* menempatkan collaboration_id di metadata JSON.
+                $builder->orWhere('metadata->collaboration_id', $collaboration->id);
+
+                if ($submissionIds !== []) {
+                    $builder->orWhere(fn ($q) => $q->where('subject_type', 'ContentSubmission')
+                        ->whereIn('subject_id', $submissionIds));
+                }
+
+                if ($paymentId !== null) {
+                    $builder->orWhere(fn ($q) => $q->where('subject_type', 'CollaborationPayment')
+                        ->where('subject_id', $paymentId));
+                }
+            })
             ->latest()
             ->limit(50)
-            ->get(['id', 'actor_id', 'actor_role', 'action', 'metadata', 'created_at']);
+            ->get(['id', 'actor_id', 'actor_role', 'action', 'subject_type', 'subject_id', 'metadata', 'created_at']);
 
         return Inertia::render('Admin/Collaborations/Show', [
             'collaboration' => [
@@ -139,6 +156,8 @@ class CollaborationsController extends Controller
                 'action' => $log->action,
                 'actor_id' => $log->actor_id,
                 'actor_role' => $log->actor_role,
+                'subject_type' => $log->subject_type,
+                'subject_id' => $log->subject_id,
                 'metadata' => $log->metadata,
                 'created_at' => $log->created_at?->toIso8601String(),
             ])->all(),

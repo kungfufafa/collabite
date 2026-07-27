@@ -1,8 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
+import { PageActionGroup } from '@/components/app/page-action-group';
 import { PageHeader } from '@/components/app/page-header';
 import { StatusBadge } from '@/components/app/status-badge';
 import {
@@ -13,7 +14,7 @@ import {
 import { WorkspaceTable } from '@/components/app/workspace-table';
 import { Button } from '@/components/ui/button';
 import { useClientTableSearch } from '@/hooks/use-client-table-search';
-import { create, edit } from '@/routes/umkm/campaigns';
+import { create, edit, index as campaignsIndex } from '@/routes/umkm/campaigns';
 
 type Campaign = {
     id: number;
@@ -60,32 +61,60 @@ function canEditCampaign(status: string): boolean {
     return status === 'draft' || status === 'open';
 }
 
+function isPendingFocus(url: string): boolean {
+    const query = url.includes('?') ? url.slice(url.indexOf('?') + 1) : '';
+
+    return new URLSearchParams(query).get('pending') === '1';
+}
+
 export default function Index({ campaigns }: { campaigns: { data: Campaign[] } | Campaign[] }): ReactNode {
+    const pageUrl = usePage().url;
+    const focusPending = isPendingFocus(pageUrl);
     const list = Array.isArray(campaigns) ? campaigns : campaigns.data;
+    const scopedList = useMemo(() => {
+        if (!focusPending) {
+            return list;
+        }
+
+        return [...list]
+            .filter((campaign) => campaign.pending_requests > 0)
+            .sort((a, b) => b.pending_requests - a.pending_requests);
+    }, [focusPending, list]);
     const getSearchText = useCallback(
         (campaign: Campaign) =>
             [campaign.title, campaign.status_label, campaign.deadline ?? ''].join(' '),
         [],
     );
     const { query, setQuery, filteredRows, resultCount, totalCount } = useClientTableSearch(
-        list,
+        scopedList,
         getSearchText,
     );
 
     return (
         <>
-            <Head title="Campaign" />
+            <Head title={focusPending ? 'Lamaran menunggu' : 'Campaign'} />
             <div>
                 <PageHeader
-                    title="Campaign"
-                    description="Kelola semua campaign Anda di satu tempat."
+                    title={focusPending ? 'Lamaran menunggu' : 'Campaign'}
+                    description={
+                        focusPending
+                            ? 'Buka campaign untuk meninjau dan menerima atau menolak lamaran creator.'
+                            : 'Kelola semua campaign Anda di satu tempat.'
+                    }
                     actions={
-                        <Button asChild>
-                            <Link href={create().url}>
-                                <Plus className="size-4" />
-                                Buat Campaign
-                            </Link>
-                        </Button>
+                        <PageActionGroup>
+                            {focusPending ? (
+                                <Button asChild variant="outline">
+                                    <Link href={campaignsIndex().url}>Semua campaign</Link>
+                                </Button>
+                            ) : null}
+                            <Button asChild>
+                                <Link href={create().url}>
+                                    <Plus className="size-4" />
+                                    Buat Campaign
+                                </Link>
+                            </Button>
+                        </PageActionGroup>
                     }
                 />
 
@@ -123,10 +152,16 @@ export default function Index({ campaigns }: { campaigns: { data: Campaign[] } |
                                 cell: (c) => c.deadline ?? '—',
                             },
                             {
-                                header: 'Pengajuan',
-                                cell: (c) => (
-                                    <span className="tabular-nums">{c.pending_requests}</span>
-                                ),
+                                header: 'Lamaran menunggu',
+                                cell: (c) =>
+                                    c.pending_requests > 0 ? (
+                                        <StatusBadge
+                                            label={`${c.pending_requests} menunggu`}
+                                            tone="warning"
+                                        />
+                                    ) : (
+                                        <span className="text-muted-foreground">0</span>
+                                    ),
                             },
                             {
                                 header: 'Kolaborasi',
@@ -145,8 +180,28 @@ export default function Index({ campaigns }: { campaigns: { data: Campaign[] } |
                                 ),
                             },
                         ]}
-                        emptyDescription="Buat campaign untuk mulai menerima lamaran dari creator."
-                        emptyTitle="Belum ada campaign"
+                        emptyAction={
+                            focusPending ? (
+                                <Button asChild variant="outline">
+                                    <Link href={campaignsIndex().url}>Semua campaign</Link>
+                                </Button>
+                            ) : (
+                                <Button asChild>
+                                    <Link href={create().url}>
+                                        <Plus className="size-4" />
+                                        Buat Campaign
+                                    </Link>
+                                </Button>
+                            )
+                        }
+                        emptyDescription={
+                            focusPending
+                                ? 'Tidak ada campaign dengan lamaran yang menunggu tinjauan. Undang creator dari Cari Creator jika perlu.'
+                                : 'Buat campaign untuk mulai menerima lamaran dari creator.'
+                        }
+                        emptyTitle={
+                            focusPending ? 'Tidak ada lamaran menunggu' : 'Belum ada campaign'
+                        }
                         getRowKey={(c) => c.id}
                         rows={filteredRows}
                         search={{
