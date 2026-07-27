@@ -1,0 +1,51 @@
+index	scene	title	file
+01	PEMBUKA	Collabite: menghubungkan UMKM dengan Content Creator	01-pembuka-collabite-menghubungkan-umkm-dengan-content-creator.png
+02	BABAK 1 — UMKM	UMKM membuat akun baru	02-babak-1-umkm-umkm-membuat-akun-baru.png
+03	BABAK 1 — UMKM	Data pendaftaran UMKM terisi	03-babak-1-umkm-data-pendaftaran-umkm-terisi.png
+04	BABAK 1 — UMKM	Akun UMKM berhasil dibuat	04-babak-1-umkm-akun-umkm-berhasil-dibuat.png
+05	BABAK 2 — CREATOR	Content Creator membuat akun baru	05-babak-2-creator-content-creator-membuat-akun-baru.png
+06	BABAK 2 — CREATOR	Data pendaftaran Creator terisi	06-babak-2-creator-data-pendaftaran-creator-terisi.png
+07	BABAK 2 — CREATOR	Akun Creator berhasil dibuat	07-babak-2-creator-akun-creator-berhasil-dibuat.png
+08	BABAK 3 — CREATOR	Creator masuk ke dashboard	08-babak-3-creator-creator-masuk-ke-dashboard.png
+09	BABAK 3 — CREATOR	Creator mengunggah dokumen (KTP)	09-babak-3-creator-creator-mengunggah-dokumen-ktp.png
+10	BABAK 3 — CREATOR	Pengajuan verifikasi terkirim (status: pending)	10-babak-3-creator-pengajuan-verifikasi-terkirim-status-pending.png
+11	BABAK 3 — ADMIN	Admin masuk sebagai moderator	11-babak-3-admin-admin-masuk-sebagai-moderator.png
+12	BABAK 3 — ADMIN	Admin memeriksa dokumen Creator	12-babak-3-admin-admin-memeriksa-dokumen-creator.png
+13	BABAK 3 — ADMIN	Creator kini TERVERIFIKASI	13-babak-3-admin-creator-kini-terverifikasi.png
+14	BABAK 4 — UMKM	UMKM masuk ke dashboard	14-babak-4-umkm-umkm-masuk-ke-dashboard.png
+15	BABAK 4 — UMKM	Halaman tinjau lamaran	15-babak-4-umkm-halaman-tinjau-lamaran.png
+16	BABAK 4 — UMKM	UMKM membuat campaign untuk jalur LAMARAN	16-babak-4-umkm-umkm-membuat-campaign-untuk-jalur-lamaran.png
+17	BABAK 4 — UMKM	Campaign lamaran LIVE (status: Open)	17-babak-4-umkm-campaign-lamaran-live-status-open.png
+18	BABAK 4 — UMKM	UMKM membuat campaign kedua untuk jalur UNDANGAN	18-babak-4-umkm-umkm-membuat-campaign-kedua-untuk-jalur-undangan.png
+19	BABAK 4 — UMKM	Campaign undangan LIVE (status: Open)	19-babak-4-umkm-campaign-undangan-live-status-open.png
+20	BABAK 5 — UMKM UNDANG	UMKM mencari Creator di Discover	20-babak-5-umkm-undang-umkm-mencari-creator-di-discover.png
+21	BABAK 5 — UMKM UNDANG	UMKM memilih campaign tujuan undangan	21-babak-5-umkm-undang-umkm-memilih-campaign-tujuan-undangan.png
+22	BABAK 5 — UMKM UNDANG	Konfirmasi campaign di tombol kirim	22-babak-5-umkm-undang-konfirmasi-campaign-di-tombol-kirim.png
+23	BABAK 5 — UMKM UNDANG	Undangan terkirim	23-babak-5-umkm-undang-undangan-terkirim.png
+24	BABAK 6 — CREATOR	Creator membuka inbox Permintaan	24-babak-6-creator-creator-membuka-inbox-permintaan.png
+25	BABAK 6 — CREATOR	Creator menyetujui Syarat dan Ketentuan	25-babak-6-creator-creator-menyetujui-syarat-dan-ketentuan.png
+26	BABAK 6 — CREATOR	Deal via UNDANGAN terbentuk	26-babak-6-creator-deal-via-undangan-terbentuk.png
+27	BABAK 7 — CREATOR	Creator menjelajah campaign yang tersedia	27-babak-7-creator-creator-menjelajah-campaign-yang-tersedia.png
+28	BABAK 7 — CREATOR	Creator menulis pesan lamaran	28-babak-7-creator-creator-menulis-pesan-lamaran.png
+29	BABAK 7 — CREATOR	Lamaran terkirim (status: pending)	29-babak-7-creator-lamaran-terkirim-status-pending.png
+30	BABAK 8 — DEAL LAMARAN	UMKM meninjau lamaran yang masuk	30-babak-8-deal-lamaran-umkm-meninjau-lamaran-yang-masuk.png
+31	BABAK 8 — DEAL LAMARAN	UMKM menyetujui Syarat dan Ketentuan	31-babak-8-deal-lamaran-umkm-menyetujui-syarat-dan-ketentuan.png
+32	BABAK 8 — DEAL LAMARAN	DEAL! Kolaborasi via lamaran dimulai	32-babak-8-deal-lamaran-deal-kolaborasi-via-lamaran-dimulai.png
+33	BABAK 9 — WORKSPACE	Creator membuka workspace kolaborasi	33-babak-9-workspace-creator-membuka-workspace-kolaborasi.png
+34	BABAK 9 — WORKSPACE	Creator mengirim pesan ke UMKM	34-babak-9-workspace-creator-mengirim-pesan-ke-umkm.png
+35	BABAK 9 — WORKSPACE	Creator memperbarui progres pekerjaan	35-babak-9-workspace-creator-memperbarui-progres-pekerjaan.png
+36	BABAK 9 — WORKSPACE	Creator mengunggah hasil konten (v1)	36-babak-9-workspace-creator-mengunggah-hasil-konten-v1.png
+37	BABAK 9 — WORKSPACE	UMKM meninjau konten & meminta revisi	37-babak-9-workspace-umkm-meninjau-konten-meminta-revisi.png
+38	BABAK 9 — WORKSPACE	Creator mengirim revisi (v2)	38-babak-9-workspace-creator-mengirim-revisi-v2.png
+39	BABAK 9 — WORKSPACE	UMKM menyetujui hasil revisi	39-babak-9-workspace-umkm-menyetujui-hasil-revisi.png
+40	BABAK 9 — WORKSPACE	UMKM menyelesaikan kolaborasi	40-babak-9-workspace-umkm-menyelesaikan-kolaborasi.png
+41	BABAK 9 — WORKSPACE	UMKM memberi rating & review untuk Creator	41-babak-9-workspace-umkm-memberi-rating-review-untuk-creator.png
+42	BABAK 9 — SELESAI	Kolaborasi selesai penuh & di-review dua arah	42-babak-9-selesai-kolaborasi-selesai-penuh-di-review-dua-arah.png
+43	BABAK 10 — ADMIN	Admin menjaga kualitas platform	43-babak-10-admin-admin-menjaga-kualitas-platform.png
+44	BABAK 10 — ADMIN	Moderasi campaign	44-babak-10-admin-moderasi-campaign.png
+45	BABAK 10 — ADMIN	Campaign demo terlihat di antrean moderasi	45-babak-10-admin-campaign-demo-terlihat-di-antrean-moderasi.png
+46	BABAK 10 — ADMIN	Manajemen pengguna	46-babak-10-admin-manajemen-pengguna.png
+47	BABAK 10 — ADMIN	Pemantauan seluruh kolaborasi lintas pengguna	47-babak-10-admin-pemantauan-seluruh-kolaborasi-lintas-pengguna.png
+48	BABAK 10 — ADMIN	Audit log (catatan aktivitas, append-only)	48-babak-10-admin-audit-log-catatan-aktivitas-append-only.png
+49	BABAK 10 — ADMIN	Laporan & ekspor data (CSV)	49-babak-10-admin-laporan-ekspor-data-csv.png
+50	PENUTUP	Itulah Collabite dari daftar hingga deal selesai	50-penutup-itulah-collabite-dari-daftar-hingga-deal-selesai.png

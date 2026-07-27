@@ -138,14 +138,77 @@ export async function showBanner(page: Page, opts: BannerOpts): Promise<void> {
         });
 }
 
-/** Tampilkan narasi lalu tahan sejenak agar presenter sempat berbicara. */
+let sceneShotIndex = 0;
+
+function sceneSlug(opts: BannerOpts): string {
+    return `${opts.scene}__${opts.title}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 80);
+}
+
+/**
+ * Tampilkan narasi lalu tahan sejenak agar presenter sempat berbicara.
+ * Set DEMO_CAPTURE_SCENES=1 untuk menyimpan screenshot per babak
+ * ke docs/demo-guide/assets/scenes/ (+ manifest.json untuk DOCX).
+ */
 export async function narrate(
     page: Page,
     opts: BannerOpts,
     waitMs: number = DEFAULT_STEP_MS,
 ): Promise<void> {
     await showBanner(page, opts);
-    await page.waitForTimeout(waitMs);
+    // Sedikit jeda agar banner & halaman settle sebelum capture/presentasi.
+    await page.waitForTimeout(Math.min(waitMs, 900));
+
+    if (process.env.DEMO_CAPTURE_SCENES === '1') {
+        const fs = await import('node:fs');
+        const dir = `${process.cwd()}/docs/demo-guide/assets/scenes`;
+        fs.mkdirSync(dir, { recursive: true });
+
+        if (sceneShotIndex === 0) {
+            // Reset manifest untuk run baru.
+            fs.writeFileSync(`${dir}/manifest.json`, '[]\n');
+            fs.writeFileSync(`${dir}/scenes.tsv`, 'index\tscene\ttitle\tfile\n');
+            for (const old of fs.readdirSync(dir)) {
+                if (old.endsWith('.png')) {
+                    fs.unlinkSync(`${dir}/${old}`);
+                }
+            }
+        }
+
+        sceneShotIndex += 1;
+        const idx = String(sceneShotIndex).padStart(2, '0');
+        const file = `${idx}-${sceneSlug(opts)}.png`;
+        await page.screenshot({ path: `${dir}/${file}`, fullPage: false });
+
+        const manifestPath = `${dir}/manifest.json`;
+        const list = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as Array<{
+            index: number;
+            scene: string;
+            title: string;
+            note: string;
+            file: string;
+        }>;
+        list.push({
+            index: sceneShotIndex,
+            scene: opts.scene,
+            title: opts.title,
+            note: opts.note ?? '',
+            file,
+        });
+        fs.writeFileSync(manifestPath, `${JSON.stringify(list, null, 2)}\n`);
+        fs.appendFileSync(
+            `${dir}/scenes.tsv`,
+            `${idx}\t${opts.scene}\t${opts.title}\t${file}\n`,
+        );
+    }
+
+    const remaining = waitMs - Math.min(waitMs, 900);
+    if (remaining > 0) {
+        await page.waitForTimeout(remaining);
+    }
 }
 
 /** Tandai email user sebagai terverifikasi (agar bisa masuk dashboard). */

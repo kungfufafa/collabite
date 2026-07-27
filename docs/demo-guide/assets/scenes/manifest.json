@@ -1,0 +1,352 @@
+[
+  {
+    "index": 1,
+    "scene": "PEMBUKA",
+    "title": "Collabite: menghubungkan UMKM dengan Content Creator",
+    "note": "Tiga peran setara — UMKM, Creator, Admin. Dua jalur matchmaking: undangan & lamaran.",
+    "file": "01-pembuka-collabite-menghubungkan-umkm-dengan-content-creator.png"
+  },
+  {
+    "index": 2,
+    "scene": "BABAK 1 — UMKM",
+    "title": "UMKM membuat akun baru",
+    "note": "Mengisi data akun dan profil usaha.",
+    "file": "02-babak-1-umkm-umkm-membuat-akun-baru.png"
+  },
+  {
+    "index": 3,
+    "scene": "BABAK 1 — UMKM",
+    "title": "Data pendaftaran UMKM terisi",
+    "note": "Klik \"Daftar sebagai UMKM\".",
+    "file": "03-babak-1-umkm-data-pendaftaran-umkm-terisi.png"
+  },
+  {
+    "index": 4,
+    "scene": "BABAK 1 — UMKM",
+    "title": "Akun UMKM berhasil dibuat",
+    "note": "Email terverifikasi & profil usaha lengkap.",
+    "file": "04-babak-1-umkm-akun-umkm-berhasil-dibuat.png"
+  },
+  {
+    "index": 5,
+    "scene": "BABAK 2 — CREATOR",
+    "title": "Content Creator membuat akun baru",
+    "note": "Mengisi data akun, kota, kategori, dan keahlian.",
+    "file": "05-babak-2-creator-content-creator-membuat-akun-baru.png"
+  },
+  {
+    "index": 6,
+    "scene": "BABAK 2 — CREATOR",
+    "title": "Data pendaftaran Creator terisi",
+    "note": "Klik \"Daftar sebagai Creator\".",
+    "file": "06-babak-2-creator-data-pendaftaran-creator-terisi.png"
+  },
+  {
+    "index": 7,
+    "scene": "BABAK 2 — CREATOR",
+    "title": "Akun Creator berhasil dibuat",
+    "note": "Profil & portofolio dilengkapi, siap mengajukan verifikasi.",
+    "file": "07-babak-2-creator-akun-creator-berhasil-dibuat.png"
+  },
+  {
+    "index": 8,
+    "scene": "BABAK 3 — CREATOR",
+    "title": "Creator masuk ke dashboard",
+    "note": "Agar tepercaya di marketplace, Creator mengajukan verifikasi identitas.",
+    "file": "08-babak-3-creator-creator-masuk-ke-dashboard.png"
+  },
+  {
+    "index": 9,
+    "scene": "BABAK 3 — CREATOR",
+    "title": "Creator mengunggah dokumen (KTP)",
+    "note": "Klik \"Kirim Pengajuan\".",
+    "file": "09-babak-3-creator-creator-mengunggah-dokumen-ktp.png"
+  },
+  {
+    "index": 10,
+    "scene": "BABAK 3 — CREATOR",
+    "title": "Pengajuan verifikasi terkirim (status: pending)",
+    "note": "Sekarang giliran Admin meninjau.",
+    "file": "10-babak-3-creator-pengajuan-verifikasi-terkirim-status-pending.png"
+  },
+  {
+    "index": 11,
+    "scene": "BABAK 3 — ADMIN",
+    "title": "Admin masuk sebagai moderator",
+    "note": "Membuka antrian verifikasi Creator.",
+    "file": "11-babak-3-admin-admin-masuk-sebagai-moderator.png"
+  },
+  {
+    "index": 12,
+    "scene": "BABAK 3 — ADMIN",
+    "title": "Admin memeriksa dokumen Creator",
+    "note": "Dokumen valid → Admin menyetujui.",
+    "file": "12-babak-3-admin-admin-memeriksa-dokumen-creator.png"
+  },
+  {
+    "index": 13,
+    "scene": "BABAK 3 — ADMIN",
+    "title": "Creator kini TERVERIFIKASI",
+    "note": "Creator tepercaya dan siap tampil di marketplace.",
+    "file": "13-babak-3-admin-creator-kini-terverifikasi.png"
+  },
+  {
+    "index": 14,
+    "scene": "BABAK 4 — UMKM",
+    "title": "UMKM masuk ke dashboard",
+    "note": "Kartu \"Lamaran menunggu\" mengarah ke campaign yang perlu ditinjau — bukan daftar kolaborasi kosong.",
+    "file": "14-babak-4-umkm-umkm-masuk-ke-dashboard.png"
+  },
+  {
+    "index": 15,
+    "scene": "BABAK 4 — UMKM",
+    "title": "Halaman tinjau lamaran",
+    "note": "Dari sini UMKM membuka campaign untuk menerima atau menolak lamaran.",
+    "file": "15-babak-4-umkm-halaman-tinjau-lamaran.png"
+  },
+  {
+    "index": 16,
+    "scene": "BABAK 4 — UMKM",
+    "title": "UMKM membuat campaign untuk jalur LAMARAN",
+    "note": "Creator nanti akan menemukan campaign ini dan mengirim lamaran.",
+    "file": "16-babak-4-umkm-umkm-membuat-campaign-untuk-jalur-lamaran.png"
+  },
+  {
+    "index": 17,
+    "scene": "BABAK 4 — UMKM",
+    "title": "Campaign lamaran LIVE (status: Open)",
+    "note": "Promo Kopi — Lamaran (1785112396460)",
+    "file": "17-babak-4-umkm-campaign-lamaran-live-status-open.png"
+  },
+  {
+    "index": 18,
+    "scene": "BABAK 4 — UMKM",
+    "title": "UMKM membuat campaign kedua untuk jalur UNDANGAN",
+    "note": "Satu Creator bisa diundang ke campaign yang dipilih secara eksplisit.",
+    "file": "18-babak-4-umkm-umkm-membuat-campaign-kedua-untuk-jalur-undangan.png"
+  },
+  {
+    "index": 19,
+    "scene": "BABAK 4 — UMKM",
+    "title": "Campaign undangan LIVE (status: Open)",
+    "note": "Promo Merch — Undangan (1785112396460)",
+    "file": "19-babak-4-umkm-campaign-undangan-live-status-open.png"
+  },
+  {
+    "index": 20,
+    "scene": "BABAK 5 — UMKM UNDANG",
+    "title": "UMKM mencari Creator di Discover",
+    "note": "Undangan selalu ke SATU campaign yang dipilih — tidak otomatis ke semua campaign.",
+    "file": "20-babak-5-umkm-undang-umkm-mencari-creator-di-discover.png"
+  },
+  {
+    "index": 21,
+    "scene": "BABAK 5 — UMKM UNDANG",
+    "title": "UMKM memilih campaign tujuan undangan",
+    "note": "Dropdown \"Undang ke campaign mana?\" → Promo Merch — Undangan (1785112396460)",
+    "file": "21-babak-5-umkm-undang-umkm-memilih-campaign-tujuan-undangan.png"
+  },
+  {
+    "index": 22,
+    "scene": "BABAK 5 — UMKM UNDANG",
+    "title": "Konfirmasi campaign di tombol kirim",
+    "note": "Tombol menyebut nama campaign secara eksplisit.",
+    "file": "22-babak-5-umkm-undang-konfirmasi-campaign-di-tombol-kirim.png"
+  },
+  {
+    "index": 23,
+    "scene": "BABAK 5 — UMKM UNDANG",
+    "title": "Undangan terkirim",
+    "note": "Creator akan melihatnya di halaman Permintaan.",
+    "file": "23-babak-5-umkm-undang-undangan-terkirim.png"
+  },
+  {
+    "index": 24,
+    "scene": "BABAK 6 — CREATOR",
+    "title": "Creator membuka inbox Permintaan",
+    "note": "Undangan dari UMKM tampil di sini, terpisah dari kolaborasi aktif.",
+    "file": "24-babak-6-creator-creator-membuka-inbox-permintaan.png"
+  },
+  {
+    "index": 25,
+    "scene": "BABAK 6 — CREATOR",
+    "title": "Creator menyetujui Syarat dan Ketentuan",
+    "note": "Lalu klik Terima Undangan (sejajar dengan Tolak).",
+    "file": "25-babak-6-creator-creator-menyetujui-syarat-dan-ketentuan.png"
+  },
+  {
+    "index": 26,
+    "scene": "BABAK 6 — CREATOR",
+    "title": "Deal via UNDANGAN terbentuk",
+    "note": "Workspace undangan siap. Demo berikutnya fokus ke jalur lamaran untuk siklus konten lengkap.",
+    "file": "26-babak-6-creator-deal-via-undangan-terbentuk.png"
+  },
+  {
+    "index": 27,
+    "scene": "BABAK 7 — CREATOR",
+    "title": "Creator menjelajah campaign yang tersedia",
+    "note": "Menemukan campaign UMKM untuk dilamar.",
+    "file": "27-babak-7-creator-creator-menjelajah-campaign-yang-tersedia.png"
+  },
+  {
+    "index": 28,
+    "scene": "BABAK 7 — CREATOR",
+    "title": "Creator menulis pesan lamaran",
+    "note": "Klik \"Kirim Lamaran\".",
+    "file": "28-babak-7-creator-creator-menulis-pesan-lamaran.png"
+  },
+  {
+    "index": 29,
+    "scene": "BABAK 7 — CREATOR",
+    "title": "Lamaran terkirim (status: pending)",
+    "note": "Menunggu keputusan UMKM.",
+    "file": "29-babak-7-creator-lamaran-terkirim-status-pending.png"
+  },
+  {
+    "index": 30,
+    "scene": "BABAK 8 — DEAL LAMARAN",
+    "title": "UMKM meninjau lamaran yang masuk",
+    "note": "Tombol Terima dan Tolak sejajar; setujui Syarat dan Ketentuan dulu.",
+    "file": "30-babak-8-deal-lamaran-umkm-meninjau-lamaran-yang-masuk.png"
+  },
+  {
+    "index": 31,
+    "scene": "BABAK 8 — DEAL LAMARAN",
+    "title": "UMKM menyetujui Syarat dan Ketentuan",
+    "note": "Persetujuan dicatat sebelum kolaborasi dimulai.",
+    "file": "31-babak-8-deal-lamaran-umkm-menyetujui-syarat-dan-ketentuan.png"
+  },
+  {
+    "index": 32,
+    "scene": "BABAK 8 — DEAL LAMARAN",
+    "title": "DEAL! Kolaborasi via lamaran dimulai",
+    "note": "Banner next-step mengarahkan ke tab yang relevan (mis. Konten).",
+    "file": "32-babak-8-deal-lamaran-deal-kolaborasi-via-lamaran-dimulai.png"
+  },
+  {
+    "index": 33,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "Creator membuka workspace kolaborasi",
+    "note": "Semua komunikasi & pengerjaan tercatat di sini.",
+    "file": "33-babak-9-workspace-creator-membuka-workspace-kolaborasi.png"
+  },
+  {
+    "index": 34,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "Creator mengirim pesan ke UMKM",
+    "note": "",
+    "file": "34-babak-9-workspace-creator-mengirim-pesan-ke-umkm.png"
+  },
+  {
+    "index": 35,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "Creator memperbarui progres pekerjaan",
+    "note": "",
+    "file": "35-babak-9-workspace-creator-memperbarui-progres-pekerjaan.png"
+  },
+  {
+    "index": 36,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "Creator mengunggah hasil konten (v1)",
+    "note": "Lalu mengirimkannya untuk direview UMKM.",
+    "file": "36-babak-9-workspace-creator-mengunggah-hasil-konten-v1.png"
+  },
+  {
+    "index": 37,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "UMKM meninjau konten & meminta revisi",
+    "note": "Alur revisi tercatat rapi, bukan lewat chat acak.",
+    "file": "37-babak-9-workspace-umkm-meninjau-konten-meminta-revisi.png"
+  },
+  {
+    "index": 38,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "Creator mengirim revisi (v2)",
+    "note": "",
+    "file": "38-babak-9-workspace-creator-mengirim-revisi-v2.png"
+  },
+  {
+    "index": 39,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "UMKM menyetujui hasil revisi",
+    "note": "",
+    "file": "39-babak-9-workspace-umkm-menyetujui-hasil-revisi.png"
+  },
+  {
+    "index": 40,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "UMKM menyelesaikan kolaborasi",
+    "note": "Kolaborasi selesai — kini kedua pihak saling memberi review.",
+    "file": "40-babak-9-workspace-umkm-menyelesaikan-kolaborasi.png"
+  },
+  {
+    "index": 41,
+    "scene": "BABAK 9 — WORKSPACE",
+    "title": "UMKM memberi rating & review untuk Creator",
+    "note": "",
+    "file": "41-babak-9-workspace-umkm-memberi-rating-review-untuk-creator.png"
+  },
+  {
+    "index": 42,
+    "scene": "BABAK 9 — SELESAI",
+    "title": "Kolaborasi selesai penuh & di-review dua arah",
+    "note": "Reputasi kedua pihak kini terekam di platform.",
+    "file": "42-babak-9-selesai-kolaborasi-selesai-penuh-di-review-dua-arah.png"
+  },
+  {
+    "index": 43,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Admin menjaga kualitas platform",
+    "note": "Admin bukan bagian transaksi — tugasnya memoderasi & mengawasi.",
+    "file": "43-babak-10-admin-admin-menjaga-kualitas-platform.png"
+  },
+  {
+    "index": 44,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Moderasi campaign",
+    "note": "Admin dapat menyembunyikan campaign yang melanggar kebijakan.",
+    "file": "44-babak-10-admin-moderasi-campaign.png"
+  },
+  {
+    "index": 45,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Campaign demo terlihat di antrean moderasi",
+    "note": "Promo Kopi — Lamaran (1785112396460)",
+    "file": "45-babak-10-admin-campaign-demo-terlihat-di-antrean-moderasi.png"
+  },
+  {
+    "index": 46,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Manajemen pengguna",
+    "note": "Admin dapat menonaktifkan (suspend) akun bermasalah.",
+    "file": "46-babak-10-admin-manajemen-pengguna.png"
+  },
+  {
+    "index": 47,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Pemantauan seluruh kolaborasi lintas pengguna",
+    "note": "Termasuk kolaborasi UMKM–Creator yang barusan selesai.",
+    "file": "47-babak-10-admin-pemantauan-seluruh-kolaborasi-lintas-pengguna.png"
+  },
+  {
+    "index": 48,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Audit log (catatan aktivitas, append-only)",
+    "note": "Setiap tindakan penting terekam dan tidak bisa diubah.",
+    "file": "48-babak-10-admin-audit-log-catatan-aktivitas-append-only.png"
+  },
+  {
+    "index": 49,
+    "scene": "BABAK 10 — ADMIN",
+    "title": "Laporan & ekspor data (CSV)",
+    "note": "",
+    "file": "49-babak-10-admin-laporan-ekspor-data-csv.png"
+  },
+  {
+    "index": 50,
+    "scene": "PENUTUP",
+    "title": "Itulah Collabite dari daftar hingga deal selesai",
+    "note": "UMKM menjalankan campaign • Creator membuat konten • Admin menjaga kualitas. Dua jalur: undangan & lamaran.",
+    "file": "50-penutup-itulah-collabite-dari-daftar-hingga-deal-selesai.png"
+  }
+]
