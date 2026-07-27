@@ -11,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Jalankan: npm run test:e2e:demo
  * Atur tempo: DEMO_STEP_MS=3000 DEMO_SLOWMO=700 npm run test:e2e:demo
  */
-const slowMo = Number(process.env.DEMO_SLOWMO ?? 550);
+const slowMo = Number(process.env.DEMO_SLOWMO ?? 700);
 const headless = process.env.DEMO_HEADLESS === '1';
 
 export default defineConfig({

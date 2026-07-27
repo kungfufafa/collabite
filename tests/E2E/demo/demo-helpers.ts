@@ -6,13 +6,13 @@
  * demo. Semua fungsi di sini fokus pada keterbacaan visual, bukan kecepatan.
  *
  * Kecepatan/pacing bisa diatur lewat env:
- *   DEMO_STEP_MS  → jeda default tiap langkah narasi (ms). Default 2200.
- *   DEMO_SLOWMO   → slowMo Playwright (di config). Default 550.
+ *   DEMO_STEP_MS  → jeda minimum tiap langkah narasi (ms). Default 7000.
+ *   DEMO_SLOWMO   → slowMo Playwright (di config). Default 700.
  */
 import type { Page } from '@playwright/test';
 import { execSync } from 'node:child_process';
 
-export const DEFAULT_STEP_MS = Number(process.env.DEMO_STEP_MS ?? 2200);
+export const DEFAULT_STEP_MS = Number(process.env.DEMO_STEP_MS ?? 7000);
 
 type BannerOpts = {
     /** Label babak, mis. "BABAK 1 — UMKM". */
@@ -23,6 +23,24 @@ type BannerOpts = {
     note?: string;
 };
 
+type DemoFlowStep = {
+    scene: string;
+    label: string;
+};
+
+const DEMO_FLOW_STEPS: DemoFlowStep[] = [
+    { scene: 'BABAK 1', label: 'Registrasi UMKM' },
+    { scene: 'BABAK 2', label: 'Registrasi Creator' },
+    { scene: 'BABAK 3', label: 'Verifikasi Creator' },
+    { scene: 'BABAK 4', label: 'Campaign UMKM' },
+    { scene: 'BABAK 5', label: 'Undangan UMKM' },
+    { scene: 'BABAK 6', label: 'Terima Undangan' },
+    { scene: 'BABAK 7', label: 'Lamaran Creator' },
+    { scene: 'BABAK 8', label: 'Deal Kolaborasi' },
+    { scene: 'BABAK 9', label: 'Workspace & Review' },
+    { scene: 'BABAK 10', label: 'Oversight Admin' },
+];
+
 /**
  * Skrip yang di-inject ke SETIAP navigasi (bertahan melewati reload penuh):
  * - Kursor merah yang mengikuti mouse.
@@ -30,82 +48,165 @@ type BannerOpts = {
  * Membuat gerakan otomatis mudah diikuti penonton.
  */
 export async function installDemoOverlay(page: Page): Promise<void> {
-    await page.addInitScript(() => {
-        const ensure = (): void => {
-            if (document.getElementById('__demo_cursor__')) {
-                return;
+    await page.addInitScript(
+        ({ flowSteps, skipInvite }) => {
+            const flowStorageKey = '__collabite_demo_flow_scene__';
+
+            const renderFlow = (): void => {
+                const id = '__demo_flow__';
+                document.getElementById(id)?.remove();
+
+                const activeScene =
+                    sessionStorage.getItem(flowStorageKey) ?? 'PEMBUKA';
+                const activeIndex = flowSteps.findIndex(({ scene }) =>
+                    activeScene.startsWith(scene),
+                );
+                const isComplete = activeScene === 'PENUTUP';
+                const el = document.createElement('aside');
+                el.id = id;
+                el.setAttribute('aria-label', 'Alur demo Collabite');
+                el.style.cssText = [
+                    'position:fixed',
+                    'z-index:2147483646',
+                    'top:112px',
+                    'right:18px',
+                    'width:248px',
+                    'padding:14px',
+                    'border:2px solid rgba(255,210,63,.95)',
+                    'border-radius:14px',
+                    'background:rgba(17,17,17,.94)',
+                    'box-shadow:4px 4px 0 rgba(0,0,0,.25)',
+                    'color:#fff',
+                    'font-family:Inter,system-ui,-apple-system,sans-serif',
+                    'pointer-events:none',
+                ].join(';');
+
+                const steps = flowSteps
+                    .map(({ scene, label }, index) => {
+                        const isSkipped =
+                            skipInvite &&
+                            index >= 4 &&
+                            index <= 5 &&
+                            (activeIndex > 5 || isComplete);
+                        const isActive = index === activeIndex && !isComplete;
+                        const isDone =
+                            (index < activeIndex || isComplete) && !isSkipped;
+                        const color = isActive
+                            ? '#FFD23F'
+                            : isDone
+                              ? '#51CF66'
+                              : '#9CA3AF';
+                        const marker = isActive
+                            ? '●'
+                            : isDone
+                              ? '✓'
+                              : isSkipped
+                                ? '–'
+                                : '○';
+                        const status = isActive
+                            ? 'Sedang dijelaskan'
+                            : isDone
+                              ? 'Selesai'
+                              : isSkipped
+                                ? 'Dilewati'
+                                : 'Berikutnya';
+
+                        return `<li aria-label="${label}: ${status}" style="display:flex;gap:9px;align-items:center;padding:4px 0;color:${color};font-size:12px;font-weight:${isActive ? '800' : '600'};opacity:${isActive || isDone ? '1' : '.72'};">
+                            <span aria-hidden="true" style="width:14px;text-align:center;font-size:14px;">${marker}</span>
+                            <span style="flex:1;">${index + 1}. ${label}</span>
+                        </li>`;
+                    })
+                    .join('');
+
+                el.innerHTML = `
+                    <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#FFD23F;font-weight:800;">Peta Alur Demo</div>
+                    <div style="font-size:13px;font-weight:800;margin:3px 0 7px;">${activeScene}</div>
+                    <ol style="margin:0;padding:0;list-style:none;">${steps}</ol>`;
+                document.documentElement.appendChild(el);
+            };
+
+            const ensure = (): void => {
+                renderFlow();
+
+                if (document.getElementById('__demo_cursor__')) {
+                    return;
+                }
+                const dot = document.createElement('div');
+                dot.id = '__demo_cursor__';
+                dot.style.cssText = [
+                    'position:fixed',
+                    'z-index:2147483646',
+                    'width:24px',
+                    'height:24px',
+                    'margin:-12px 0 0 -12px',
+                    'border:3px solid #FF5A5F',
+                    'border-radius:50%',
+                    'background:rgba(255,90,95,.22)',
+                    'box-shadow:0 0 0 2px rgba(255,255,255,.7)',
+                    'pointer-events:none',
+                    'left:-100px',
+                    'top:-100px',
+                ].join(';');
+                document.documentElement.appendChild(dot);
+
+                document.addEventListener(
+                    'mousemove',
+                    (e) => {
+                        dot.style.left = `${e.clientX}px`;
+                        dot.style.top = `${e.clientY}px`;
+                    },
+                    true,
+                );
+
+                document.addEventListener(
+                    'mousedown',
+                    (e) => {
+                        const r = document.createElement('div');
+                        r.style.cssText = [
+                            'position:fixed',
+                            'z-index:2147483646',
+                            `left:${e.clientX}px`,
+                            `top:${e.clientY}px`,
+                            'width:12px',
+                            'height:12px',
+                            'margin:-6px 0 0 -6px',
+                            'border-radius:50%',
+                            'background:#FF5A5F',
+                            'pointer-events:none',
+                            'opacity:.75',
+                            'transition:all .45s ease',
+                        ].join(';');
+                        document.documentElement.appendChild(r);
+                        requestAnimationFrame(() => {
+                            r.style.width = '52px';
+                            r.style.height = '52px';
+                            r.style.margin = '-26px 0 0 -26px';
+                            r.style.opacity = '0';
+                        });
+                        setTimeout(() => r.remove(), 460);
+                    },
+                    true,
+                );
+            };
+
+            if (document.readyState !== 'loading') {
+                ensure();
             }
 
-            const dot = document.createElement('div');
-            dot.id = '__demo_cursor__';
-            dot.style.cssText = [
-                'position:fixed',
-                'z-index:2147483646',
-                'width:24px',
-                'height:24px',
-                'margin:-12px 0 0 -12px',
-                'border:3px solid #FF5A5F',
-                'border-radius:50%',
-                'background:rgba(255,90,95,.22)',
-                'box-shadow:0 0 0 2px rgba(255,255,255,.7)',
-                'pointer-events:none',
-                'left:-100px',
-                'top:-100px',
-            ].join(';');
-            document.documentElement.appendChild(dot);
-
-            document.addEventListener(
-                'mousemove',
-                (e) => {
-                    dot.style.left = `${e.clientX}px`;
-                    dot.style.top = `${e.clientY}px`;
-                },
-                true,
-            );
-
-            document.addEventListener(
-                'mousedown',
-                (e) => {
-                    const r = document.createElement('div');
-                    r.style.cssText = [
-                        'position:fixed',
-                        'z-index:2147483646',
-                        `left:${e.clientX}px`,
-                        `top:${e.clientY}px`,
-                        'width:12px',
-                        'height:12px',
-                        'margin:-6px 0 0 -6px',
-                        'border-radius:50%',
-                        'background:#FF5A5F',
-                        'pointer-events:none',
-                        'opacity:.75',
-                        'transition:all .45s ease',
-                    ].join(';');
-                    document.documentElement.appendChild(r);
-                    requestAnimationFrame(() => {
-                        r.style.width = '52px';
-                        r.style.height = '52px';
-                        r.style.margin = '-26px 0 0 -26px';
-                        r.style.opacity = '0';
-                    });
-                    setTimeout(() => r.remove(), 460);
-                },
-                true,
-            );
-        };
-
-        if (document.readyState !== 'loading') {
-            ensure();
-        }
-
-        document.addEventListener('DOMContentLoaded', ensure);
-    });
+            document.addEventListener('DOMContentLoaded', ensure);
+        },
+        {
+            flowSteps: DEMO_FLOW_STEPS,
+            skipInvite: process.env.DEMO_SKIP_INVITE === '1',
+        },
+    );
 }
 
 /** Tampilkan banner narasi di atas halaman (dipasang ulang tiap dipanggil). */
 export async function showBanner(page: Page, opts: BannerOpts): Promise<void> {
     await page
         .evaluate(({ scene, title, note }) => {
+            sessionStorage.setItem('__collabite_demo_flow_scene__', scene);
             const id = '__demo_banner__';
             document.getElementById(id)?.remove();
 
@@ -132,6 +233,9 @@ export async function showBanner(page: Page, opts: BannerOpts): Promise<void> {
                     ${note ? `<div style="font-size:13px;opacity:.85;margin-top:3px;line-height:1.35;">${note}</div>` : ''}
                 </div>`;
             document.documentElement.appendChild(el);
+
+            document.getElementById('__demo_flow__')?.remove();
+            document.dispatchEvent(new Event('DOMContentLoaded'));
         }, opts)
         .catch(() => {
             // Halaman mungkin sedang bernavigasi; abaikan.
@@ -156,8 +260,10 @@ function sceneSlug(opts: BannerOpts): string {
 export async function narrate(
     page: Page,
     opts: BannerOpts,
-    waitMs: number = DEFAULT_STEP_MS,
+    requestedWaitMs: number = DEFAULT_STEP_MS,
 ): Promise<void> {
+    const waitMs = Math.max(requestedWaitMs, DEFAULT_STEP_MS);
+
     await showBanner(page, opts);
     // Sedikit jeda agar banner & halaman settle sebelum capture/presentasi.
     await page.waitForTimeout(Math.min(waitMs, 900));
@@ -170,7 +276,10 @@ export async function narrate(
         if (sceneShotIndex === 0) {
             // Reset manifest untuk run baru.
             fs.writeFileSync(`${dir}/manifest.json`, '[]\n');
-            fs.writeFileSync(`${dir}/scenes.tsv`, 'index\tscene\ttitle\tfile\n');
+            fs.writeFileSync(
+                `${dir}/scenes.tsv`,
+                'index\tscene\ttitle\tfile\n',
+            );
             for (const old of fs.readdirSync(dir)) {
                 if (old.endsWith('.png')) {
                     fs.unlinkSync(`${dir}/${old}`);
@@ -184,7 +293,9 @@ export async function narrate(
         await page.screenshot({ path: `${dir}/${file}`, fullPage: false });
 
         const manifestPath = `${dir}/manifest.json`;
-        const list = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as Array<{
+        const list = JSON.parse(
+            fs.readFileSync(manifestPath, 'utf8'),
+        ) as Array<{
             index: number;
             scene: string;
             title: string;
