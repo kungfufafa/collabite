@@ -6,7 +6,12 @@ import {
     loginPage,
     prepareCreatorProfileForVerification,
 } from '../../_helpers';
-import { markEmailVerified, narrate } from '../demo-helpers';
+import {
+    demoClick,
+    demoGoto,
+    markEmailVerified,
+    narrate,
+} from '../demo-helpers';
 import { pngFile, type DemoCtx } from './types';
 
 /** BABAK 1 — UMKM daftar + profil siap publish. */
@@ -14,7 +19,7 @@ export async function registerUmkmModule(ctx: DemoCtx): Promise<void> {
     const { page, context, umkmEmail } = ctx;
 
     await context.clearCookies();
-    await page.goto('/register?role=umkm');
+    await demoGoto(page, '/register?role=umkm');
     await narrate(page, {
         scene: 'BABAK 1 — UMKM',
         title: 'UMKM membuat akun baru',
@@ -27,7 +32,7 @@ export async function registerUmkmModule(ctx: DemoCtx): Promise<void> {
     await page.locator('#umkm-password-confirmation').fill(E2E_PASSWORD);
     await page.locator('#business_name').fill('Kedai Kopi Sari');
     await page.locator('#business_type').fill('F&B / Kuliner');
-    await page.locator('#terms-umkm').click();
+    await demoClick(page.locator('#terms-umkm'), 'Menyetujui syarat UMKM');
     await narrate(
         page,
         {
@@ -37,7 +42,10 @@ export async function registerUmkmModule(ctx: DemoCtx): Promise<void> {
         },
         1500,
     );
-    await page.getByRole('button', { name: 'Daftar sebagai UMKM' }).click();
+    await demoClick(
+        page.getByRole('button', { name: 'Daftar sebagai UMKM' }),
+        'Mendaftarkan akun UMKM',
+    );
     await page.waitForURL((url) => !url.pathname.includes('/register'), {
         timeout: 30_000,
     });
@@ -55,7 +63,7 @@ export async function registerCreatorModule(ctx: DemoCtx): Promise<void> {
     const { page, context, creatorEmail, creatorName } = ctx;
 
     await context.clearCookies();
-    await page.goto('/register?role=creator');
+    await demoGoto(page, '/register?role=creator');
     await narrate(page, {
         scene: 'BABAK 2 — CREATOR',
         title: 'Content Creator membuat akun baru',
@@ -67,9 +75,18 @@ export async function registerCreatorModule(ctx: DemoCtx): Promise<void> {
     await page.locator('#creator-password').fill(E2E_PASSWORD);
     await page.locator('#creator-password-confirmation').fill(E2E_PASSWORD);
     await page.locator('#city').fill('Bandung');
-    await page.locator('label:has(input[name="category_ids[]"])').first().click();
-    await page.locator('label:has(input[name="skill_ids[]"])').first().click();
-    await page.locator('#terms-creator').click();
+    await demoClick(
+        page.locator('label:has(input[name="category_ids[]"])').first(),
+        'Memilih kategori Creator',
+    );
+    await demoClick(
+        page.locator('label:has(input[name="skill_ids[]"])').first(),
+        'Memilih keahlian Creator',
+    );
+    await demoClick(
+        page.locator('#terms-creator'),
+        'Menyetujui syarat Creator',
+    );
     await narrate(
         page,
         {
@@ -79,7 +96,10 @@ export async function registerCreatorModule(ctx: DemoCtx): Promise<void> {
         },
         1500,
     );
-    await page.getByRole('button', { name: 'Daftar sebagai Creator' }).click();
+    await demoClick(
+        page.getByRole('button', { name: 'Daftar sebagai Creator' }),
+        'Mendaftarkan akun Creator',
+    );
     await page.waitForURL((url) => !url.pathname.includes('/register'), {
         timeout: 30_000,
     });
@@ -93,7 +113,9 @@ export async function registerCreatorModule(ctx: DemoCtx): Promise<void> {
 }
 
 /** BABAK 3a — Creator ajukan verifikasi. */
-export async function creatorSubmitVerificationModule(ctx: DemoCtx): Promise<void> {
+export async function creatorSubmitVerificationModule(
+    ctx: DemoCtx,
+): Promise<void> {
     const { page, creatorEmail } = ctx;
 
     await loginPage(page, creatorEmail);
@@ -104,9 +126,14 @@ export async function creatorSubmitVerificationModule(ctx: DemoCtx): Promise<voi
         note: 'Agar tepercaya di marketplace, Creator mengajukan verifikasi identitas.',
     });
 
-    await page.goto('/creator/verification');
-    await expect(page.getByRole('heading', { name: 'Verifikasi Creator' })).toBeVisible();
-    await page.locator('input[type="file"]').first().setInputFiles(pngFile('ktp.png'));
+    await demoGoto(page, '/creator/verification');
+    await expect(
+        page.getByRole('heading', { name: 'Verifikasi Creator' }),
+    ).toBeVisible();
+    await page
+        .locator('input[type="file"]')
+        .first()
+        .setInputFiles(pngFile('ktp.png'));
     await narrate(
         page,
         {
@@ -116,7 +143,10 @@ export async function creatorSubmitVerificationModule(ctx: DemoCtx): Promise<voi
         },
         1500,
     );
-    await page.getByRole('button', { name: 'Kirim Pengajuan' }).click();
+    await demoClick(
+        page.getByRole('button', { name: 'Kirim Pengajuan' }),
+        'Mengirim pengajuan verifikasi',
+    );
     await expect(page.getByText(/pending/i).first()).toBeVisible();
     await narrate(page, {
         scene: 'BABAK 3 — CREATOR',

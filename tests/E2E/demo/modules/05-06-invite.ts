@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 
 import { latestCollaborationIdForCampaign, loginPage } from '../../_helpers';
-import { narrate } from '../demo-helpers';
+import { demoClick, demoGoto, narrate } from '../demo-helpers';
 import type { DemoCtx } from './types';
 
 /** BABAK 5 — UMKM Discover: pilih campaign lalu undang Creator. */
@@ -14,7 +14,7 @@ export async function umkmInviteModule(ctx: DemoCtx): Promise<void> {
 
     await context.clearCookies();
     await loginPage(page, umkmEmail);
-    await page.goto('/umkm/discover');
+    await demoGoto(page, '/umkm/discover');
     await narrate(page, {
         scene: 'BABAK 5 — UMKM UNDANG',
         title: 'UMKM mencari Creator di Discover',
@@ -22,7 +22,10 @@ export async function umkmInviteModule(ctx: DemoCtx): Promise<void> {
     });
 
     await page.getByLabel('Kata kunci').fill(creatorName);
-    await page.getByRole('button', { name: 'Terapkan filter' }).click();
+    await demoClick(
+        page.getByRole('button', { name: 'Terapkan filter' }),
+        'Menerapkan filter Creator',
+    );
     await expect(page.getByText(creatorName)).toBeVisible({ timeout: 15_000 });
 
     const card = page
@@ -30,7 +33,10 @@ export async function umkmInviteModule(ctx: DemoCtx): Promise<void> {
         .filter({ hasText: creatorName })
         .filter({ has: page.getByRole('button', { name: /Undang Creator/ }) })
         .first();
-    await card.getByRole('button', { name: /Undang Creator/ }).click();
+    await demoClick(
+        card.getByRole('button', { name: /Undang Creator/ }),
+        'Membuka formulir undangan',
+    );
 
     await narrate(page, {
         scene: 'BABAK 5 — UMKM UNDANG',
@@ -41,15 +47,20 @@ export async function umkmInviteModule(ctx: DemoCtx): Promise<void> {
     // Jangan pakai getByRole('combobox').first() — itu filter Kategori di atas.
     const campaignCombo = page.getByLabel(/Undang ke campaign mana/i);
     await expect(campaignCombo).toBeVisible({ timeout: 10_000 });
-    await campaignCombo.click();
-    await page.getByRole('option', { name: campaignInviteTitle }).click();
+    await demoClick(campaignCombo, 'Membuka pilihan campaign');
+    await demoClick(
+        page.getByRole('option', { name: campaignInviteTitle }),
+        'Memilih campaign tujuan',
+    );
 
     await expect(page.getByText(/Undangan akan dikirim untuk/i)).toBeVisible({
         timeout: 10_000,
     });
-    await page.getByLabel('Pesan undangan').fill(
-        'Halo, kami ingin mengajak Anda berkolaborasi di campaign merchandise ini.',
-    );
+    await page
+        .getByLabel('Pesan undangan')
+        .fill(
+            'Halo, kami ingin mengajak Anda berkolaborasi di campaign merchandise ini.',
+        );
     await narrate(
         page,
         {
@@ -59,7 +70,10 @@ export async function umkmInviteModule(ctx: DemoCtx): Promise<void> {
         },
         1800,
     );
-    await page.getByRole('button', { name: /Kirim undangan ke/i }).click();
+    await demoClick(
+        page.getByRole('button', { name: /Kirim undangan ke/i }),
+        'Mengirim undangan ke Creator',
+    );
     await expect(page.getByText(/Undangan terkirim/i)).toBeVisible();
     await narrate(page, {
         scene: 'BABAK 5 — UMKM UNDANG',
@@ -74,11 +88,17 @@ export async function creatorAcceptInviteModule(ctx: DemoCtx): Promise<void> {
         return;
     }
 
-    const { page, context, creatorEmail, campaignInviteTitle, campaignInviteId } = ctx;
+    const {
+        page,
+        context,
+        creatorEmail,
+        campaignInviteTitle,
+        campaignInviteId,
+    } = ctx;
 
     await context.clearCookies();
     await loginPage(page, creatorEmail);
-    await page.goto('/creator/requests');
+    await demoGoto(page, '/creator/requests');
     await narrate(page, {
         scene: 'BABAK 6 — CREATOR',
         title: 'Creator membuka inbox Permintaan',
@@ -96,12 +116,17 @@ export async function creatorAcceptInviteModule(ctx: DemoCtx): Promise<void> {
         },
         1800,
     );
-    await page.getByRole('button', { name: 'Terima Undangan' }).click();
-    await expect(page.getByText(/Undangan diterima|Kolaborasi dimulai/i)).toBeVisible();
+    await demoClick(
+        page.getByRole('button', { name: 'Terima Undangan' }),
+        'Menerima undangan UMKM',
+    );
+    await expect(
+        page.getByText(/Undangan diterima|Kolaborasi dimulai/i),
+    ).toBeVisible();
 
     if (campaignInviteId) {
         ctx.collabInviteId = latestCollaborationIdForCampaign(campaignInviteId);
-        await page.goto(`/creator/collaborations/${ctx.collabInviteId}`);
+        await demoGoto(page, `/creator/collaborations/${ctx.collabInviteId}`);
         await narrate(
             page,
             {

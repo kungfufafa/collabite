@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 
 import { createUmkmCampaignViaPage, loginPage } from '../../_helpers';
-import { narrate } from '../demo-helpers';
+import { demoGoto, narrate } from '../demo-helpers';
 import type { DemoCtx } from './types';
 
 /** BABAK 4 — Dashboard CTA + dua campaign (lamaran & undangan). */
@@ -18,7 +18,7 @@ export async function umkmCampaignsModule(ctx: DemoCtx): Promise<void> {
     });
 
     // Navigasi langsung (lebih andal daripada klik tile saat headed/slowMo).
-    await page.goto('/umkm/campaigns?pending=1');
+    await demoGoto(page, '/umkm/campaigns?pending=1');
     await expect(page).toHaveURL(/\/umkm\/campaigns/);
     await narrate(page, {
         scene: 'BABAK 4 — UMKM',

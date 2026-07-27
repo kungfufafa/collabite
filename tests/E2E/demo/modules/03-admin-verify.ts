@@ -1,11 +1,13 @@
 import { expect } from '@playwright/test';
 
 import { loginSeededUser } from '../../_helpers';
-import { narrate } from '../demo-helpers';
+import { demoClick, demoGoto, narrate } from '../demo-helpers';
 import type { DemoCtx } from './types';
 
 /** BABAK 3b — Admin setujui verifikasi (spotlight Admin #1). */
-export async function adminApproveVerificationModule(ctx: DemoCtx): Promise<void> {
+export async function adminApproveVerificationModule(
+    ctx: DemoCtx,
+): Promise<void> {
     const { page, context, adminEmail, creatorEmail } = ctx;
 
     await context.clearCookies();
@@ -17,9 +19,12 @@ export async function adminApproveVerificationModule(ctx: DemoCtx): Promise<void
         note: 'Membuka antrian verifikasi Creator.',
     });
 
-    await page.goto('/admin/verifications');
+    await demoGoto(page, '/admin/verifications');
     const row = page.getByRole('row').filter({ hasText: creatorEmail }).first();
-    await row.getByRole('link', { name: 'Tinjau' }).click();
+    await demoClick(
+        row.getByRole('link', { name: 'Tinjau' }),
+        'Meninjau dokumen Creator',
+    );
     await expect(page).toHaveURL(/\/admin\/verifications\/\d+/);
     await narrate(page, {
         scene: 'BABAK 3 — ADMIN',
@@ -27,7 +32,10 @@ export async function adminApproveVerificationModule(ctx: DemoCtx): Promise<void
         note: 'Dokumen valid → Admin menyetujui.',
     });
     page.once('dialog', (d) => d.accept());
-    await page.getByRole('button', { name: 'Setujui verifikasi' }).click();
+    await demoClick(
+        page.getByRole('button', { name: 'Setujui verifikasi' }),
+        'Menyetujui verifikasi Creator',
+    );
     await expect(page.getByText(/Disetujui|verified/i).first()).toBeVisible();
     await narrate(page, {
         scene: 'BABAK 3 — ADMIN',

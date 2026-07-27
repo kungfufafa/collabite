@@ -9,7 +9,7 @@
  *   DEMO_STEP_MS  → jeda minimum tiap langkah narasi (ms). Default 7000.
  *   DEMO_SLOWMO   → slowMo Playwright (di config). Default 700.
  */
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { execSync } from 'node:child_process';
 
 export const DEFAULT_STEP_MS = Number(process.env.DEMO_STEP_MS ?? 7000);
@@ -240,6 +240,97 @@ export async function showBanner(page: Page, opts: BannerOpts): Promise<void> {
         .catch(() => {
             // Halaman mungkin sedang bernavigasi; abaikan.
         });
+}
+
+async function showActionCue(
+    page: Page,
+    message: string,
+    target?: { x: number; y: number; width: number; height: number },
+): Promise<void> {
+    await page.evaluate(
+        ({ message, target }) => {
+            document.getElementById('__demo_action_cue__')?.remove();
+            document.getElementById('__demo_action_target__')?.remove();
+
+            const cue = document.createElement('div');
+            cue.id = '__demo_action_cue__';
+            cue.textContent = message;
+            cue.style.cssText = [
+                'position:fixed',
+                'z-index:2147483647',
+                'right:18px',
+                'bottom:18px',
+                'padding:10px 14px',
+                'border:2px solid #FFD23F',
+                'border-radius:10px',
+                'background:rgba(17,17,17,.94)',
+                'box-shadow:3px 3px 0 rgba(0,0,0,.25)',
+                'color:#fff',
+                'font:700 13px Inter,system-ui,-apple-system,sans-serif',
+                'pointer-events:none',
+            ].join(';');
+            document.documentElement.appendChild(cue);
+
+            if (!target) {
+                return;
+            }
+
+            const outline = document.createElement('div');
+            outline.id = '__demo_action_target__';
+            outline.style.cssText = [
+                'position:fixed',
+                'z-index:2147483646',
+                `left:${target.x - 6}px`,
+                `top:${target.y - 6}px`,
+                `width:${target.width + 12}px`,
+                `height:${target.height + 12}px`,
+                'border:3px solid #FFD23F',
+                'border-radius:8px',
+                'box-shadow:0 0 0 5px rgba(255,210,63,.22)',
+                'pointer-events:none',
+                'transition:opacity .2s ease',
+            ].join(';');
+            document.documentElement.appendChild(outline);
+        },
+        { message, target },
+    );
+}
+
+/** Gulir, sorot, dan klik target agar aksi otomatis mudah diikuti. */
+export async function demoClick(
+    locator: Locator,
+    label = 'Klik target yang disorot',
+): Promise<void> {
+    await locator.evaluate((element) => {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+        });
+    });
+    await locator.page().waitForTimeout(650);
+    await locator.scrollIntoViewIfNeeded();
+
+    const box = await locator.boundingBox();
+    const page = locator.page();
+
+    if (box) {
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+            steps: 14,
+        });
+        await showActionCue(page, label, box);
+        await page.waitForTimeout(700);
+    }
+
+    await locator.click();
+    await page.waitForTimeout(500);
+}
+
+/** Beri penanda visual sebelum berpindah halaman otomatis. */
+export async function demoGoto(page: Page, url: string): Promise<void> {
+    await showActionCue(page, 'Berpindah ke halaman berikutnya');
+    await page.waitForTimeout(700);
+    await page.goto(url);
 }
 
 let sceneShotIndex = 0;
