@@ -1,0 +1,26 @@
+[Unit]
+Description=Collabite Laravel queue worker
+After=network.target mysql.service mariadb.service
+# Sesuaikan After= bila DB pakai unit lain di 1Panel
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/1panel/www/sites/collabite.rizqis.com/index
+# Ganti path php bila beda (which php / php -v)
+ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --backoff=60 --max-time=3600 --timeout=90
+Restart=always
+RestartSec=5
+Nice=10
+
+# Log ke journald (lihat: sudo collabite-ctl logs queue)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=collabite-queue
+
+# Batasi environment ke .env Laravel
+Environment=APP_ENV=production
+
+[Install]
+WantedBy=multi-user.target

@@ -201,11 +201,8 @@ test.describe.serial('E2E-08 Admin shell + supporting', () => {
         }
 
         await visitOk(page, '/admin/reports');
-        await expect(
-            page.getByRole('button', { name: /Ekspor|Export|CSV|Unduh/i }).or(
-                page.getByRole('link', { name: /Ekspor|Export|CSV|Unduh/i }),
-            ).first(),
-        ).toBeVisible();
+        await expect(page.getByRole('link', { name: /Ekspor CSV/i })).toBeVisible();
+        await expect(page.getByLabel(/Jenis ekspor CSV/i)).toBeVisible();
     });
 });
 

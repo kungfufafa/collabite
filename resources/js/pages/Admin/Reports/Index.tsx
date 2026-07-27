@@ -1,10 +1,17 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Activity, Briefcase, Download, Star, Users } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { MetricTile } from '@/components/app/metric-tile';
 import { WorkspacePage } from '@/components/app/workspace-page';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Stats = {
     users_total: number;
@@ -23,18 +30,50 @@ type Props = {
     stats: Stats;
 };
 
+type ExportType = 'users' | 'campaigns' | 'collaborations' | 'reviews';
+
+const EXPORT_OPTIONS: { value: ExportType; label: string }[] = [
+    { value: 'users', label: 'Pengguna' },
+    { value: 'campaigns', label: 'Campaign' },
+    { value: 'collaborations', label: 'Kolaborasi' },
+    { value: 'reviews', label: 'Review' },
+];
+
 export default function AdminReportsIndex({ stats }: Props): ReactNode {
+    const [exportType, setExportType] = useState<ExportType>('users');
+
     return (
         <>
             <Head title="Laporan" />
             <WorkspacePage
                 actions={
-                    <Button asChild variant="outline">
-                        <Link href="/admin/reports/export">
-                            <Download className="size-4" />
-                            Ekspor CSV
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Select
+                            value={exportType}
+                            onValueChange={(value) => setExportType(value as ExportType)}
+                        >
+                            <SelectTrigger aria-label="Jenis ekspor CSV" className="w-[180px]">
+                                <SelectValue placeholder="Pilih data" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {EXPORT_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {/*
+                          Unduhan file binary HARUS pakai <a> biasa.
+                          Inertia <Link> mem-fetch sebagai XHR JSON → CSV gagal di browser.
+                        */}
+                        <Button asChild variant="outline">
+                            <a href={`/admin/reports/export?type=${exportType}`}>
+                                <Download className="size-4" />
+                                Ekspor CSV
+                            </a>
+                        </Button>
+                    </div>
                 }
                 description="Ringkasan metrik platform Collabite."
                 title="Laporan & Statistik"
