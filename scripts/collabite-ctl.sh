@@ -2,36 +2,16 @@
 # =============================================================================
 # collabite-ctl — CLI ringan untuk systemctl di server 1Panel Collabite
 # =============================================================================
-# Default app root (document root Laravel):
+# Default app root:
 #   /opt/1panel/www/sites/collabite.rizqis.com/index
-#
-# Install cepat di VPS:
-#   sudo cp scripts/collabite-ctl.sh /usr/local/bin/collabite-ctl
-#   sudo chmod +x /usr/local/bin/collabite-ctl
-#   sudo cp scripts/systemd/collabite-queue.service /etc/systemd/system/
-#   # sesuaikan User= / php path di unit bila perlu
-#   sudo systemctl daemon-reload
-#   sudo collabite-ctl queue enable
-#   sudo collabite-ctl queue start
-#
-# Contoh:
-#   sudo collabite-ctl status
-#   sudo collabite-ctl queue restart
-#   sudo collabite-ctl php restart
-#   sudo collabite-ctl nginx reload
-#   sudo collabite-ctl all restart
 # =============================================================================
 
 set -euo pipefail
 
 APP_ROOT="${COLLABITE_APP_ROOT:-/opt/1panel/www/sites/collabite.rizqis.com/index}"
-
-# Nama unit — override lewat env kalau beda di 1Panel kamu
 QUEUE_UNIT="${COLLABITE_QUEUE_UNIT:-collabite-queue.service}"
 PHP_UNIT="${COLLABITE_PHP_UNIT:-php8.4-fpm.service}"
 NGINX_UNIT="${COLLABITE_NGINX_UNIT:-nginx.service}"
-# Beberapa instalasi 1Panel memakai openresty:
-#   COLLABITE_NGINX_UNIT=openresty.service
 
 die() { echo "error: $*" >&2; exit 1; }
 need_root() {
@@ -49,6 +29,20 @@ resolve_unit() {
   esac
 }
 
+is_service() {
+  case "$1" in
+    queue|worker|php|fpm|php-fpm|nginx|web|http) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_action() {
+  case "$1" in
+    start|stop|restart|reload|enable|disable) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 unit_exists() {
   systemctl cat "$1" &>/dev/null
 }
@@ -60,67 +54,44 @@ sys() {
 
 cmd_help() {
   cat <<EOF
-collabite-ctl — wrapper systemctl untuk Collabite (1Panel)
+collabite-ctl — wrapper systemctl Collabite (1Panel)
 
-Usage:
-  sudo collabite-ctl <command> [service]
+Usage (dua gaya OK):
+  sudo collabite-ctl <command> <service>
+  sudo collabite-ctl <service> <command>
 
-Commands:
-  status [service]     Status (default: semua: queue, php, nginx)
-  start <service>      Start unit
-  stop <service>       Stop unit
-  restart <service>    Restart unit
-  reload <service>     Reload unit (nginx/php)
-  enable <service>     Enable on boot
-  disable <service>    Disable on boot
-  logs <service>       journalctl -u -f (Ctrl+C keluar)
-  all restart          Restart queue + php + nginx
-  doctor               Cek path app + unit terpasang
-  help                 Tampilkan bantuan
+Contoh yang benar:
+  sudo collabite-ctl enable queue
+  sudo collabite-ctl queue enable
+  sudo collabite-ctl start queue
+  sudo collabite-ctl queue start
+  sudo collabite-ctl status
+  sudo collabite-ctl doctor
+  sudo collabite-ctl logs queue
+  sudo collabite-ctl all restart
 
-Services:
-  queue | worker       ${QUEUE_UNIT}
-  php   | fpm          ${PHP_UNIT}
-  nginx | web          ${NGINX_UNIT}
-
-Env override:
-  COLLABITE_APP_ROOT=/path/to/laravel
-  COLLABITE_QUEUE_UNIT=collabite-queue.service
-  COLLABITE_PHP_UNIT=php8.4-fpm.service
-  COLLABITE_NGINX_UNIT=nginx.service   # atau openresty.service
-
-App root saat ini: ${APP_ROOT}
+Services: queue | php | nginx
+App root: ${APP_ROOT}
 EOF
 }
 
 cmd_doctor() {
   echo "== Collabite doctor =="
   echo "APP_ROOT: $APP_ROOT"
-  if [[ -f "$APP_ROOT/artisan" ]]; then
-    echo "artisan: OK"
-  else
-    echo "artisan: MISSING (cek COLLABITE_APP_ROOT)"
-  fi
-  if [[ -f "$APP_ROOT/.env" ]]; then
-    echo ".env: OK"
-  else
-    echo ".env: MISSING"
-  fi
+  if [[ -f "$APP_ROOT/artisan" ]]; then echo "artisan: OK"; else echo "artisan: MISSING"; fi
+  if [[ -f "$APP_ROOT/.env" ]]; then echo ".env: OK"; else echo ".env: MISSING"; fi
   echo
   for label in queue php nginx; do
     u="$(resolve_unit "$label")"
     if unit_exists "$u"; then
-      state="$(systemctl is-active "$u" 2>/dev/null || true)"
-      enabled="$(systemctl is-enabled "$u" 2>/dev/null || true)"
-      echo "$label ($u): active=${state} enabled=${enabled}"
+      echo "$label ($u): active=$(systemctl is-active "$u" 2>/dev/null || true) enabled=$(systemctl is-enabled "$u" 2>/dev/null || true)"
     else
       echo "$label ($u): UNIT NOT INSTALLED"
     fi
   done
   echo
-  echo "Hint install queue unit:"
-  echo "  sudo cp scripts/systemd/collabite-queue.service /etc/systemd/system/"
-  echo "  sudo systemctl daemon-reload && sudo collabite-ctl queue enable && sudo collabite-ctl queue start"
+  echo "PHP binary hint: which php ; php -v"
+  echo "User hint:      id www-data ; ls -ld $APP_ROOT"
 }
 
 cmd_status() {
@@ -149,24 +120,26 @@ cmd_logs() {
   journalctl -u "$u" -f -n 100
 }
 
-main() {
-  local cmd="${1:-help}"
-  shift || true
+run_action() {
+  local action="$1"
+  local service="$2"
+  local u
+  u="$(resolve_unit "$service")"
+  sys "$action" "$u"
+  systemctl --no-pager --full status "$u" || true
+}
 
-  case "$cmd" in
-    help|-h|--help) cmd_help ;;
-    doctor) cmd_doctor ;;
-    status) cmd_status "$@" ;;
-    logs) cmd_logs "$@" ;;
-    start|stop|restart|reload|enable|disable)
-      [[ $# -ge 1 ]] || die "usage: collabite-ctl $cmd <queue|php|nginx>"
-      u="$(resolve_unit "$1")"
-      sys "$cmd" "$u"
-      systemctl --no-pager --full status "$u" || true
-      ;;
+main() {
+  local a="${1:-help}"
+  local b="${2:-}"
+
+  case "$a" in
+    help|-h|--help) cmd_help; return ;;
+    doctor) cmd_doctor; return ;;
+    status) shift || true; cmd_status "$@"; return ;;
+    logs) shift || true; cmd_logs "$@"; return ;;
     all)
-      sub="${1:-}"
-      [[ "$sub" == "restart" ]] || die "usage: collabite-ctl all restart"
+      [[ "${b:-}" == "restart" ]] || die "usage: collabite-ctl all restart"
       need_root
       for label in queue php nginx; do
         u="$(resolve_unit "$label")"
@@ -178,11 +151,29 @@ main() {
         fi
       done
       cmd_status
-      ;;
-    *)
-      die "perintah tidak dikenal: $cmd (lihat: collabite-ctl help)"
+      return
       ;;
   esac
+
+  # enable queue  /  start queue
+  if is_action "$a" && [[ -n "$b" ]] && is_service "$b"; then
+    run_action "$a" "$b"
+    return
+  fi
+
+  # queue enable  /  queue start
+  if is_service "$a" && [[ -n "$b" ]] && is_action "$b"; then
+    run_action "$b" "$a"
+    return
+  fi
+
+  # queue  → status
+  if is_service "$a" && [[ -z "$b" ]]; then
+    cmd_status "$a"
+    return
+  fi
+
+  die "perintah tidak dikenal. Coba: sudo collabite-ctl help"
 }
 
 main "$@"
